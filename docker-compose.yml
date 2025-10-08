@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+  db:
+    build: ./db
+    container_name: pi-sql
+    environment:
+      SA_PASSWORD: "YourStrong!Passw0rd"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./mssql-data:/var/opt/mssql
+
+  backend:
+    build: ./backend/pi-planning-backend
+    depends_on:
+      - db
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=PIPlanningDB;User Id=sa;Password=YourStrong!Passw0rd;"
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend/pi-planning-ui
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
