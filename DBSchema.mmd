@@ -1,0 +1,74 @@
+erDiagram
+    BOARD {
+        INT Id PK "Board ID"
+        VARCHAR Name
+        INT NumSprints
+        INT SprintDuration
+        BOOLEAN IsFinalized
+        VARCHAR DevTestToggle "Current toggle mode"
+        DATETIME CreatedAt
+    }
+
+    SPRINT {
+        INT Id PK
+        INT BoardId FK
+        VARCHAR Name
+        DATE StartDate
+        DATE EndDate
+    }
+
+    FEATURE {
+        INT Id PK
+        INT BoardId FK
+        VARCHAR AzureId
+        VARCHAR Title
+        INT Priority
+        VARCHAR ValueArea
+        BOOLEAN IsFinalized
+    }
+
+    USERSTORY {
+        INT Id PK
+        INT FeatureId FK
+        VARCHAR AzureId
+        VARCHAR Title
+        FLOAT StoryPoints
+        FLOAT DevStoryPoints
+        FLOAT TestStoryPoints
+        INT OriginalSprintId FK
+        INT CurrentSprintId FK
+        BOOLEAN IsMoved
+        TEXT Notes
+    }
+
+    TEAMMEMBER {
+        INT Id PK
+        VARCHAR Name
+        BOOLEAN IsDev
+        BOOLEAN IsTest
+    }
+
+    TEAMMEMBER_SPRINT {
+        INT Id PK
+        INT TeamMemberId FK
+        INT SprintId FK
+        FLOAT CapacityDev
+        FLOAT CapacityTest
+    }
+
+    CURSORPRESENCE {
+        INT Id PK
+        INT BoardId FK
+        INT TeamMemberId FK
+        FLOAT X
+        FLOAT Y
+        DATETIME LastSeen
+    }
+
+    BOARD ||--o{ SPRINT : has
+    BOARD ||--o{ FEATURE : has
+    FEATURE ||--o{ USERSTORY : has
+    SPRINT ||--o{ TEAMMEMBER_SPRINT : has
+    TEAMMEMBER ||--o{ TEAMMEMBER_SPRINT : has
+    BOARD ||--o{ CURSORPRESENCE : tracks
+    TEAMMEMBER ||--o{ CURSORPRESENCE : tracks
