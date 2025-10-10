@@ -1,11 +1,18 @@
 erDiagram
     BOARD {
-        INT Id PK "Board ID"
+        INT Id PK
         VARCHAR Name
+        VARCHAR Organization
+        VARCHAR Project
+        VARCHAR AzureStoryPointField
+        VARCHAR AzureDevStoryPointField
+        VARCHAR AzureTestStoryPointField
         INT NumSprints
         INT SprintDuration
+        BOOLEAN IsLocked
+        VARCHAR PasswordHash
         BOOLEAN IsFinalized
-        VARCHAR DevTestToggle "Current toggle mode"
+        BOOLEAN DevTestToggle
         DATETIME CreatedAt
     }
 

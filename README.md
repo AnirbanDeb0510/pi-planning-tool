@@ -127,17 +127,23 @@ docker-compose -f docker/docker-compose.yml up
 ---
 
 ## 🧩 ER Diagram
-![alt text](erDiagram.png)
 
 ```mermaid
 erDiagram
     BOARD {
         INT Id PK
         VARCHAR Name
+        VARCHAR Organization
+        VARCHAR Project
+        VARCHAR AzureStoryPointField
+        VARCHAR AzureDevStoryPointField
+        VARCHAR AzureTestStoryPointField
         INT NumSprints
         INT SprintDuration
+        BOOLEAN IsLocked
+        VARCHAR PasswordHash
         BOOLEAN IsFinalized
-        VARCHAR DevTestToggle
+        BOOLEAN DevTestToggle
         DATETIME CreatedAt
     }
 
