@@ -28,3 +28,12 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# .NET build outputs
+/backend/pi-planning-backend/bin/
+/backend/pi-planning-backend/obj/
+/backend/pi-planning-backend/Properties/launchSettings.json
+
+# Docker / DB data
+/db/mssql-data/
+docker-compose.override.yml

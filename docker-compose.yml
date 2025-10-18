@@ -1,4 +1,5 @@
 version: '3.9'
+
 services:
   db:
     build: ./db
@@ -9,20 +10,36 @@ services:
     ports:
       - "1433:1433"
     volumes:
-      - ./mssql-data:/var/opt/mssql
+      - ./mssql-data:/var/opt/mssql/data   # ✅ persistent data volume
+    restart: always
+    networks:
+      - pi-net
 
   backend:
     build: ./backend/pi-planning-backend
+    container_name: pi-backend
     depends_on:
       - db
     environment:
-      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=PIPlanningDB;User Id=sa;Password=YourStrong!Passw0rd;"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=PIPlanningDB;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
     ports:
       - "8080:8080"
+    restart: always
+    networks:
+      - pi-net
 
   frontend:
     build: ./frontend/pi-planning-ui
+    container_name: pi-frontend
     depends_on:
       - backend
     ports:
       - "4200:80"
+    restart: always
+    networks:
+      - pi-net
+
+networks:
+  pi-net:
+    driver: bridge
