@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("pi-planning-backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ff5eed13fbe919e398dbbb22fb2b528afd0b6864")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+55e05b901b4e7cd210809b9898c92c2fef8ad4cf")]
 [assembly: System.Reflection.AssemblyProductAttribute("pi-planning-backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("pi-planning-backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

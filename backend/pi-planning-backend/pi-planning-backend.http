@@ -1,6 +1,0 @@
-@pi_planning_backend_HostAddress = http://localhost:5262
-
-GET {{pi_planning_backend_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
