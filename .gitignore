@@ -35,5 +35,5 @@ yarn-error.log*
 /backend/pi-planning-backend/Properties/launchSettings.json
 
 # Docker / DB data
-/db/mssql-data/
+db/pg-data/
 docker-compose.override.yml
