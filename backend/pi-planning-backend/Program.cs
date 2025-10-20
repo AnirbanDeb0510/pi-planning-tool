@@ -14,7 +14,7 @@ builder.Services.AddSwaggerGen();
 // DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 // SignalR
 builder.Services.AddSignalR();
@@ -26,7 +26,7 @@ builder.Services.AddHttpClient<IAzureBoardsService, AzureBoardsService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials().AllowAnyOrigin());
+        policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 });
 
 var app = builder.Build();
@@ -45,7 +45,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHub<PlanningHub>("/hub/planning");
 

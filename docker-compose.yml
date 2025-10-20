@@ -1,16 +1,15 @@
-version: '3.9'
-
 services:
   db:
     build: ./db
-    container_name: pi-sql
+    container_name: pi-postgres
     environment:
-      SA_PASSWORD: "YourStrong!Passw0rd"
-      ACCEPT_EULA: "Y"
+      POSTGRES_PASSWORD: "YourStrong!Passw0rd"
+      POSTGRES_DB: PIPlanningDB
+      POSTGRES_USER: postgres
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - ./mssql-data:/var/opt/mssql/data   # ✅ persistent data volume
+      - ./db/pg-data:/var/lib/postgresql/data
     restart: always
     networks:
       - pi-net
@@ -22,7 +21,7 @@ services:
       - db
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
-      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=PIPlanningDB;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+      ConnectionStrings__DefaultConnection: "Host=pi-postgres;Database=PIPlanningDB;Username=postgres;Password=YourStrong!Passw0rd"
     ports:
       - "8080:8080"
     restart: always
