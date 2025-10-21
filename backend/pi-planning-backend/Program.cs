@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using PiPlanningBackend.Data;
-using PiPlanningBackend.Services;
 using PiPlanningBackend.Hubs;
 using PiPlanningBackend.Services.Interfaces;
+using PiPlanningBackend.Services.Implementations;
+using PiPlanningBackend.Repositories.Interfaces;
+using PiPlanningBackend.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,9 @@ builder.Services.AddSignalR();
 
 // AzureBoardsService with HttpClient
 builder.Services.AddHttpClient<IAzureBoardsService, AzureBoardsService>();
+builder.Services.AddScoped<IBoardRepository, BoardRepository>();
+builder.Services.AddScoped<IBoardService, BoardService>();
+
 
 // CORS (dev convenience)
 builder.Services.AddCors(options =>
