@@ -24,7 +24,6 @@ namespace PiPlanningBackend.Repositories.Implementations
         public async Task<Board?> GetByIdAsync(int id)
         {
             return await _context.Boards
-                .Include(b => b.Sprints)
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
 
@@ -38,6 +37,13 @@ namespace PiPlanningBackend.Repositories.Implementations
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<Board?> GetBoardWithSprintsAsync(int boardId)
+        {
+            return await _context.Boards
+                .Include(b => b.Sprints)
+                .FirstOrDefaultAsync(b => b.Id == boardId);
         }
     }
 }

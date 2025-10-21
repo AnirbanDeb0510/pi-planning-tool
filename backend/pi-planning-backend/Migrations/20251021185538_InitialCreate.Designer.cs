@@ -12,7 +12,7 @@ using PiPlanningBackend.Data;
 namespace PiPlanningBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251020121116_InitialCreate")]
+    [Migration("20251021185538_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -56,7 +56,8 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("NumSprints")
                         .HasColumnType("integer");
@@ -72,6 +73,9 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<int>("SprintDuration")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -128,7 +132,8 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("ValueArea")
                         .HasColumnType("text");
@@ -158,7 +163,8 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp with time zone");
@@ -178,6 +184,9 @@ namespace PiPlanningBackend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BoardId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsDev")
                         .HasColumnType("boolean");
 
@@ -186,9 +195,12 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BoardId");
 
                     b.ToTable("TeamMembers");
                 });
@@ -262,7 +274,8 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
@@ -299,6 +312,17 @@ namespace PiPlanningBackend.Migrations
                     b.Navigation("Board");
                 });
 
+            modelBuilder.Entity("PiPlanningBackend.Models.TeamMember", b =>
+                {
+                    b.HasOne("PiPlanningBackend.Models.Board", "Board")
+                        .WithMany()
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Board");
+                });
+
             modelBuilder.Entity("PiPlanningBackend.Models.TeamMemberSprint", b =>
                 {
                     b.HasOne("PiPlanningBackend.Models.Sprint", "Sprint")
@@ -308,7 +332,7 @@ namespace PiPlanningBackend.Migrations
                         .IsRequired();
 
                     b.HasOne("PiPlanningBackend.Models.TeamMember", "TeamMember")
-                        .WithMany()
+                        .WithMany("TeamMemberSprints")
                         .HasForeignKey("TeamMemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -350,6 +374,11 @@ namespace PiPlanningBackend.Migrations
                     b.Navigation("TeamMemberSprints");
 
                     b.Navigation("UserStories");
+                });
+
+            modelBuilder.Entity("PiPlanningBackend.Models.TeamMember", b =>
+                {
+                    b.Navigation("TeamMemberSprints");
                 });
 #pragma warning restore 612, 618
         }

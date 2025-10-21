@@ -25,6 +25,8 @@ builder.Services.AddSignalR();
 builder.Services.AddHttpClient<IAzureBoardsService, AzureBoardsService>();
 builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IBoardService, BoardService>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<ITeamService, TeamService>();
 
 
 // CORS (dev convenience)

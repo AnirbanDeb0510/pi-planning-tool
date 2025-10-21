@@ -29,7 +29,8 @@ namespace PiPlanningBackend.Services.Implementations
                 NumSprints = dto.NumSprints,
                 SprintDuration = dto.SprintDuration,
                 DevTestToggle = dto.DevTestToggle,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                StartDate = dto.StartDate
             };
 
             // 🧩 Optional password handling
@@ -40,7 +41,7 @@ namespace PiPlanningBackend.Services.Implementations
             }
 
             // 🧩 Auto-generate sprints
-            var startDate = DateTime.UtcNow.Date;
+            var startDate = dto.StartDate;
             for (int i = 1; i <= dto.NumSprints; i++)
             {
                 var sprint = new Sprint

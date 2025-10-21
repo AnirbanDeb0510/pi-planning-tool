@@ -23,6 +23,8 @@ namespace PiPlanningBackend.DTOs
 
         public bool DevTestToggle { get; set; }
         
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+
         /// 🔐 Optional password for board protection
         public string? Password { get; set; }
     }
