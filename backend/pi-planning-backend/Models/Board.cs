@@ -1,8 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace PiPlanningBackend.Models
 {
     public class Board
     {
         public int Id { get; set; }
+        
+        [Required, MaxLength(100)]
         public string Name { get; set; } = "";
         public string? Organization { get; set; }
         public string? Project { get; set; }
@@ -11,6 +15,7 @@ namespace PiPlanningBackend.Models
         public string? AzureTestStoryPointField { get; set; }
         public int NumSprints { get; set; }
         public int SprintDuration { get; set; }
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
         public bool IsLocked { get; set; }
         public string? PasswordHash { get; set; }
         public bool IsFinalized { get; set; }

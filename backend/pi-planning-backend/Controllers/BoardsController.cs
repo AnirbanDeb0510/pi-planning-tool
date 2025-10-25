@@ -1,53 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PiPlanningBackend.Data;
-using PiPlanningBackend.Models;
 using PiPlanningBackend.DTOs;
+using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Controllers
 {
     [ApiController]
-    [Route("api/boards")]
-    public class BoardsController : ControllerBase
+    [Route("api/[controller]")]
+    public class BoardController : ControllerBase
     {
-        private readonly AppDbContext _db;
-        public BoardsController(AppDbContext db) { _db = db; }
+        private readonly IBoardService _boardService;
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        public BoardController(IBoardService boardService)
         {
-            var board = await _db.Boards
-                .Include(b => b.Sprints)
-                .Include(b => b.Features)
-                .FirstOrDefaultAsync(b => b.Id == id);
-
-            if (board == null) return NotFound();
-
-            var dto = new BoardDto
-            {
-                Id = board.Id,
-                Name = board.Name,
-                Organization = board.Organization,
-                Project = board.Project,
-                DevTestToggle = board.DevTestToggle
-            };
-
-            return Ok(dto);
+            _boardService = boardService;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BoardDto input)
+        public async Task<IActionResult> CreateBoard(BoardCreateDto dto)
         {
-            var b = new Board
-            {
-                Name = input.Name,
-                Organization = input.Organization,
-                Project = input.Project,
-                DevTestToggle = input.DevTestToggle
-            };
-            _db.Boards.Add(b);
-            await _db.SaveChangesAsync();
-            return CreatedAtAction(nameof(Get), new { id = b.Id }, b);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var board = await _boardService.CreateBoardAsync(dto);
+            return CreatedAtAction(nameof(GetBoard), new { id = board.Id }, board);
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetBoard(int id)
+        {
+            return Ok($"Placeholder for board {id}");
         }
     }
 }

@@ -16,7 +16,12 @@ A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boa
 - **Board Management**:
   - Unique board ID.
   - Optional password protection.
+  - Start date for planning.
   - Finalization mode with visual indicators for moved stories.
+- **Team Management**:
+  - Add/update team members per board.
+  - Automatic assignment of Dev/Test capacities per sprint based on `DevTestToggle` and `SprintDuration`.
+  - Modify capacity per sprint via API.
 - **Notes**: Free-text notes per feature or story for risks or additional info.
 - **Dev/Test Toggle**: Switch between total story points and split points.
 - **Persistence**: Store board configuration, assignments, and state in SQL Server/PostgreSQL.
@@ -28,12 +33,13 @@ A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boa
 ```
 
 pi-planning-tool/
-├── backend/                   # .NET 8 Web API
+├── backend/pi-planning-backend               # .NET 8 Web API
 │   ├── Controllers/
 │   ├── Models/
 │   ├── Services/
+│   ├── Dockerfile
 │   └── Program.cs
-├── frontend/                  # Angular 20 app
+├── frontend/pi-planning-ui.                   # Angular 20 app
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── components/
@@ -41,11 +47,12 @@ pi-planning-tool/
 │   │   │   └── models/
 │   │   ├── assets/
 │   │   └── index.html
+│   ├── Dockerfile
 │   └── angular.json
-├── docker/
-│   ├── backend.Dockerfile
-│   ├── frontend.Dockerfile
-│   └── docker-compose.yml
+├── db/
+│   ├── Dockerfile
+│   ├── init.sql
+├── docker-compose.yml
 ├── README.md
 └── pi-planning-tool.sln
 
@@ -82,7 +89,7 @@ cd pi-planning-tool
 ### 2. Frontend
 
 ```bash
-cd frontend
+cd frontend/pi-planning-ui
 npm install
 ng serve
 ```
@@ -97,7 +104,7 @@ docker run -p 4200:4200 pi-planning-frontend
 ### 3. Backend
 
 ```bash
-cd backend
+cd backend/pi-planning-backend
 dotnet restore
 dotnet run
 ```
@@ -140,6 +147,7 @@ erDiagram
         VARCHAR AzureTestStoryPointField
         INT NumSprints
         INT SprintDuration
+        DATETIME StartDate
         BOOLEAN IsLocked
         VARCHAR PasswordHash
         BOOLEAN IsFinalized
@@ -182,6 +190,7 @@ erDiagram
     TEAMMEMBER {
         INT Id PK
         VARCHAR Name
+        INT BoardId FK
         BOOLEAN IsDev
         BOOLEAN IsTest
     }
@@ -205,6 +214,7 @@ erDiagram
 
     BOARD ||--o{ SPRINT : has
     BOARD ||--o{ FEATURE : has
+    BOARD ||--o{ TEAMMEMBER : has
     FEATURE ||--o{ USERSTORY : has
     SPRINT ||--o{ TEAMMEMBER_SPRINT : has
     TEAMMEMBER ||--o{ TEAMMEMBER_SPRINT : has
@@ -233,7 +243,7 @@ erDiagram
 
 * **Frontend**: Angular 20 + Angular Material + CDK Drag&Drop
 * **Backend**: .NET 8 Web API + SignalR
-* **Database**: SQL Server / PostgreSQL (Dockerized)
+* **Database**: SQL Server / PostgreSQL (Dockerize)
 * **Real-time**: SignalR WebSockets
 * **Containerization**: Docker & Docker Compose
 * **Hosting**: Google Cloud Run (future: Azure App Service)

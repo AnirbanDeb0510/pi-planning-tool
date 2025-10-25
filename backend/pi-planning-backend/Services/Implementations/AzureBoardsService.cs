@@ -4,7 +4,7 @@ using System.Text.Json;
 using PiPlanningBackend.DTOs;
 using PiPlanningBackend.Services.Interfaces;
 
-namespace PiPlanningBackend.Services
+namespace PiPlanningBackend.Services.Implementations
 {
     public class AzureBoardsService : IAzureBoardsService
     {

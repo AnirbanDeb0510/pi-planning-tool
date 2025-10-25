@@ -18,7 +18,7 @@ namespace PiPlanningBackend.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Organization = table.Column<string>(type: "text", nullable: true),
                     Project = table.Column<string>(type: "text", nullable: true),
                     AzureStoryPointField = table.Column<string>(type: "text", nullable: true),
@@ -26,6 +26,7 @@ namespace PiPlanningBackend.Migrations
                     AzureTestStoryPointField = table.Column<string>(type: "text", nullable: true),
                     NumSprints = table.Column<int>(type: "integer", nullable: false),
                     SprintDuration = table.Column<int>(type: "integer", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsLocked = table.Column<bool>(type: "boolean", nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: true),
                     IsFinalized = table.Column<bool>(type: "boolean", nullable: false),
@@ -55,21 +56,6 @@ namespace PiPlanningBackend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TeamMembers",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    IsDev = table.Column<bool>(type: "boolean", nullable: false),
-                    IsTest = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TeamMembers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Features",
                 columns: table => new
                 {
@@ -77,7 +63,7 @@ namespace PiPlanningBackend.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     BoardId = table.Column<int>(type: "integer", nullable: false),
                     AzureId = table.Column<string>(type: "text", nullable: true),
-                    Title = table.Column<string>(type: "text", nullable: false),
+                    Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Priority = table.Column<int>(type: "integer", nullable: true),
                     ValueArea = table.Column<string>(type: "text", nullable: true),
                     IsFinalized = table.Column<bool>(type: "boolean", nullable: false)
@@ -100,7 +86,7 @@ namespace PiPlanningBackend.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     BoardId = table.Column<int>(type: "integer", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -113,6 +99,62 @@ namespace PiPlanningBackend.Migrations
                         principalTable: "Boards",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TeamMembers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    IsDev = table.Column<bool>(type: "boolean", nullable: false),
+                    IsTest = table.Column<bool>(type: "boolean", nullable: false),
+                    BoardId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TeamMembers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TeamMembers_Boards_BoardId",
+                        column: x => x.BoardId,
+                        principalTable: "Boards",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserStories",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FeatureId = table.Column<int>(type: "integer", nullable: false),
+                    AzureId = table.Column<string>(type: "text", nullable: true),
+                    Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    StoryPoints = table.Column<double>(type: "double precision", nullable: true),
+                    DevStoryPoints = table.Column<double>(type: "double precision", nullable: true),
+                    TestStoryPoints = table.Column<double>(type: "double precision", nullable: true),
+                    OriginalSprintId = table.Column<int>(type: "integer", nullable: true),
+                    CurrentSprintId = table.Column<int>(type: "integer", nullable: true),
+                    IsMoved = table.Column<bool>(type: "boolean", nullable: false),
+                    Notes = table.Column<string>(type: "text", nullable: true),
+                    SprintId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserStories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserStories_Features_FeatureId",
+                        column: x => x.FeatureId,
+                        principalTable: "Features",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserStories_Sprints_SprintId",
+                        column: x => x.SprintId,
+                        principalTable: "Sprints",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -143,40 +185,6 @@ namespace PiPlanningBackend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "UserStories",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FeatureId = table.Column<int>(type: "integer", nullable: false),
-                    AzureId = table.Column<string>(type: "text", nullable: true),
-                    Title = table.Column<string>(type: "text", nullable: false),
-                    StoryPoints = table.Column<double>(type: "double precision", nullable: true),
-                    DevStoryPoints = table.Column<double>(type: "double precision", nullable: true),
-                    TestStoryPoints = table.Column<double>(type: "double precision", nullable: true),
-                    OriginalSprintId = table.Column<int>(type: "integer", nullable: true),
-                    CurrentSprintId = table.Column<int>(type: "integer", nullable: true),
-                    IsMoved = table.Column<bool>(type: "boolean", nullable: false),
-                    Notes = table.Column<string>(type: "text", nullable: true),
-                    SprintId = table.Column<int>(type: "integer", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserStories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserStories_Features_FeatureId",
-                        column: x => x.FeatureId,
-                        principalTable: "Features",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserStories_Sprints_SprintId",
-                        column: x => x.SprintId,
-                        principalTable: "Sprints",
-                        principalColumn: "Id");
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Features_AzureId",
                 table: "Features",
@@ -190,6 +198,11 @@ namespace PiPlanningBackend.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Sprints_BoardId",
                 table: "Sprints",
+                column: "BoardId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamMembers_BoardId",
+                table: "TeamMembers",
                 column: "BoardId");
 
             migrationBuilder.CreateIndex(
