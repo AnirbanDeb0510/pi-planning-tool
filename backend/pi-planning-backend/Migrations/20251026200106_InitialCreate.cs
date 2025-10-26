@@ -19,11 +19,11 @@ namespace PiPlanningBackend.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Organization = table.Column<string>(type: "text", nullable: true),
-                    Project = table.Column<string>(type: "text", nullable: true),
-                    AzureStoryPointField = table.Column<string>(type: "text", nullable: true),
-                    AzureDevStoryPointField = table.Column<string>(type: "text", nullable: true),
-                    AzureTestStoryPointField = table.Column<string>(type: "text", nullable: true),
+                    Organization = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Project = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    AzureStoryPointField = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    AzureDevStoryPointField = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    AzureTestStoryPointField = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     NumSprints = table.Column<int>(type: "integer", nullable: false),
                     SprintDuration = table.Column<int>(type: "integer", nullable: false),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -39,33 +39,16 @@ namespace PiPlanningBackend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CursorPresences",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    BoardId = table.Column<int>(type: "integer", nullable: false),
-                    TeamMemberId = table.Column<int>(type: "integer", nullable: true),
-                    X = table.Column<double>(type: "double precision", nullable: false),
-                    Y = table.Column<double>(type: "double precision", nullable: false),
-                    LastSeen = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CursorPresences", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Features",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     BoardId = table.Column<int>(type: "integer", nullable: false),
-                    AzureId = table.Column<string>(type: "text", nullable: true),
+                    AzureId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Priority = table.Column<int>(type: "integer", nullable: true),
-                    ValueArea = table.Column<string>(type: "text", nullable: true),
+                    ValueArea = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     IsFinalized = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -130,16 +113,15 @@ namespace PiPlanningBackend.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FeatureId = table.Column<int>(type: "integer", nullable: false),
-                    AzureId = table.Column<string>(type: "text", nullable: true),
+                    AzureId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     StoryPoints = table.Column<double>(type: "double precision", nullable: true),
                     DevStoryPoints = table.Column<double>(type: "double precision", nullable: true),
                     TestStoryPoints = table.Column<double>(type: "double precision", nullable: true),
                     OriginalSprintId = table.Column<int>(type: "integer", nullable: true),
-                    CurrentSprintId = table.Column<int>(type: "integer", nullable: true),
+                    SprintId = table.Column<int>(type: "integer", nullable: false),
                     IsMoved = table.Column<bool>(type: "boolean", nullable: false),
-                    Notes = table.Column<string>(type: "text", nullable: true),
-                    SprintId = table.Column<int>(type: "integer", nullable: true)
+                    Notes = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -221,11 +203,6 @@ namespace PiPlanningBackend.Migrations
                 column: "AzureId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserStories_CurrentSprintId",
-                table: "UserStories",
-                column: "CurrentSprintId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserStories_FeatureId",
                 table: "UserStories",
                 column: "FeatureId");
@@ -239,9 +216,6 @@ namespace PiPlanningBackend.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "CursorPresences");
-
             migrationBuilder.DropTable(
                 name: "TeamMemberSprints");
 

@@ -12,7 +12,7 @@ using PiPlanningBackend.Data;
 namespace PiPlanningBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251021185538_InitialCreate")]
+    [Migration("20251026200106_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -34,13 +34,16 @@ namespace PiPlanningBackend.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AzureDevStoryPointField")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("AzureStoryPointField")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("AzureTestStoryPointField")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -63,13 +66,15 @@ namespace PiPlanningBackend.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Organization")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
                     b.Property<string>("Project")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("SprintDuration")
                         .HasColumnType("integer");
@@ -82,34 +87,6 @@ namespace PiPlanningBackend.Migrations
                     b.ToTable("Boards");
                 });
 
-            modelBuilder.Entity("PiPlanningBackend.Models.CursorPresence", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BoardId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("LastSeen")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("TeamMemberId")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("X")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("Y")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CursorPresences");
-                });
-
             modelBuilder.Entity("PiPlanningBackend.Models.Feature", b =>
                 {
                     b.Property<int>("Id")
@@ -119,7 +96,8 @@ namespace PiPlanningBackend.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AzureId")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("BoardId")
                         .HasColumnType("integer");
@@ -136,7 +114,8 @@ namespace PiPlanningBackend.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("ValueArea")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
@@ -243,10 +222,8 @@ namespace PiPlanningBackend.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AzureId")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("CurrentSprintId")
-                        .HasColumnType("integer");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<double?>("DevStoryPoints")
                         .HasColumnType("double precision");
@@ -263,7 +240,7 @@ namespace PiPlanningBackend.Migrations
                     b.Property<int?>("OriginalSprintId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("SprintId")
+                    b.Property<int>("SprintId")
                         .HasColumnType("integer");
 
                     b.Property<double?>("StoryPoints")
@@ -280,8 +257,6 @@ namespace PiPlanningBackend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AzureId");
-
-                    b.HasIndex("CurrentSprintId");
 
                     b.HasIndex("FeatureId");
 
@@ -350,11 +325,15 @@ namespace PiPlanningBackend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PiPlanningBackend.Models.Sprint", null)
+                    b.HasOne("PiPlanningBackend.Models.Sprint", "Sprint")
                         .WithMany("UserStories")
-                        .HasForeignKey("SprintId");
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Feature");
+
+                    b.Navigation("Sprint");
                 });
 
             modelBuilder.Entity("PiPlanningBackend.Models.Board", b =>
