@@ -86,22 +86,34 @@ git clone https://github.com/anirbandeb0510/pi-planning-tool.git
 cd pi-planning-tool
 ````
 
-### 2. Frontend
+### 2. Start Database (PostgreSQL)
 
 ```bash
-cd frontend/pi-planning-ui
-npm install
-ng serve
+docker-compose up -d db
 ```
-
-**OR** with Docker:
-
+#### Optional: Enter container to inspect DB
 ```bash
-docker build -f docker/frontend.Dockerfile -t pi-planning-frontend .
-docker run -p 4200:4200 pi-planning-frontend
+docker exec -it pi-postgres psql -U postgres -d PIPlanningDB
+```
+From here, you can run SQL queries, check tables, etc.
+
+### 3. Run EF Core Migrations
+  1. Navigate to backend:
+```bash
+cd backend/pi-planning-backend
 ```
 
-### 3. Backend
+  2. Add migration (if not already done):
+```bash
+dotnet ef migrations add InitialCreate
+```
+
+  3. Apply migration:
+```bash
+dotnet ef database update
+```
+
+### 4. Backend
 
 ```bash
 cd backend/pi-planning-backend
@@ -116,10 +128,44 @@ docker build -f docker/backend.Dockerfile -t pi-planning-backend .
 docker run -p 5000:5000 pi-planning-backend
 ```
 
-### 4. Docker Compose (Full Stack)
+### 5. Frontend
+
+```bash
+cd frontend/pi-planning-ui
+npm install
+ng serve
+```
+
+**OR** with Docker:
+
+```bash
+docker build -f docker/frontend.Dockerfile -t pi-planning-frontend .
+docker run -p 4200:4200 pi-planning-frontend
+```
+
+### 6. Docker Compose (Full Stack)
 
 ```bash
 docker-compose -f docker/docker-compose.yml up
+```
+This will start DB + backend + frontend together.
+
+### 7. Inspect Running Containers
+- List running containers:
+```bash
+docker ps
+```
+- Enter backend container:
+```bash
+docker exec -it <container_name_or_id> /bin/bash
+```
+- Enter database container:
+```bash
+docker exec -it pi-postgres /bin/bash
+```
+- Connect to PostgreSQL inside container:
+```bash
+psql -U postgres -d PIPlanningDB
 ```
 
 ---
