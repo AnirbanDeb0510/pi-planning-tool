@@ -1,0 +1,23 @@
+.board-container {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.sprint-columns {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
+
+.sprint-column {
+  min-width: 250px;
+  background: #f4f5f7;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.story-list {
+  min-height: 100px;
+}
