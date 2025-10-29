@@ -1,23 +1,72 @@
 .board-container {
-  display: flex;
-  gap: 16px;
-  padding: 20px;
-  overflow-x: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+    overflow-x: auto;
+}
+
+.sprint-header {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 6px;
+}
+
+.sprint-header-cell {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+}
+
+.feature-label {
+    width: 150px;
+    text-align: left;
+}
+
+.parking-lot-col {
+    min-width: 200px;
+    text-align: center;
+}
+
+.feature-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.feature-name {
+    width: 150px;
+    font-weight: bold;
 }
 
 .sprint-columns {
-  display: flex;
-  flex-direction: row;
-  gap: 16px;
+    display: flex;
+    flex-direction: row;
+    flex: 1;
 }
 
 .sprint-column {
-  min-width: 250px;
-  background: #f4f5f7;
-  padding: 12px;
-  border-radius: 12px;
+    flex: 1;
+    min-width: 200px;
+    background: #f4f5f7;
+    margin: 4px;
+    border-radius: 10px;
+    padding: 6px;
 }
 
 .story-list {
-  min-height: 100px;
+    min-height: 100px;
+    min-width: 230px;
+}
+
+.cdk-drop-list-dragging {
+    background: #e2e8f0;
+    border: 2px dashed #2563eb;
+}
+
+.total {
+    font-size: 0.8rem;
+    color: #2563eb;
 }

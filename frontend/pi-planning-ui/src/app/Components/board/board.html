@@ -1,43 +1,41 @@
 <div class="board-container">
-  <!-- Parking Lot -->
-  <div class="sprint-column parking-lot">
-    <h2>Parking Lot</h2>
-    <div
-      cdkDropList
-      [id]="'parkingLot'"
-      [cdkDropListData]="parkingLot"
-      [cdkDropListConnectedTo]="connectedDropLists"
-      class="story-list"
-      (cdkDropListDropped)="drop($event)"
-    >
-      <app-story-card
-        *ngFor="let story of parkingLot"
-        [story]="story"
-        cdkDrag
-      ></app-story-card>
+    <!-- Header Row -->
+    <div class="sprint-header">
+        <div class="sprint-header-cell feature-label">Feature</div>
+        <div class="sprint-header-cell parking-lot-col">Parking Lot</div>
+        <div class="sprint-header-cell" *ngFor="let sprint of sprints">
+            {{ sprint.name }}
+            <div class="total">Total: {{ getSprintTotal(sprint.id) }}</div>
+        </div>
     </div>
-  </div>
 
-  <!-- Sprints -->
-  <div class="sprint-columns">
-    <div class="sprint-column" *ngFor="let sprint of sprints">
-      <h2>{{ sprint.name }}</h2>
-      <p>Total Points: {{ getSprintTotal(sprint) }}</p>
+    <!-- Feature Rows -->
+    <div class="feature-row" *ngFor="let feature of features">
+        <!-- Feature Name -->
+        <div class="feature-name">
+            <h3>{{ feature.name }}</h3>
+            <span class="feature-total">Total: {{ getFeatureTotal(feature) }} pts</span>
+        </div>
 
-      <div
-        cdkDropList
-        [id]="sprint.id"
-        [cdkDropListData]="sprint.stories"
-        [cdkDropListConnectedTo]="connectedDropLists"
-        class="story-list"
-        (cdkDropListDropped)="drop($event)"
-      >
-        <app-story-card
-          *ngFor="let story of sprint.stories"
-          [story]="story"
-          cdkDrag
-        ></app-story-card>
-      </div>
+        <!-- Parking Lot -->
+        <div class="sprint-column">
+            <div cdkDropList [id]="feature.name + '_parkingLot'" [cdkDropListData]="feature.parkingLot"
+                [cdkDropListConnectedTo]="getConnectedLists(feature)" class="story-list"
+                (cdkDropListDropped)="drop($event)">
+                <app-story-card *ngFor="let story of feature.parkingLot" [story]="story" cdkDrag></app-story-card>
+            </div>
+        </div>
+
+        <!-- Sprints -->
+        <div class="sprint-columns">
+            <div class="sprint-column" *ngFor="let sprint of sprints">
+                <div cdkDropList [id]="feature.name + '_' + sprint.id" [cdkDropListData]="feature.stories[sprint.id]"
+                    [cdkDropListConnectedTo]="getConnectedLists(feature)" class="story-list"
+                    (cdkDropListDropped)="drop($event)">
+                    <app-story-card *ngFor="let story of feature.stories[sprint.id]" [story]="story"
+                        cdkDrag></app-story-card>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
