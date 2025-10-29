@@ -26,31 +26,31 @@ export class Board {
 
   features: Feature[] = [
     {
-      name: 'Backend',
+      name: 'Auth',
       parkingLot: [
-        { id: 'A1', title: 'Springboot', points: 5, feature: 'Backend' },
-        { id: 'A2', title: 'Dotnet', points: 3, feature: 'Backend' },
-        { id: 'A3', title: 'Ruby', points: 8, feature: 'Backend' }
+        { id: 'A1', title: 'Login Page', devPoints: 3, testPoints: 2, feature: 'Auth' },
+        { id: 'A2', title: 'Password Reset', points: 3, feature: 'Auth' }
       ],
       stories: { S1: [], S2: [], S3: [], S4: [], S5: [], S6: [] }
     },
     {
       name: 'UI',
       parkingLot: [
-        { id: 'U1', title: 'Angular', points: 8, feature: 'UI' },
-        { id: 'U2', title: 'React', points: 5, feature: 'UI' }
+        { id: 'U1', title: 'User Dashboard', devPoints: 5, testPoints: 3, feature: 'UI' },
+        { id: 'U2', title: 'Settings Panel', points: 5, feature: 'UI' }
       ],
       stories: { S1: [], S2: [], S3: [], S4: [], S5: [], S6: [] }
     },
     {
       name: 'Integration',
       parkingLot: [
-        { id: 'I1', title: 'API 1', points: 3, feature: 'Integration' },
-        { id: 'I2', title: 'API 2', points: 8, feature: 'Integration' }
+        { id: 'I1', title: 'Email Notifications', devPoints: 2, testPoints: 1, feature: 'Integration' },
+        { id: 'I2', title: 'API Sync Job', points: 8, feature: 'Integration' }
       ],
       stories: { S1: [], S2: [], S3: [], S4: [], S5: [], S6: [] }
     }
   ];
+
 
   drop(event: CdkDragDrop<Story[]>) {
     if (event.previousContainer === event.container) return;
@@ -76,19 +76,44 @@ export class Board {
     ];
   }
 
-  getSprintTotal(sprintId: string): number {
-    return this.features
-      .map(f => f.stories[sprintId].reduce((sum, s) => sum + s.points, 0))
-      .reduce((a, b) => a + b, 0);
-  }
-
   getFeatureTotal(feature: Feature): number {
-    const parkingLotTotal = feature.parkingLot.reduce((sum, s) => sum + s.points, 0);
+    const parkingLotTotal = feature.parkingLot
+      .reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0);
 
     const sprintTotals = Object.values(feature.stories)
-      .map(stories => stories.reduce((sum, s) => sum + s.points, 0))
+      .map(stories => stories.reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0))
       .reduce((a, b) => a + b, 0);
 
     return parkingLotTotal + sprintTotals;
+  }
+
+  getSprintTotal(sprintId: string): number {
+    return this.features
+      .map(f =>
+        f.stories[sprintId]
+          .reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0)
+      )
+      .reduce((a, b) => a + b, 0);
+  }
+
+  private getStoryTotalPoints(story: Story): number {
+    const dev = story.devPoints ?? 0;
+    const test = story.testPoints ?? 0;
+    const base = story.points ?? 0;
+    return dev + test + base;
+  }
+
+  getSprintTotals(sprintId: string): { dev: number; test: number; total: number } {
+    let dev = 0, test = 0, total = 0;
+
+    this.features.forEach(feature => {
+      feature.stories[sprintId].forEach(story => {
+        dev += story.devPoints ?? 0;
+        test += story.testPoints ?? 0;
+        total += (story.devPoints ?? 0) + (story.testPoints ?? 0) + (story.points ?? 0);
+      });
+    });
+
+    return { dev, test, total };
   }
 }

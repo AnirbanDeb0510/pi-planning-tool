@@ -1,5 +1,16 @@
 <div class="story-card">
-    <h3>{{ story.title }}</h3>
-    <small>Feature: {{ story.feature }}</small>
-    <span class="points">{{ story.points }} pts</span>
+  <h3>{{ story.title }}</h3>
+  <small>Feature: {{ story.feature }}</small>
+
+  <div class="points">
+    <ng-container *ngIf="story.devPoints || story.testPoints; else singlePoints">
+      <span *ngIf="story.devPoints">Dev: {{ story.devPoints }}</span>
+      <span *ngIf="story.testPoints" style="margin-left: 6px;">Test: {{ story.testPoints }}</span>
+      <span style="margin-left: 6px;">(Total: {{ (story.devPoints || 0) + (story.testPoints || 0) }})</span>
+    </ng-container>
+
+    <ng-template #singlePoints>
+      <span>Total: {{ story.points }}</span>
+    </ng-template>
+  </div>
 </div>

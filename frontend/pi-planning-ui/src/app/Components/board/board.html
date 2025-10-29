@@ -4,9 +4,14 @@
         <div class="sprint-header-cell feature-label">Feature</div>
         <div class="sprint-header-cell parking-lot-col">Parking Lot</div>
         <div class="sprint-header-cell" *ngFor="let sprint of sprints">
-            {{ sprint.name }}
-            <div class="total">Total: {{ getSprintTotal(sprint.id) }}</div>
+            <div class="sprint-name">{{ sprint.name }}</div>
+            <div class="sprint-totals">
+                <span class="dev">Dev: {{ getSprintTotals(sprint.id).dev }}</span>
+                <span class="test">Test: {{ getSprintTotals(sprint.id).test }}</span>
+                <span class="total">Total: {{ getSprintTotals(sprint.id).total }}</span>
+            </div>
         </div>
+
     </div>
 
     <!-- Feature Rows -->
