@@ -15,6 +15,11 @@ import { Feature } from '../../Models/feature.model';
   styleUrls: ['./board.css']
 })
 export class Board {
+  endResult: Feature[] = [];
+  cursorName = 'Arnab';
+  cursorX = 0;
+  cursorY = 0;
+
   sprints: Sprint[] = [
     { id: 'S1', name: 'Sprint 1' },
     { id: 'S2', name: 'Sprint 2' },
@@ -66,6 +71,7 @@ export class Board {
         event.previousIndex,
         event.currentIndex
       );
+      this.endResult = this.features;
     }
   }
 
@@ -115,5 +121,14 @@ export class Board {
     });
 
     return { dev, test, total };
+  }
+
+  sendBoardResult(): void {
+    console.log('Final Board State:', this.endResult);
+  }
+
+  onMouseMove(event: MouseEvent) {
+    this.cursorX = event.pageX + 25; // small offset so it doesn’t sit exactly under the cursor
+    this.cursorY = event.pageY + 25;
   }
 }

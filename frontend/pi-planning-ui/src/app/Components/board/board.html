@@ -1,4 +1,4 @@
-<div class="board-container">
+<div class="board-container" (mousemove)="onMouseMove($event)">
     <!-- Header Row -->
     <div class="sprint-header">
         <div class="sprint-header-cell feature-label">Feature</div>
@@ -42,5 +42,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <button class="btn-submit" (click)="sendBoardResult()">Submit</button>
+    
+    <!-- Floating cursor name -->
+    <div class="cursor-label" [ngStyle]="{ top: cursorY + 'px', left: cursorX + 'px' }">
+        {{ cursorName }}
     </div>
 </div>
