@@ -1,0 +1,13 @@
+<div class="home-container">
+  <h2>Welcome</h2>
+  <p>Please enter your name to start:</p>
+
+  <input
+    type="text"
+    [(ngModel)]="userName"
+    placeholder="Enter your name"
+    class="input-name"
+  />
+
+  <button class="btn-start" (click)="startBoard()">Start Board</button>
+</div>

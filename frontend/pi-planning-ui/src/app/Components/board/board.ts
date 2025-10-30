@@ -6,6 +6,7 @@ import { StoryCard } from '../story-card/story-card';
 import { Story } from '../../Models/story.model';
 import { Sprint } from '../../Models/sprint.model';
 import { Feature } from '../../Models/feature.model';
+import { UserService } from '../../Services/user.service';
 
 @Component({
   selector: 'app-board',
@@ -16,9 +17,13 @@ import { Feature } from '../../Models/feature.model';
 })
 export class Board {
   endResult: Feature[] = [];
-  cursorName = 'Arnab';
+  cursorName = '';
   cursorX = 0;
   cursorY = 0;
+
+  constructor(private userService: UserService) {
+    this.cursorName = this.userService.getName() || 'Guest';
+  }
 
   sprints: Sprint[] = [
     { id: 'S1', name: 'Sprint 1' },
@@ -124,11 +129,11 @@ export class Board {
   }
 
   sendBoardResult(): void {
-    console.log('Final Board State:', this.endResult);
+    console.log('Final Board State:', this.endResult, "Cursor Name:", this.cursorName);
   }
 
   onMouseMove(event: MouseEvent) {
-    this.cursorX = event.pageX + 25; // small offset so it doesn’t sit exactly under the cursor
+    this.cursorX = event.pageX + 25;
     this.cursorY = event.pageY + 25;
   }
 }
