@@ -1,0 +1,53 @@
+<div class="board-container" (mousemove)="onMouseMove($event)">
+    <!-- Header Row -->
+    <div class="sprint-header">
+        <div class="sprint-header-cell feature-label">Feature</div>
+        <div class="sprint-header-cell parking-lot-col">Parking Lot</div>
+        <div class="sprint-header-cell" *ngFor="let sprint of sprints">
+            <div class="sprint-name">{{ sprint.name }}</div>
+            <div class="sprint-totals">
+                <span class="dev">Dev: {{ getSprintTotals(sprint.id).dev }}</span>
+                <span class="test">Test: {{ getSprintTotals(sprint.id).test }}</span>
+                <span class="total">Total: {{ getSprintTotals(sprint.id).total }}</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Feature Rows -->
+    <div class="feature-row" *ngFor="let feature of features">
+        <!-- Feature Name -->
+        <div class="feature-name">
+            <h3>{{ feature.name }}</h3>
+            <span class="feature-total">Total: {{ getFeatureTotal(feature) }} pts</span>
+        </div>
+
+        <!-- Parking Lot -->
+        <div class="sprint-column">
+            <div cdkDropList [id]="feature.name + '_parkingLot'" [cdkDropListData]="feature.parkingLot"
+                [cdkDropListConnectedTo]="getConnectedLists(feature)" class="story-list"
+                (cdkDropListDropped)="drop($event)">
+                <app-story-card *ngFor="let story of feature.parkingLot" [story]="story" cdkDrag></app-story-card>
+            </div>
+        </div>
+
+        <!-- Sprints -->
+        <div class="sprint-columns">
+            <div class="sprint-column" *ngFor="let sprint of sprints">
+                <div cdkDropList [id]="feature.name + '_' + sprint.id" [cdkDropListData]="feature.stories[sprint.id]"
+                    [cdkDropListConnectedTo]="getConnectedLists(feature)" class="story-list"
+                    (cdkDropListDropped)="drop($event)">
+                    <app-story-card *ngFor="let story of feature.stories[sprint.id]" [story]="story"
+                        cdkDrag></app-story-card>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-submit" (click)="sendBoardResult()">Submit</button>
+    
+    <!-- Floating cursor name -->
+    <div class="cursor-label" [ngStyle]="{ top: cursorY + 'px', left: cursorX + 'px' }">
+        {{ cursorName }}
+    </div>
+</div>

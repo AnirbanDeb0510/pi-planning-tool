@@ -1,0 +1,98 @@
+.board-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+    overflow-x: auto;
+}
+
+.sprint-header {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 6px;
+}
+
+.sprint-header-cell {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+}
+
+.feature-label {
+    width: 150px;
+    text-align: left;
+}
+
+.parking-lot-col {
+    min-width: 200px;
+    text-align: center;
+}
+
+.feature-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.feature-name {
+    width: 150px;
+    font-weight: bold;
+}
+
+.sprint-columns {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+}
+
+.sprint-column {
+    flex: 1;
+    min-width: 200px;
+    background: #f4f5f7;
+    margin: 4px;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+.story-list {
+    min-height: 100px;
+    min-width: 230px;
+}
+
+.cdk-drop-list-dragging {
+    background: #e2e8f0;
+    border: 2px dashed #2563eb;
+}
+
+.total {
+    font-size: 0.8rem;
+    color: #2563eb;
+}
+
+.cursor-label {
+    position: absolute;
+    pointer-events: none;
+    /* so it doesn’t block clicks */
+    background: rgba(37, 99, 235, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transform: translate(-50%, -50%);
+    z-index: 100000;
+    white-space: nowrap;
+}
+
+.btn-submit {
+    padding: 10px 20px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100px;
+    float: right;
+}
