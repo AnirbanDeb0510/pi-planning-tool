@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { CdkDragDrop, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { DragDropModule } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, transferArrayItem, DragDropModule } from '@angular/cdk/drag-drop';
+import { FormsModule } from '@angular/forms';
 import { StoryCard } from '../story-card/story-card';
 import { Story } from '../../Models/story.model';
 import { Sprint } from '../../Models/sprint.model';
@@ -11,7 +11,7 @@ import { UserService } from '../../Services/user.service';
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, DragDropModule, StoryCard],
+  imports: [CommonModule, DragDropModule, StoryCard, FormsModule],
   templateUrl: './board.html',
   styleUrls: ['./board.css']
 })
@@ -20,11 +20,13 @@ export class Board {
   cursorName = '';
   cursorX = 0;
   cursorY = 0;
+  showDevTest = false; // toggle state
 
   constructor(private userService: UserService) {
     this.cursorName = this.userService.getName() || 'Guest';
   }
 
+  //Sprint Definitions
   sprints: Sprint[] = [
     { id: 'S1', name: 'Sprint 1' },
     { id: 'S2', name: 'Sprint 2' },
@@ -34,6 +36,7 @@ export class Board {
     { id: 'S6', name: 'Sprint 6' }
   ];
 
+  //Feature + Stories
   features: Feature[] = [
     {
       name: 'Auth',
@@ -61,14 +64,14 @@ export class Board {
     }
   ];
 
-
+  //Drag-Drop Logic
   drop(event: CdkDragDrop<Story[]>) {
     if (event.previousContainer === event.container) return;
 
     const [featureSrc, containerSrc] = event.previousContainer.id.split('_');
     const [featureTgt, containerTgt] = event.container.id.split('_');
 
-    // Allow drop only within same feature
+    //Allow drops only within same feature row
     if (featureSrc === featureTgt) {
       transferArrayItem(
         event.previousContainer.data,
@@ -87,9 +90,23 @@ export class Board {
     ];
   }
 
+  //Calculate Total Points for a Story
+  private getStoryTotalPoints(story: Story): number {
+  const hasDevOrTest = (story.devPoints ?? 0) + (story.testPoints ?? 0);
+  const dev = story.devPoints ?? 0;
+  const test = story.testPoints ?? 0;
+  const base = story.points ?? 0;
+
+  //If dev/test exist, use their sum; otherwise use base points.
+  return hasDevOrTest > 0 ? dev + test : base;
+}
+
+
+  //Feature-Level Totals
   getFeatureTotal(feature: Feature): number {
-    const parkingLotTotal = feature.parkingLot
-      .reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0);
+    const parkingLotTotal = feature.parkingLot.reduce(
+      (sum, s) => sum + this.getStoryTotalPoints(s), 0
+    );
 
     const sprintTotals = Object.values(feature.stories)
       .map(stories => stories.reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0))
@@ -98,6 +115,22 @@ export class Board {
     return parkingLotTotal + sprintTotals;
   }
 
+  //Sprint-Level Totals (Dev/Test/Total)
+  getSprintTotals(sprintId: string): { dev: number; test: number; total: number } {
+    let dev = 0, test = 0, total = 0;
+
+    this.features.forEach(feature => {
+      feature.stories[sprintId].forEach(story => {
+        dev += story.devPoints ?? 0;
+        test += story.testPoints ?? 0;
+        total += this.getStoryTotalPoints(story);
+      });
+    });
+
+    return { dev, test, total };
+  }
+
+  //Optional Legacy Sprint Total (for total-only use)
   getSprintTotal(sprintId: string): number {
     return this.features
       .map(f =>
@@ -107,33 +140,14 @@ export class Board {
       .reduce((a, b) => a + b, 0);
   }
 
-  private getStoryTotalPoints(story: Story): number {
-    const dev = story.devPoints ?? 0;
-    const test = story.testPoints ?? 0;
-    const base = story.points ?? 0;
-    return dev + test + base;
-  }
-
-  getSprintTotals(sprintId: string): { dev: number; test: number; total: number } {
-    let dev = 0, test = 0, total = 0;
-
-    this.features.forEach(feature => {
-      feature.stories[sprintId].forEach(story => {
-        dev += story.devPoints ?? 0;
-        test += story.testPoints ?? 0;
-        total += (story.devPoints ?? 0) + (story.testPoints ?? 0) + (story.points ?? 0);
-      });
-    });
-
-    return { dev, test, total };
-  }
-
+  //Final Board Result Output
   sendBoardResult(): void {
-    console.log('Final Board State:', this.endResult, "Cursor Name:", this.cursorName);
+    console.log('Final Board State:', this.endResult, 'Cursor Name:', this.cursorName);
   }
 
+  //Floating Cursor Label Movement
   onMouseMove(event: MouseEvent) {
-    this.cursorX = event.pageX + 25;
-    this.cursorY = event.pageY + 25;
+    this.cursorX = event.clientX + 20;
+    this.cursorY = event.clientY + 20;
   }
 }
