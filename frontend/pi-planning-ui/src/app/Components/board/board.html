@@ -1,10 +1,10 @@
 <!-- Dev-Test Toggle -->
 <div class="toggle-container">
-  <label class="switch">
-    <input type="checkbox" [(ngModel)]="showDevTest" />
-    <span class="slider"></span>
-  </label>
-  <span class="toggle-label">Dev/Test Toggle</span>
+    <label class="switch">
+        <input type="checkbox" [(ngModel)]="showDevTest" />
+        <span class="slider"></span>
+    </label>
+    <span class="toggle-label">Dev/Test Toggle</span>
 </div>
 
 <div class="board-container" (mousemove)="onMouseMove($event)">
@@ -36,7 +36,8 @@
             <div cdkDropList [id]="feature.name + '_parkingLot'" [cdkDropListData]="feature.parkingLot"
                 [cdkDropListConnectedTo]="getConnectedLists(feature)" class="story-list"
                 (cdkDropListDropped)="drop($event)">
-                <app-story-card *ngFor="let story of feature.parkingLot" [story]="story"[parent]="this" cdkDrag></app-story-card>
+                <app-story-card *ngFor="let story of feature.parkingLot" [story]="story" [parent]="this"
+                    cdkDrag></app-story-card>
             </div>
         </div>
 
@@ -46,8 +47,15 @@
                 <div cdkDropList [id]="feature.name + '_' + sprint.id" [cdkDropListData]="feature.stories[sprint.id]"
                     [cdkDropListConnectedTo]="getConnectedLists(feature)" class="story-list"
                     (cdkDropListDropped)="drop($event)">
-                    <app-story-card *ngFor="let story of feature.stories[sprint.id]" [story]="story"
-                        [parent]="this" cdkDrag></app-story-card>
+                    <app-story-card *ngFor="let story of feature.stories[sprint.id]" [story]="story" [parent]="this"
+                        cdkDrag></app-story-card>
+                </div>
+                <div class="sprint-feature-points">
+                    <ng-container *ngIf="getFeatureSprintDevTestTotals(feature, sprint.id) as fTotals">
+                        <span *ngIf="showDevTest && fTotals.dev > 0" class="dev">Dev: {{ fTotals.dev }}</span>
+                        <span *ngIf="showDevTest && fTotals.test > 0" class="test">Test: {{ fTotals.test }}</span>
+                        <span class="total">Total: {{ fTotals.total }}</span>
+                    </ng-container>
                 </div>
             </div>
         </div>

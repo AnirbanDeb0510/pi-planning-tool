@@ -150,4 +150,28 @@ export class Board {
     this.cursorX = event.clientX + 20;
     this.cursorY = event.clientY + 20;
   }
+
+  getFeatureSprintPoints(feature: Feature, sprintId: string): number {
+  if (!feature || !feature.stories || !feature.stories[sprintId]) return 0;
+
+  return feature.stories[sprintId]
+    .reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0);
+}
+
+getFeatureSprintDevTestTotals(feature: Feature, sprintId: string): { dev: number; test: number; total: number } {
+  if (!feature || !feature.stories || !feature.stories[sprintId]) {
+    return { dev: 0, test: 0, total: 0 };
+  }
+
+  let dev = 0, test = 0, total = 0;
+
+  feature.stories[sprintId].forEach(story => {
+    dev += story.devPoints ?? 0;
+    test += story.testPoints ?? 0;
+    total += this.getStoryTotalPoints(story);
+  });
+
+  return { dev, test, total };
+}
+
 }

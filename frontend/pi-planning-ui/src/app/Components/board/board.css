@@ -153,3 +153,32 @@ input:checked + .slider:before {
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+.sprint-feature-points {
+  text-align: center;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.sprint-feature-points .dev {
+  color: #2563eb;
+  background-color: #dbeafe;
+  padding: 1px 5px;
+}
+
+.sprint-feature-points .test {
+  color: #166534;
+  background-color: #dcfce7;
+  padding: 1px 5px;
+}
+
+.sprint-feature-points .total {
+  color: #92400e;
+  background-color: #fef9c3;
+  padding: 1px 5px;
+  font-weight: 600;
+}
+
