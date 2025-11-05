@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Story } from '../../Models/story.model';
+import { Board } from '../board/board';
 
 @Component({
   selector: 'app-story-card',
@@ -11,4 +12,5 @@ import { Story } from '../../Models/story.model';
 })
 export class StoryCard {
   @Input() story!: Story;
+  @Input() parent!: Board;
 }
