@@ -26,7 +26,7 @@ namespace PiPlanningBackend.Repositories.Implementations
         {
             await _db.TeamMembers.AddAsync(member);
         }
-        
+
         public async Task AddAsync(int boardId, TeamMember member)
         {
             // Assign boardId if you store that in TeamMember

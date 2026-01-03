@@ -42,7 +42,8 @@ namespace PiPlanningBackend.Services.Implementations
 
             // 🧩 Auto-generate sprints
             var startDate = dto.StartDate;
-            for (int i = 1; i <= dto.NumSprints; i++)
+            // Starting from 0 to include Sprint 0 as Placeholder/ Parking lot
+            for (int i = 0; i <= dto.NumSprints; i++)
             {
                 var sprint = new Sprint
                 {

@@ -2,7 +2,7 @@ namespace PiPlanningBackend.DTOs
 {
     public class UserStoryDto
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
         public string Title { get; set; } = "";
         public string? AzureId { get; set; }
         public double? StoryPoints { get; set; }

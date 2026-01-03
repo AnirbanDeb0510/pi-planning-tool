@@ -27,6 +27,9 @@ builder.Services.AddScoped<IBoardRepository, BoardRepository>();
 builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
+builder.Services.AddScoped<IUserStoryRepository, UserStoryRepository>();
+builder.Services.AddScoped<IFeatureService, FeatureService>();
 
 
 // CORS (dev convenience)
@@ -54,6 +57,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 // app.UseHttpsRedirection();
 app.MapControllers();
+// TODO: Global Exception handling middleware
 app.MapHub<PlanningHub>("/hub/planning");
 
 app.Run();
