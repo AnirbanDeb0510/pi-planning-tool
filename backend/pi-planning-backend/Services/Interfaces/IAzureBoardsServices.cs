@@ -6,29 +6,23 @@ namespace PiPlanningBackend.Services.Interfaces
     public interface IAzureBoardsService
     {
         /// <summary>
-        /// Fetches a single Azure DevOps work item (Feature or Story) with its relations expanded.
+        /// Get a Feature work item along with its child User Stories from Azure Boards.
         /// </summary>
-        Task<JsonElement?> GetWorkItemWithRelationsAsync(string organization, string project, int id, string pat);
+        /// <param name="organization"></param>
+        /// <param name="project"></param>
+        /// <param name="featureId"></param>
+        /// <param name="pat"></param>
+        /// <returns></returns>
+        public Task<FeatureDto> GetFeatureWithChildrenAsync(string organization, string project, int featureId, string pat);
 
         /// <summary>
-        /// Fetches multiple work items by their IDs.
+        /// Get a User Story work item from Azure Boards.
         /// </summary>
-        Task<JsonElement?> GetWorkItemsAsync(string organization, string project, IEnumerable<int> ids, string pat);
-
-        /// <summary>
-        /// Converts a raw Azure work item JSON to a Feature DTO.
-        /// </summary>
-        FeatureDto ParseFeature(JsonElement workItem);
-
-        /// <summary>
-        /// Converts a raw Azure work item JSON to a User Story DTO, 
-        /// dynamically mapping Story Point fields.
-        /// </summary>
-        UserStoryDto ParseUserStory(
-            JsonElement workItem,
-            string storyPointField = "Microsoft.VSTS.Scheduling.StoryPoints",
-            string devField = "Custom.DevStoryPoints",
-            string testField = "Custom.TestStoryPoints"
-        );
+        /// <param name="organization"></param>
+        /// <param name="project"></param>
+        /// <param name="userStoryId"></param>
+        /// <param name="pat"></param>
+        /// <returns></returns>
+        public Task<UserStoryDto> GetUserStoryAsync(string organization, string project, int userStoryId, string pat);
     }
 }

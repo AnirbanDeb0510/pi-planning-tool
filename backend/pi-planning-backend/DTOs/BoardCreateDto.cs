@@ -22,7 +22,7 @@ namespace PiPlanningBackend.DTOs
         public int SprintDuration { get; set; }
 
         public bool DevTestToggle { get; set; }
-        
+
         public DateTime StartDate { get; set; } = DateTime.UtcNow;
 
         /// 🔐 Optional password for board protection
