@@ -9,5 +9,6 @@ namespace PiPlanningBackend.Repositories.Interfaces
         Task<Board?> GetBoardWithSprintsAsync(int boardId);
         Task<IEnumerable<Board>> GetAllAsync();
         Task SaveChangesAsync();
+        Task<Board?> GetBoardWithFullHierarchyAsync(int boardId);
     }
 }

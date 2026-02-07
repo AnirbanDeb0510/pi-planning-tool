@@ -58,6 +58,7 @@ app.UseCors("AllowAll");
 // app.UseHttpsRedirection();
 app.MapControllers();
 // TODO: Global Exception handling middleware
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 app.MapHub<PlanningHub>("/hub/planning");
 
 app.Run();

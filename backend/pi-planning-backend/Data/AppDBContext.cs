@@ -33,7 +33,7 @@ namespace PiPlanningBackend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Board>()
-                .HasMany<TeamMember>()
+                .HasMany(b => b.TeamMembers)
                 .WithOne(t => t.Board!)
                 .HasForeignKey(t => t.BoardId)
                 .OnDelete(DeleteBehavior.Cascade);
