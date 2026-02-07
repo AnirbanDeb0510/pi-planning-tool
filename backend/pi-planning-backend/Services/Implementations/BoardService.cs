@@ -18,6 +18,9 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<Board> CreateBoardAsync(BoardCreateDto dto)
         {
+            // Ensure StartDate is UTC-aware for PostgreSQL
+            var startDateUtc = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc);
+
             var board = new Board
             {
                 Name = dto.Name,
@@ -30,7 +33,7 @@ namespace PiPlanningBackend.Services.Implementations
                 SprintDuration = dto.SprintDuration,
                 DevTestToggle = dto.DevTestToggle,
                 CreatedAt = DateTime.UtcNow,
-                StartDate = dto.StartDate
+                StartDate = startDateUtc
             };
 
             // 🧩 Optional password handling
@@ -41,19 +44,28 @@ namespace PiPlanningBackend.Services.Implementations
             }
 
             // 🧩 Auto-generate sprints
-            var startDate = dto.StartDate;
-            // Starting from 0 to include Sprint 0 as Placeholder/ Parking lot
-            for (int i = 0; i <= dto.NumSprints; i++)
+            // Sprint 0 is a placeholder/parking lot (no real dates)
+            var sprintZero = new Sprint
+            {
+                Name = "Sprint 0",
+                StartDate = startDateUtc,
+                EndDate = startDateUtc  // Placeholder sprint has same start/end
+            };
+            board.Sprints.Add(sprintZero);
+
+            // Actual sprints (1 through NumSprints)
+            var currentSprintStart = startDateUtc;
+            for (int i = 1; i <= dto.NumSprints; i++)
             {
                 var sprint = new Sprint
                 {
                     Name = $"Sprint {i}",
-                    StartDate = startDate,
-                    EndDate = startDate.AddDays(dto.SprintDuration - 1)
+                    StartDate = currentSprintStart,
+                    EndDate = currentSprintStart.AddDays(dto.SprintDuration - 1)
                 };
                 board.Sprints.Add(sprint);
 
-                startDate = startDate.AddDays(dto.SprintDuration);
+                currentSprintStart = currentSprintStart.AddDays(dto.SprintDuration);
             }
 
             await _boardRepository.AddAsync(board);
@@ -63,6 +75,75 @@ namespace PiPlanningBackend.Services.Implementations
         public async Task<Board?> GetBoardAsync(int id)
         {
             return await _boardRepository.GetByIdAsync(id);
+        }
+
+        public async Task<BoardResponseDto?> GetBoardWithHierarchyAsync(int boardId)
+        {
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
+            if (board == null)
+                return null;
+
+            return new BoardResponseDto
+            {
+                Id = board.Id,
+                Name = board.Name,
+                IsLocked = board.IsLocked,
+                IsFinalized = board.IsFinalized,
+                DevTestToggle = board.DevTestToggle,
+                StartDate = board.StartDate,
+                Sprints = board.Sprints
+                    .OrderBy(s => s.Id)
+                    .Select(s => new SprintDto
+                    {
+                        Id = s.Id,
+                        Name = s.Name,
+                        StartDate = s.StartDate,
+                        EndDate = s.EndDate
+                    })
+                    .ToList(),
+                Features = board.Features
+                    .OrderBy(f => f.Priority)
+                    .Select(f => new FeatureResponseDto
+                    {
+                        Id = f.Id,
+                        Title = f.Title,
+                        AzureId = f.AzureId,
+                        Priority = f.Priority,
+                        ValueArea = f.ValueArea,
+                        UserStories = f.UserStories
+                            .Select(us => new UserStoryDto
+                            {
+                                Id = us.Id,
+                                Title = us.Title,
+                                AzureId = us.AzureId,
+                                StoryPoints = us.StoryPoints,
+                                DevStoryPoints = us.DevStoryPoints,
+                                TestStoryPoints = us.TestStoryPoints,
+                                SprintId = us.SprintId,
+                                OriginalSprintId = us.OriginalSprintId,
+                                IsMoved = us.IsMoved
+                            })
+                            .ToList()
+                    })
+                    .ToList(),
+                TeamMembers = board.TeamMembers
+                    .Select(tm => new TeamMemberResponseDto
+                    {
+                        Id = tm.Id,
+                        Name = tm.Name,
+                        IsDev = tm.IsDev,
+                        IsTest = tm.IsTest,
+                        SprintCapacities = tm.TeamMemberSprints
+                            .Select(tms => new TeamMemberSprintDto
+                            {
+                                SprintId = tms.SprintId,
+                                CapacityDev = tms.CapacityDev,
+                                CapacityTest = tms.CapacityTest
+                            })
+                            .ToList()
+                    })
+                    .ToList()
+            };
         }
 
     }

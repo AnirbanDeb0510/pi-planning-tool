@@ -40,5 +40,6 @@ namespace PiPlanningBackend.Models
 
         public ICollection<Sprint> Sprints { get; set; } = [];
         public ICollection<Feature> Features { get; set; } = [];
+        public ICollection<TeamMember> TeamMembers { get; set; } = [];
     }
 }

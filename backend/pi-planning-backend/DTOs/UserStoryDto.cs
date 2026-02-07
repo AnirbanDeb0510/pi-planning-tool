@@ -8,7 +8,8 @@ namespace PiPlanningBackend.DTOs
         public double? StoryPoints { get; set; }
         public double? DevStoryPoints { get; set; }
         public double? TestStoryPoints { get; set; }
-        public int? CurrentSprintId { get; set; }
+        public int? SprintId { get; set; }
+        public int? OriginalSprintId { get; set; }
         public bool IsMoved { get; set; }
     }
 }

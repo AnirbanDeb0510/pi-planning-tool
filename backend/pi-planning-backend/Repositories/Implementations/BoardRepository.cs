@@ -45,5 +45,16 @@ namespace PiPlanningBackend.Repositories.Implementations
                 .Include(b => b.Sprints)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
         }
+
+        public async Task<Board?> GetBoardWithFullHierarchyAsync(int boardId)
+        {
+            return await _context.Boards
+                .Include(b => b.Sprints)
+                .Include(b => b.Features)
+                    .ThenInclude(f => f.UserStories)
+                .Include(b => b.TeamMembers)  // Add if not present
+                    .ThenInclude(tm => tm.TeamMemberSprints)
+                .FirstOrDefaultAsync(b => b.Id == boardId);
+        }
     }
 }

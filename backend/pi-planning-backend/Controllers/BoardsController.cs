@@ -6,11 +6,11 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class BoardController : ControllerBase
+    public class BoardsController : ControllerBase
     {
         private readonly IBoardService _boardService;
 
-        public BoardController(IBoardService boardService)
+        public BoardsController(IBoardService boardService)
         {
             _boardService = boardService;
         }
@@ -22,13 +22,33 @@ namespace PiPlanningBackend.Controllers
                 return BadRequest(ModelState);
 
             var board = await _boardService.CreateBoardAsync(dto);
-            return CreatedAtAction(nameof(GetBoard), new { id = board.Id }, board);
+
+            var response = new BoardCreatedDto
+            {
+                Id = board.Id,
+                Name = board.Name,
+                Organization = board.Organization,
+                Project = board.Project,
+                NumSprints = board.NumSprints,
+                SprintDuration = board.SprintDuration,
+                StartDate = board.StartDate,
+                IsLocked = board.IsLocked,
+                IsFinalized = board.IsFinalized,
+                DevTestToggle = board.DevTestToggle,
+                CreatedAt = board.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetBoard), new { id = board.Id }, response);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetBoard(int id)
+        public async Task<IActionResult> GetBoard(int id)
         {
-            return Ok($"Placeholder for board {id}");
+            var board = await _boardService.GetBoardWithHierarchyAsync(id);
+            if (board == null)
+                return NotFound();
+
+            return Ok(board);
         }
     }
 }
