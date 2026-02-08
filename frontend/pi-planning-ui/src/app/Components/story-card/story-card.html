@@ -1,16 +1,26 @@
 <div class="story-card">
   <h3>{{ story.title }}</h3>
-  <small>Feature: {{ story.feature }}</small>
 
   <div class="points">
-  <ng-container *ngIf="parent?.showDevTest && (story.devPoints || story.testPoints); else singlePoints">
-    <span *ngIf="story.devPoints">Dev: {{ story.devPoints }}</span>
-    <span *ngIf="story.testPoints" style="margin-left: 6px;">Test: {{ story.testPoints }}</span>
-    <span style="margin-left: 6px;">(Total: {{ (story.devPoints || 0) + (story.testPoints || 0) }})</span>
-  </ng-container>
+    <ng-container
+      *ngIf="
+        parent?.showDevTest?.() && (story.devStoryPoints || story.testStoryPoints);
+        else singlePoints
+      "
+    >
+      <span *ngIf="story.devStoryPoints">💻 Dev: {{ story.devStoryPoints }}</span>
+      <span *ngIf="story.testStoryPoints">🧪 Test: {{ story.testStoryPoints }}</span>
+      <span>({{ (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }})</span>
+    </ng-container>
 
-  <ng-template #singlePoints>
-    <span>Total: {{ story.points ?? ((story.devPoints || 0) + (story.testPoints || 0)) }}</span>
-  </ng-template>
-</div>
+    <ng-template #singlePoints>
+      <span
+        >⭐
+        {{
+          story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0)
+        }}
+        pts</span
+      >
+    </ng-template>
+  </div>
 </div>

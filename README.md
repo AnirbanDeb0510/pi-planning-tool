@@ -2,6 +2,8 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
+**🎯 Current Status (Feb 8, 2026):** Core frontend board UI completed with Material Design, drag-and-drop, dark theme, and responsive layout. Backend API foundation in place. See [STATUS.md](STATUS.md) for detailed progress.
+
 ---
 
 ## 🚀 Features
@@ -56,7 +58,7 @@ pi-planning-tool/
 ├── README.md
 └── pi-planning-tool.sln
 
-````
+```
 
 ---
 
@@ -84,31 +86,38 @@ Optional:
 ```bash
 git clone https://github.com/anirbandeb0510/pi-planning-tool.git
 cd pi-planning-tool
-````
+```
 
 ### 2. Start Database (PostgreSQL)
 
 ```bash
 docker-compose up -d db
 ```
+
 #### Optional: Enter container to inspect DB
+
 ```bash
 docker exec -it pi-postgres psql -U postgres -d PIPlanningDB
 ```
+
 From here, you can run SQL queries, check tables, etc.
 
 ### 3. Run EF Core Migrations
-  1. Navigate to backend:
+
+1. Navigate to backend:
+
 ```bash
 cd backend/pi-planning-backend
 ```
 
-  2. Add migration (if not already done):
+2. Add migration (if not already done):
+
 ```bash
 dotnet ef migrations add InitialCreate
 ```
 
-  3. Apply migration:
+3. Apply migration:
+
 ```bash
 dotnet ef database update
 ```
@@ -148,22 +157,31 @@ docker run -p 4200:4200 pi-planning-frontend
 ```bash
 docker-compose -f docker/docker-compose.yml up
 ```
+
 This will start DB + backend + frontend together.
 
 ### 7. Inspect Running Containers
+
 - List running containers:
+
 ```bash
 docker ps
 ```
+
 - Enter backend container:
+
 ```bash
 docker exec -it <container_name_or_id> /bin/bash
 ```
+
 - Enter database container:
+
 ```bash
 docker exec -it pi-postgres /bin/bash
 ```
+
 - Connect to PostgreSQL inside container:
+
 ```bash
 psql -U postgres -d PIPlanningDB
 ```
@@ -172,10 +190,10 @@ psql -U postgres -d PIPlanningDB
 
 ## 🗄️ Database
 
-* **SQL Server / PostgreSQL**
-* Supports EF Core migrations.
-* Optional: Mount local path for persistence with Docker.
-* Tables: `Board`, `Sprint`, `Feature`, `UserStory`, `TeamMember`, `TeamMember_Sprint`, `CursorPresence`.
+- **SQL Server / PostgreSQL**
+- Supports EF Core migrations.
+- Optional: Mount local path for persistence with Docker.
+- Tables: `Board`, `Sprint`, `Feature`, `UserStory`, `TeamMember`, `TeamMember_Sprint`, `CursorPresence`.
 
 ---
 
@@ -274,36 +292,34 @@ erDiagram
 
 ## 🔗 Azure Integration
 
-* Configure Azure DevOps Project & PAT at board creation.
-* Fetch Features & User Stories.
-* Optional: Save PAT locally in browser storage.
-* Field mapping configurable for:
-
-  * Story Points
-  * Dev Story Points
-  * Test Story Points
+- Configure Azure DevOps Project & PAT at board creation.
+- Fetch Features & User Stories.
+- Optional: Save PAT locally in browser storage.
+- Field mapping configurable for:
+  - Story Points
+  - Dev Story Points
+  - Test Story Points
 
 ---
 
 ## 🏗️ Architecture
 
-* **Frontend**: Angular 20 + Angular Material + CDK Drag&Drop
-* **Backend**: .NET 8 Web API + SignalR
-* **Database**: SQL Server / PostgreSQL (Dockerize)
-* **Real-time**: SignalR WebSockets
-* **Containerization**: Docker & Docker Compose
-* **Hosting**: Google Cloud Run (future: Azure App Service)
+- **Frontend**: Angular 20 + Angular Material + CDK Drag&Drop
+- **Backend**: .NET 8 Web API + SignalR
+- **Database**: SQL Server / PostgreSQL (Dockerize)
+- **Real-time**: SignalR WebSockets
+- **Containerization**: Docker & Docker Compose
+- **Hosting**: Google Cloud Run (future: Azure App Service)
 
 ---
 
 ## 📝 Contribution Guidelines
 
-* **Branch Protection**: No direct pushes to `main`. Use PRs.
-* **PR Reviews**: Require at least 1 approval before merge.
-* **Coding Standards**:
-
-  * Angular: Use `css` (not `scss`).
-  * Backend: Clean architecture with controllers, services, and models.
+- **Branch Protection**: No direct pushes to `main`. Use PRs.
+- **PR Reviews**: Require at least 1 approval before merge.
+- **Coding Standards**:
+  - Angular: Use `css` (not `scss`).
+  - Backend: Clean architecture with controllers, services, and models.
 
 ---
 
