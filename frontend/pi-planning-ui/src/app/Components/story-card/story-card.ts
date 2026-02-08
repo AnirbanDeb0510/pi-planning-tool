@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Story } from '../../Models/story.model';
+import { UserStoryDto } from '../../shared/models/board.dto';
 import { Board } from '../board/board';
 
 @Component({
@@ -8,9 +8,9 @@ import { Board } from '../board/board';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './story-card.html',
-  styleUrl: './story-card.css'
+  styleUrl: './story-card.css',
 })
 export class StoryCard {
-  @Input() story!: Story;
+  @Input() story!: UserStoryDto;
   @Input() parent!: Board;
 }

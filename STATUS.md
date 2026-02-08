@@ -1,8 +1,43 @@
 # PI Planning Tool - Development Status & Checklist
 
-**Status:** Phase 1 - Backend API Completion  
-**Last Updated:** February 6, 2026  
+**Status:** Phase 2 - Frontend Board UI Completion  
+**Last Updated:** February 8, 2026  
 **Team Lead:** Anirban Deb
+
+---
+
+## 🎉 RECENT ACCOMPLISHMENTS (Feb 6-8, 2026)
+
+### Frontend Board UI - Material Design Implementation
+
+**Completed Features:**
+
+- ✅ Angular Material 20.2.x integration with theming
+- ✅ Dark theme with toggle service
+- ✅ Board grid layout with CSS Grid (dynamic column alignment)
+- ✅ Story card component with Material styling and emoji indicators
+- ✅ Drag-and-drop with CDK (horizontal story movement)
+- ✅ State persistence with deep-copy updates
+- ✅ Sprint footer visualization (Dev/Test/Total points + sprint names)
+- ✅ Horizontal scrolling for 6+ sprints with sticky header
+- ✅ Responsive design with proper alignment at all zoom levels
+- ✅ Feature name centering and layout polish
+
+**Technical Highlights:**
+
+- Used Angular signals for reactive state management
+- Implemented `BoardService` with mock data mimicking backend DTOs
+- Fixed drag-drop persistence with deep copying nested arrays
+- Solved sticky header width alignment with inner wrapper container
+- Created dynamic `grid-template-columns` binding for perfect alignment
+
+**Files Changed:**
+
+- `board.component.ts/html/css` - Main board layout and logic
+- `story-card.component.ts/html/css` - Story card styling
+- `board.service.ts` - State management with signals
+- `theme.service.ts` - Dark/light theme toggle
+- `styles.css` - Global Material theme configuration
 
 ---
 
@@ -84,11 +119,15 @@
 
 #### Frontend Foundation (Week 2-3)
 
-- [ ] Board component with Material Design layout
-- [ ] Service layer for API communication
-- [ ] Basic drag-drop for stories
+- [x] Board component with Material Design layout
+- [x] Service layer for API communication (BoardService with signals)
+- [x] Drag-drop for stories with persistence
+- [x] Story card component with Material styling
+- [x] Dark theme implementation with toggle
+- [x] Responsive grid layout with horizontal scrolling
+- [x] Sprint footer with Dev/Test/Total points display
 - [ ] Team member UI
-- **Status:** Components exist but no styling/data binding
+- **Status:** Core board UI completed with Material polish
 
 ---
 
@@ -114,16 +153,20 @@
 
 #### Frontend UI/UX
 
-- [ ] Board grid layout (features × sprints)
-- [ ] Story card component with Material Design
+- [x] Board grid layout (features × sprints)
+- [x] Story card component with Material Design
+- [x] Move story drag-drop (horizontal)
+- [x] Styling & responsive design
+- [x] Dark theme with toggle
+- [x] Sprint footer with points visualization
+- [x] Horizontal scrolling for 6+ sprints
+- [x] Feature name centering and alignment
 - [ ] Azure fetch modal
 - [ ] Team capacity visualization
 - [ ] Notes modal for features/stories
-- [ ] Move story drag-drop (horizontal)
 - [ ] Reorder feature drag-drop (vertical)
 - [ ] Real-time cursor presence indicators
 - [ ] Toast notifications for remote updates
-- [ ] Styling & responsive design
 
 #### Testing & Documentation
 
@@ -198,43 +241,48 @@
 - [ ] Capacity calculation helpers
 - [ ] Advanced repository queries
 
----
+--- ✅ COMPLETED
 
-### PHASE 2: Frontend Board View (Target: 2-3 weeks)
-
-#### Week 1: Layout & Styling
-
-- [ ] Day 1-2: Material Design setup
+- [x] Day 1-2: Material Design setup
   ```
-  [ ] Import Material modules
-  [ ] Set up global styles
-  [ ] Create shared component library
+  [x] Import Material modules
+  [x] Set up global styles (light + dark theme)
+  [x] Create theme service with toggle
   ```
-- [ ] Day 3-5: Board layout
+- [x] Day 3-5: Board layout
   ```
-  [ ] Feature sidebar (list)
-  [ ] Sprint header (list)
-  [ ] Story grid (features × sprints)
-  [ ] Responsive design
+  [x] Feature rows with centered labels
+  [x] Sprint header with alignment
+  [x] Story grid (features × sprints)
+  [x] Responsive design with horizontal scroll
+  [x] Sprint footer with Dev/Test/Total points
   ```
 
-#### Week 2: Data Binding & Interactions
+#### Week 2: Data Binding & Interactions ✅ COMPLETED
 
-- [ ] Day 1-2: API integration
+- [x] Day 1-2: API integration
   ```
-  [ ] Create board service
-  [ ] Fetch board data
-  [ ] Handle loading/error states
+  [x] Create BoardService with Angular signals
+  [x] Mock data implementation
+  [x] Client-side DTOs (BoardResponseDto, etc.)
   ```
-- [ ] Day 3-5: Drag-drop
+- [x] Day 3-5: Drag-drop
   ```
-  [ ] CDK drag-drop setup
-  [ ] Story card dragging (horizontal)
+  [x] CDK drag-drop setup
+  [x] Story card dragging (horizontal)
+  [x] Deep-copy state updates for persistence
+  [x] Correct sprint ID parsing from drop lists
   [ ] Feature reordering (vertical)
-  [ ] Call move APIs on drop
   ```
 
-#### Week 3: Team & Features
+#### Week 3: Team & Features 🟡 IN PROGRESS
+
+- [ ] Day 1-2: Team panel
+
+  ```
+  [ ] Display team members above sprint headeres
+
+  ```
 
 - [ ] Day 1-2: Team panel
   ```
@@ -303,7 +351,7 @@
 | Milestone            | Target Date      | Status         |
 | -------------------- | ---------------- | -------------- |
 | Backend API complete | Feb 20, 2026     | 🔴 Not started |
-| Frontend board view  | Mar 5, 2026      | 🔴 Not started |
+| Frontend board view  | Mar 5, 2026      | � In progress  |
 | Azure integration    | Mar 12, 2026     | 🔴 Not started |
 | Real-time features   | Mar 19, 2026     | 🔴 Not started |
 | Testing & polish     | Mar 26, 2026     | 🔴 Not started |
@@ -316,12 +364,12 @@
 | Component         | Estimate      | Status   |
 | ----------------- | ------------- | -------- |
 | Backend APIs      | 80 hours      | 30% done |
-| Frontend UI       | 100 hours     | 5% done  |
+| Frontend UI       | 100 hours     | 50% done |
 | Azure Integration | 30 hours      | 0% done  |
 | SignalR/Real-time | 50 hours      | 0% done  |
 | Testing           | 60 hours      | 0% done  |
 | Deployment        | 20 hours      | 0% done  |
-| **Total**         | **340 hours** | **~10%** |
+| **Total**         | **340 hours** | **~25%** |
 
 **Assumptions:**
 
@@ -329,6 +377,13 @@
 - 40 hours/week effective dev time
 - No blocking issues
 - Scope doesn't expand
+
+**Recent Progress:**
+
+- Frontend board layout completed with Material Design
+- Drag-and-drop functionality working with state persistence
+- Dark theme implementation with toggle
+- Sprint footer visualization with Dev/Test/Total points
 
 ---
 
@@ -437,5 +492,5 @@ A feature is "done" when:
 
 ---
 
-**Last Updated:** February 6, 2026  
-**Next Update:** After first sprint completion
+**Last Updated:** February 8, 2026  
+**Next Update:** After team member UI implementation
