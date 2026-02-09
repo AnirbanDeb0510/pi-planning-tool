@@ -7,20 +7,114 @@
   <span class="toggle-label">Dev/Test Toggle</span>
 </div>
 
+<!-- Team Member Bar -->
+<div class="team-bar">
+  <div class="team-bar-title">Team Members</div>
+  <div class="team-member-list">
+    <div class="team-member-chip" *ngFor="let member of getTeamMembers()">
+      <span class="member-name">{{ member.name }}</span>
+      <span
+        *ngIf="showDevTest()"
+        class="member-role"
+        [class.dev]="member.isDev && !member.isTest"
+        [class.test]="member.isTest && !member.isDev"
+        [class.both]="member.isDev && member.isTest"
+      >
+        {{ getMemberRoleLabel(member) }}
+      </span>
+    </div>
+    <button class="add-member-button" type="button" (click)="openAddMember()">+ Add Member</button>
+  </div>
+</div>
+
 <div class="board-container" (mousemove)="onMouseMove($event)">
   <div class="board-content">
+    <!-- Team Capacity Row (grid aligned with header) -->
+    <div class="team-capacity-row" [style.gridTemplateColumns]="getGridTemplateColumns()">
+      <div class="team-capacity-cell team-capacity-label">Team</div>
+      <div class="team-capacity-cell team-capacity-label">Capacity</div>
+      <div class="team-capacity-cell" *ngFor="let sprint of getDisplayedSprints()">
+        <div class="capacity-header">
+          <span class="capacity-title">{{ sprint.name }}</span>
+          <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)">
+            Edit
+          </button>
+        </div>
+        <div class="capacity-list">
+          <div class="capacity-chip" *ngFor="let member of getTeamMembers()">
+            <span class="capacity-name">{{ member.name }}</span>
+            <span *ngIf="showDevTest()" class="capacity-role">{{
+              getMemberRoleLabel(member)
+            }}</span>
+            <ng-container *ngIf="showDevTest(); else totalCapacity">
+              <span *ngIf="member.isDev" class="capacity-value"
+                >Dev: {{ getMemberSprintCapacity(member, sprint.id).dev }}</span
+              >
+              <span *ngIf="member.isTest" class="capacity-value"
+                >Test: {{ getMemberSprintCapacity(member, sprint.id).test }}</span
+              >
+            </ng-container>
+            <ng-template #totalCapacity>
+              <span class="capacity-value"
+                >Capacity:
+                {{
+                  getMemberSprintCapacity(member, sprint.id).dev +
+                    getMemberSprintCapacity(member, sprint.id).test
+                }}</span
+              >
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Header Row (grid) -->
     <div class="sprint-header" [style.gridTemplateColumns]="getGridTemplateColumns()">
       <div class="sprint-header-cell feature-label">Feature</div>
       <div class="sprint-header-cell parking-lot-col">Parking Lot</div>
       <div class="sprint-header-cell" *ngFor="let sprint of getDisplayedSprints()">
         <div class="sprint-name">{{ sprint.name }}</div>
-        <div class="sprint-totals">
-          <span *ngIf="showDevTest()" class="dev">Dev: {{ getSprintTotals(sprint.id).dev }}</span>
-          <span *ngIf="showDevTest()" class="test"
-            >Test: {{ getSprintTotals(sprint.id).test }}</span
-          >
-          <span class="total">Total: {{ getSprintTotals(sprint.id).total }}</span>
+        <div class="sprint-metrics">
+          <div class="metric-block">
+            <div class="metric-label">Load</div>
+            <div class="metric-values">
+              <ng-container *ngIf="showDevTest(); else totalLoad">
+                <span class="dev" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'dev')"
+                  >Dev: {{ getSprintTotals(sprint.id).dev }}</span
+                >
+                <span class="test" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'test')"
+                  >Test: {{ getSprintTotals(sprint.id).test }}</span
+                >
+                <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
+                  >Total: {{ getSprintTotals(sprint.id).total }}</span
+                >
+              </ng-container>
+              <ng-template #totalLoad>
+                <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
+                  >Total: {{ getSprintTotals(sprint.id).total }}</span
+                >
+              </ng-template>
+            </div>
+          </div>
+          <div class="metric-block">
+            <div class="metric-label">Capacity</div>
+            <div class="metric-values">
+              <ng-container *ngIf="showDevTest(); else totalCapacity">
+                <span class="capacity-dev">Dev: {{ getSprintCapacityTotals(sprint.id).dev }}</span>
+                <span class="capacity-test"
+                  >Test: {{ getSprintCapacityTotals(sprint.id).test }}</span
+                >
+                <span class="capacity-total"
+                  >Total: {{ getSprintCapacityTotals(sprint.id).total }}</span
+                >
+              </ng-container>
+              <ng-template #totalCapacity>
+                <span class="capacity-total"
+                  >Total: {{ getSprintCapacityTotals(sprint.id).total }}</span
+                >
+              </ng-template>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -93,6 +187,95 @@
     </div>
   </div>
   <!-- close board-content -->
+
+  <!-- Add Member Modal -->
+  <div class="modal-backdrop" *ngIf="showAddMemberModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Team Member</h3>
+        <button type="button" class="modal-close" (click)="closeAddMember()">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="modal-label">Name</label>
+        <input
+          class="modal-input"
+          type="text"
+          [ngModel]="newMemberName()"
+          (ngModelChange)="newMemberName.set($event)"
+          placeholder="Enter name"
+        />
+
+        <ng-container *ngIf="showDevTest()">
+          <label class="modal-label">Role</label>
+          <select
+            class="modal-input"
+            [ngModel]="newMemberRole()"
+            (ngModelChange)="newMemberRole.set($event)"
+          >
+            <option value="dev">Dev</option>
+            <option value="test">Test</option>
+          </select>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeAddMember()">Cancel</button>
+        <button class="btn-primary" type="button" (click)="saveNewMember()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Capacity Editor Modal -->
+  <div class="modal-backdrop" *ngIf="showCapacityModal()">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h3>Edit Sprint Capacities</h3>
+        <button type="button" class="modal-close" (click)="closeCapacityEditor()">×</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedSprintId() as sprintId">
+        <div class="capacity-edit-row" *ngFor="let member of getTeamMembers()">
+          <div class="capacity-edit-name">
+            {{ member.name }}
+            <span *ngIf="showDevTest()" class="capacity-edit-role"
+              >({{ getMemberRoleLabel(member) }})</span
+            >
+          </div>
+          <div class="capacity-edit-inputs">
+            <ng-container *ngIf="showDevTest(); else simpleCapacity">
+              <input
+                *ngIf="member.isDev"
+                class="modal-input small"
+                type="number"
+                [value]="capacityEdits()[member.id]?.dev ?? 0"
+                (input)="updateCapacityEdit(member.id, 'dev', $any($event.target).valueAsNumber)"
+                placeholder="Dev"
+              />
+              <input
+                *ngIf="member.isTest"
+                class="modal-input small"
+                type="number"
+                [value]="capacityEdits()[member.id]?.test ?? 0"
+                (input)="updateCapacityEdit(member.id, 'test', $any($event.target).valueAsNumber)"
+                placeholder="Test"
+              />
+            </ng-container>
+            <ng-template #simpleCapacity>
+              <input
+                class="modal-input small"
+                type="number"
+                [value]="capacityEdits()[member.id]?.dev ?? 0"
+                (input)="updateCapacityEdit(member.id, 'dev', $any($event.target).valueAsNumber)"
+                placeholder="Capacity"
+              />
+            </ng-template>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeCapacityEditor()">Cancel</button>
+        <button class="btn-primary" type="button" (click)="saveCapacityEdits()">Save</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Floating cursor name -->
   <div class="cursor-label" [ngStyle]="{ top: cursorY() + 'px', left: cursorX() + 'px' }">

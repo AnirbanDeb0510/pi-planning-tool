@@ -17,6 +17,157 @@
   width: fit-content;
 }
 
+/* ===== TEAM MEMBER BAR ===== */
+.team-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 24px 20px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.team-bar-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a237e;
+  letter-spacing: 0.3px;
+}
+
+.team-member-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.team-member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f3f5fe;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: #1a237e;
+  border: 1px solid #e1e6ff;
+}
+
+.member-role {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  color: white;
+  background: #6a5acd;
+}
+
+.member-role.dev {
+  background: #3f51b5;
+}
+
+.member-role.test {
+  background: #2e7d32;
+}
+
+.member-role.both {
+  background: #6d4c41;
+}
+
+.add-member-button {
+  border: 1px dashed #3f51b5;
+  background: transparent;
+  color: #3f51b5;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.add-member-button:hover {
+  background: #e8eaf6;
+}
+
+/* ===== TEAM CAPACITY ROW ===== */
+.team-capacity-row {
+  display: grid;
+  align-items: stretch;
+  min-width: max-content;
+  background: #eef2ff;
+  border-radius: 8px;
+  padding: 8px 0;
+  column-gap: 20px;
+  margin: 0 0 16px;
+  border: 1px solid #e1e6ff;
+}
+
+.team-capacity-cell {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-capacity-label {
+  font-weight: 600;
+  color: #1a237e;
+  align-items: center;
+  justify-content: center;
+}
+
+.capacity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.capacity-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1a237e;
+}
+
+.capacity-edit {
+  border: none;
+  background: transparent;
+  color: #3f51b5;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.capacity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.capacity-chip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: white;
+  border: 1px solid #dfe4ff;
+  border-radius: 12px;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  color: #424242;
+}
+
+.capacity-name {
+  font-weight: 600;
+}
+
+.capacity-role {
+  color: #5e35b1;
+}
+
+.capacity-value {
+  color: #1a237e;
+}
+
 /* ===== DARK MODE ===== */
 :host-context(.dark-theme) .board-container {
   background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
@@ -87,6 +238,71 @@
   color: #e0e0e0;
 }
 
+:host-context(.dark-theme) .team-bar {
+  background: #2d2d2d;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+:host-context(.dark-theme) .team-bar-title {
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .team-member-chip {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .add-member-button {
+  border-color: #7c4dff;
+  color: #c6b6ff;
+}
+
+:host-context(.dark-theme) .team-capacity-row {
+  background: #2e2e2e;
+  border-color: #3b3b3b;
+}
+
+:host-context(.dark-theme) .capacity-title,
+:host-context(.dark-theme) .team-capacity-label {
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .capacity-chip {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .capacity-role {
+  color: #b39ddb;
+}
+
+:host-context(.dark-theme) .capacity-value {
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .modal {
+  background: #2d2d2d;
+}
+
+:host-context(.dark-theme) .modal-header h3,
+:host-context(.dark-theme) .modal-label,
+:host-context(.dark-theme) .capacity-edit-name {
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .modal-input {
+  background: #3a3a3a;
+  border-color: #4a4a4a;
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .btn-secondary {
+  background: #4a4a4a;
+  color: #e0e0e0;
+}
+
 :host-context(.dark-theme) .cursor-label {
   background: rgba(124, 77, 255, 0.95);
 }
@@ -140,12 +356,50 @@
   font-size: 0.95rem;
 }
 
-.sprint-totals {
+.sprint-metrics {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 6px;
+}
+
+.metric-block {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   opacity: 0.95;
+  min-width: 90px;
+}
+
+.metric-label {
+  font-weight: 600;
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.metric-values {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metric-values .over-capacity {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.metric-values .capacity-dev {
+  color: #c5cae9;
+}
+
+.metric-values .capacity-test {
+  color: #c8e6c9;
+}
+
+.metric-values .capacity-total {
+  color: #ffe0b2;
 }
 
 /* ===== FEATURE ROWS ===== */
@@ -362,6 +616,125 @@ input:checked + .slider:before {
   font-weight: 500;
   color: #424242;
   letter-spacing: 0.3px;
+}
+
+/* ===== MODALS ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 420px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+}
+
+.modal-wide {
+  width: 560px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1a237e;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #424242;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #424242;
+}
+
+.modal-input {
+  border: 1px solid #d0d7ff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.modal-input.small {
+  width: 90px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: #3f51b5;
+  color: white;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #424242;
+}
+
+.capacity-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.capacity-edit-name {
+  font-weight: 600;
+  color: #1a237e;
+}
+
+.capacity-edit-role {
+  font-weight: 500;
+  color: #6d4c41;
+  margin-left: 6px;
+}
+
+.capacity-edit-inputs {
+  display: flex;
+  gap: 8px;
 }
 
 /* ===== BUTTONS ===== */

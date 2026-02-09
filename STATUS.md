@@ -1,12 +1,12 @@
 # PI Planning Tool - Development Status & Checklist
 
 **Status:** Phase 2 - Frontend Board UI Completion  
-**Last Updated:** February 8, 2026  
+**Last Updated:** February 9, 2026  
 **Team Lead:** Anirban Deb
 
 ---
 
-## 🎉 RECENT ACCOMPLISHMENTS (Feb 6-8, 2026)
+## 🎉 RECENT ACCOMPLISHMENTS (Feb 6-9, 2026)
 
 ### Frontend Board UI - Material Design Implementation
 
@@ -22,6 +22,9 @@
 - ✅ Horizontal scrolling for 6+ sprints with sticky header
 - ✅ Responsive design with proper alignment at all zoom levels
 - ✅ Feature name centering and layout polish
+- ✅ Team member bar with add-member flow
+- ✅ Sprint capacity row and editable capacity modal
+- ✅ Load vs capacity display in sprint header
 
 **Technical Highlights:**
 
@@ -30,6 +33,7 @@
 - Fixed drag-drop persistence with deep copying nested arrays
 - Solved sticky header width alignment with inner wrapper container
 - Created dynamic `grid-template-columns` binding for perfect alignment
+- Added capacity calculations and over-capacity highlighting
 
 **Files Changed:**
 
@@ -126,8 +130,9 @@
 - [x] Dark theme implementation with toggle
 - [x] Responsive grid layout with horizontal scrolling
 - [x] Sprint footer with Dev/Test/Total points display
-- [ ] Team member UI
-- **Status:** Core board UI completed with Material polish
+- [x] Team member UI (add member + role badges)
+- [x] Team capacity visualization (per-sprint, editable)
+- **Status:** Core board UI and team capacity features completed
 
 ---
 
@@ -163,6 +168,7 @@
 - [x] Feature name centering and alignment
 - [ ] Azure fetch modal
 - [ ] Team capacity visualization
+- [x] Team capacity visualization
 - [ ] Notes modal for features/stories
 - [ ] Reorder feature drag-drop (vertical)
 - [ ] Real-time cursor presence indicators
@@ -280,7 +286,7 @@
 - [ ] Day 1-2: Team panel
 
   ```
-  [ ] Display team members above sprint headeres
+  [ ] Display team members above sprint headers
 
   ```
 
@@ -492,5 +498,5 @@ A feature is "done" when:
 
 ---
 
-**Last Updated:** February 8, 2026  
-**Next Update:** After team member UI implementation
+**Last Updated:** February 9, 2026  
+**Next Update:** After capacity API integration

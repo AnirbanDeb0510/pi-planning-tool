@@ -10,7 +10,12 @@ import { FormsModule } from '@angular/forms';
 import { StoryCard } from '../story-card/story-card';
 import { UserService } from '../../Services/user.service';
 import { BoardService } from '../../features/board/services/board.service';
-import { SprintDto, FeatureResponseDto, UserStoryDto } from '../../shared/models/board.dto';
+import {
+  SprintDto,
+  FeatureResponseDto,
+  UserStoryDto,
+  TeamMemberResponseDto,
+} from '../../shared/models/board.dto';
 
 @Component({
   selector: 'app-board',
@@ -32,12 +37,76 @@ export class Board {
   protected cursorX = signal(0);
   protected cursorY = signal(0);
   public showDevTest = signal(false);
+  protected showAddMemberModal = signal(false);
+  protected showCapacityModal = signal(false);
+  protected newMemberName = signal('');
+  protected newMemberRole = signal<'dev' | 'test'>('dev');
+  protected selectedSprintId = signal<number | null>(null);
+  protected capacityEdits = signal<Record<number, { dev: number; test: number }>>({});
 
   /**
    * Get all sprints from the board (skip Sprint 0 for main display)
    */
   protected getDisplayedSprints(): SprintDto[] {
     return this.board().sprints.filter((s) => s.id > 0);
+  }
+
+  protected getTeamMembers(): TeamMemberResponseDto[] {
+    return this.board().teamMembers;
+  }
+
+  protected getMemberRoleLabel(member: TeamMemberResponseDto): string {
+    if (member.isDev && member.isTest) {
+      return 'Dev/Test';
+    }
+    if (member.isDev) {
+      return 'Dev';
+    }
+    if (member.isTest) {
+      return 'Test';
+    }
+    return 'Member';
+  }
+
+  protected getMemberSprintCapacity(
+    member: TeamMemberResponseDto,
+    sprintId: number,
+  ): { dev: number; test: number } {
+    const entry = member.sprintCapacities.find((cap) => cap.sprintId === sprintId);
+    return {
+      dev: entry?.capacityDev ?? 0,
+      test: entry?.capacityTest ?? 0,
+    };
+  }
+
+  protected getSprintCapacityTotals(sprintId: number): {
+    dev: number;
+    test: number;
+    total: number;
+  } {
+    let dev = 0;
+    let test = 0;
+
+    this.getTeamMembers().forEach((member) => {
+      const cap = this.getMemberSprintCapacity(member, sprintId);
+      dev += cap.dev;
+      test += cap.test;
+    });
+
+    return { dev, test, total: dev + test };
+  }
+
+  protected isSprintOverCapacity(sprintId: number, type: 'dev' | 'test' | 'total'): boolean {
+    const load = this.getSprintTotals(sprintId);
+    const cap = this.getSprintCapacityTotals(sprintId);
+
+    if (type === 'dev') {
+      return load.dev > cap.dev;
+    }
+    if (type === 'test') {
+      return load.test > cap.test;
+    }
+    return load.total > cap.total;
   }
 
   /**
@@ -216,6 +285,61 @@ export class Board {
   toggleDevTest(): void {
     this.showDevTest.update((val) => !val);
     this.boardService.toggleDevTestToggle();
+  }
+
+  protected openAddMember(): void {
+    this.newMemberName.set('');
+    this.newMemberRole.set('dev');
+    this.showAddMemberModal.set(true);
+  }
+
+  protected closeAddMember(): void {
+    this.showAddMemberModal.set(false);
+  }
+
+  protected saveNewMember(): void {
+    const name = this.newMemberName().trim();
+    if (!name) {
+      return;
+    }
+    this.boardService.addTeamMember(name, this.newMemberRole(), this.showDevTest());
+    this.showAddMemberModal.set(false);
+  }
+
+  protected openCapacityEditor(sprintId: number): void {
+    this.selectedSprintId.set(sprintId);
+    const edits: Record<number, { dev: number; test: number }> = {};
+    this.getTeamMembers().forEach((member) => {
+      const current = this.getMemberSprintCapacity(member, sprintId);
+      edits[member.id] = { dev: current.dev, test: current.test };
+    });
+    this.capacityEdits.set(edits);
+    this.showCapacityModal.set(true);
+  }
+
+  protected closeCapacityEditor(): void {
+    this.showCapacityModal.set(false);
+    this.selectedSprintId.set(null);
+    this.capacityEdits.set({});
+  }
+
+  protected updateCapacityEdit(memberId: number, field: 'dev' | 'test', value: number): void {
+    const edits = { ...this.capacityEdits() };
+    const existing = edits[memberId] ?? { dev: 0, test: 0 };
+    edits[memberId] = { ...existing, [field]: value };
+    this.capacityEdits.set(edits);
+  }
+
+  protected saveCapacityEdits(): void {
+    const sprintId = this.selectedSprintId();
+    if (sprintId === null) {
+      return;
+    }
+    const edits = this.capacityEdits();
+    Object.entries(edits).forEach(([id, values]) => {
+      this.boardService.updateTeamMemberCapacity(Number(id), sprintId, values.dev, values.test);
+    });
+    this.closeCapacityEditor();
   }
 
   /**

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Team Member & Capacity UI (Feb 9, 2026)
+
+- Team member bar with role badges and add-member modal
+- Sprint capacity row with per-sprint capacity chips
+- Capacity editor modal (per sprint)
+- Load vs capacity display in sprint header
+- Over-capacity load highlighting
+
 ### Added - Frontend Board UI (Feb 8, 2026)
 
 #### UI Components
