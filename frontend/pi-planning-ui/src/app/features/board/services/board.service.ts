@@ -138,22 +138,45 @@ export class BoardService {
   }
 
   /**
+   * Calculate working days for a sprint based on duration (Mon-Fri).
+   */
+  private getWorkingDays(sprint: SprintDto): number {
+    if (!sprint.startDate || !sprint.endDate) {
+      return 0;
+    }
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const totalDays = Math.max(
+      1,
+      Math.round((sprint.endDate.getTime() - sprint.startDate.getTime()) / msPerDay) + 1,
+    );
+    return Math.floor((totalDays / 7) * 5);
+  }
+
+  /**
    * Generate mock team members with capacity
    */
   private generateMockTeamMembers(sprints: SprintDto[]): TeamMemberResponseDto[] {
     const teamNames = ['Alice', 'Bob', 'Charlie', 'Diana'];
 
-    return teamNames.map((name, idx) => ({
-      id: idx + 1,
-      name,
-      isDev: idx % 2 === 0,
-      isTest: idx % 2 === 1,
-      sprintCapacities: sprints.map((sprint) => ({
-        sprintId: sprint.id,
-        capacityDev: idx % 2 === 0 ? 40 : 0, // Dev has capacity if isDev
-        capacityTest: idx % 2 === 1 ? 40 : 0, // Test has capacity if isTest
-      })),
-    }));
+    return teamNames.map((name, idx) => {
+      const isDev = idx % 2 === 0;
+      const isTest = idx % 2 === 1;
+
+      return {
+        id: idx + 1,
+        name,
+        isDev,
+        isTest,
+        sprintCapacities: sprints.map((sprint) => {
+          const workingDays = sprint.id === 0 ? 0 : this.getWorkingDays(sprint);
+          return {
+            sprintId: sprint.id,
+            capacityDev: isDev ? workingDays : 0,
+            capacityTest: isTest ? workingDays : 0,
+          };
+        }),
+      };
+    });
   }
 
   /**
@@ -210,6 +233,80 @@ export class BoardService {
       ...currentBoard,
       devTestToggle: !currentBoard.devTestToggle,
     };
+    this.boardSignal.set(updatedBoard);
+  }
+
+  /**
+   * Add a new team member with default capacities per sprint.
+   */
+  public addTeamMember(name: string, role: 'dev' | 'test', devTestEnabled: boolean): void {
+    const currentBoard = this.boardSignal();
+    const nextId = Math.max(0, ...currentBoard.teamMembers.map((m) => m.id)) + 1;
+
+    const isDev = devTestEnabled ? role === 'dev' : true;
+    const isTest = devTestEnabled ? role === 'test' : false;
+
+    const newMember: TeamMemberResponseDto = {
+      id: nextId,
+      name,
+      isDev,
+      isTest,
+      sprintCapacities: currentBoard.sprints.map((sprint) => {
+        const workingDays = sprint.id === 0 ? 0 : this.getWorkingDays(sprint);
+        return {
+          sprintId: sprint.id,
+          capacityDev: isDev ? workingDays : 0,
+          capacityTest: isTest ? workingDays : 0,
+        };
+      }),
+    };
+
+    const updatedBoard = {
+      ...currentBoard,
+      teamMembers: [...currentBoard.teamMembers, newMember],
+    };
+
+    this.boardSignal.set(updatedBoard);
+  }
+
+  /**
+   * Update capacities for a team member in a specific sprint.
+   */
+  public updateTeamMemberCapacity(
+    memberId: number,
+    sprintId: number,
+    capacityDev: number,
+    capacityTest: number,
+  ): void {
+    const currentBoard = this.boardSignal();
+
+    const updatedMembers = currentBoard.teamMembers.map((member) => {
+      if (member.id !== memberId) {
+        return member;
+      }
+
+      const updatedCapacities = member.sprintCapacities.map((cap) => {
+        if (cap.sprintId !== sprintId) {
+          return cap;
+        }
+        return {
+          ...cap,
+          capacityDev,
+          capacityTest,
+        };
+      });
+
+      return {
+        ...member,
+        sprintCapacities: updatedCapacities,
+      };
+    });
+
+    const updatedBoard = {
+      ...currentBoard,
+      teamMembers: updatedMembers,
+    };
+
     this.boardSignal.set(updatedBoard);
   }
 
