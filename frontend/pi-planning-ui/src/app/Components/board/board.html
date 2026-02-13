@@ -1,3 +1,22 @@
+<!-- Loading State -->
+<div *ngIf="loading()" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <p>Loading board...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error()" class="error-overlay">
+  <div class="error-message">
+    <h2>⚠️ Error</h2>
+    <p>{{ error() }}</p>
+    <button class="btn-primary" (click)="boardService.clearError(); router.navigate(['/boards'])">
+      Go to Boards List
+    </button>
+  </div>
+</div>
+
+<!-- Board Content -->
+<div *ngIf="!loading() && !error() && board()">
 <!-- Dev-Test Toggle -->
 <div class="toggle-container">
   <label class="switch">
@@ -122,7 +141,7 @@
     <!-- Feature Rows -->
     <div
       class="feature-row"
-      *ngFor="let feature of board().features"
+      *ngFor="let feature of board()!.features"
       [style.gridTemplateColumns]="getGridTemplateColumns()"
     >
       <!-- Feature Name -->
@@ -281,4 +300,5 @@
   <div class="cursor-label" [ngStyle]="{ top: cursorY() + 'px', left: cursorX() + 'px' }">
     {{ cursorName() }}
   </div>
+</div>
 </div>

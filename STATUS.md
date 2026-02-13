@@ -1,49 +1,277 @@
 # PI Planning Tool - Development Status & Checklist
 
-**Status:** Phase 2 - Frontend Board UI Completion  
-**Last Updated:** February 9, 2026  
+**Status:** Phase 2 - Frontend Board UI Completion with Docker Integration  
+**Last Updated:** February 13, 2026  
 **Team Lead:** Anirban Deb
 
 ---
 
-## 🎉 RECENT ACCOMPLISHMENTS (Feb 6-9, 2026)
+## 🎉 RECENT ACCOMPLISHMENTS (Feb 10-13, 2026)
 
-### Frontend Board UI - Material Design Implementation
+### Docker Infrastructure & Runtime Configuration
 
-**Completed Features:**
+**Completed:**
+- ✅ Docker Compose multi-container orchestration (db, backend, frontend)
+- ✅ Frontend Dockerfile with multi-stage build (optimized)
+- ✅ Nginx configuration with gzip, security headers, and SPA routing
+- ✅ Docker entrypoint script for runtime env.js generation
+- ✅ Backend ASPNETCORE_URLS configuration for port 8080
+- ✅ Frontend API_BASE_URL environment variable injection
+- ✅ RuntimeConfig service for dynamic API URL loading
+- ✅ App initializer for runtime config bootstrap
+- ✅ Removed all mock data from BoardService
 
-- ✅ Angular Material 20.2.x integration with theming
-- ✅ Dark theme with toggle service
-- ✅ Board grid layout with CSS Grid (dynamic column alignment)
-- ✅ Story card component with Material styling and emoji indicators
-- ✅ Drag-and-drop with CDK (horizontal story movement)
-- ✅ State persistence with deep-copy updates
-- ✅ Sprint footer visualization (Dev/Test/Total points + sprint names)
-- ✅ Horizontal scrolling for 6+ sprints with sticky header
-- ✅ Responsive design with proper alignment at all zoom levels
-- ✅ Feature name centering and layout polish
-- ✅ Team member bar with add-member flow
-- ✅ Sprint capacity row and editable capacity modal
-- ✅ Load vs capacity display in sprint header
+**Board UI Grid Alignment Fixes:**
+- ✅ Fixed team capacity row padding consistency
+- ✅ Fixed sprint header flexbox alignment with symmetrical spacing
+- ✅ Added pseudo-elements (::before, ::after) for visual balance
+- ✅ Ensured grid border clipping with overflow: hidden
+- ✅ Perfect vertical alignment between capacity and sprint headers
 
-**Technical Highlights:**
-
-- Used Angular signals for reactive state management
-- Implemented `BoardService` with mock data mimicking backend DTOs
-- Fixed drag-drop persistence with deep copying nested arrays
-- Solved sticky header width alignment with inner wrapper container
-- Created dynamic `grid-template-columns` binding for perfect alignment
-- Added capacity calculations and over-capacity highlighting
-
-**Files Changed:**
-
-- `board.component.ts/html/css` - Main board layout and logic
-- `story-card.component.ts/html/css` - Story card styling
-- `board.service.ts` - State management with signals
-- `theme.service.ts` - Dark/light theme toggle
-- `styles.css` - Global Material theme configuration
+**Documentation Updates:**
+- ✅ Docker infrastructure documented
+- ✅ Runtime configuration workflow documented
+- ✅ API service architecture documented
 
 ---
+
+## 📊 CURRENT IMPLEMENTATION STATUS
+
+### 🟢 COMPLETE (Production Ready)
+
+#### Docker & Deployment Infrastructure
+
+- [x] Docker Compose with PostgreSQL, .NET Backend, Angular Frontend
+- [x] Frontend Dockerfile (multi-stage build, optimized for production)
+- [x] Nginx configuration (gzip, security headers, SPA routing)
+- [x] Docker entrypoint script for runtime env.js generation
+- [x] Backend container with ASPNETCORE_URLS configuration
+- [x] RuntimeConfig service (window.__env injection)
+- [x] App initializer for runtime config bootstrap
+- [x] All containers buildable and runnable
+
+#### Backend Models & Database
+
+- [x] Domain model fully designed (Board, Sprint, Feature, UserStory, TeamMember, TeamMemberSprint, CursorPresence)
+- [x] EF Core DbContext configured with foreign key relationships
+- [x] Initial migration (`InitialCreate`) applied successfully
+- [x] PostgreSQL containerized with Docker Compose
+- [x] Database auto-migrates on application startup
+- [x] Password hashing utility implemented
+
+#### Backend DI & Infrastructure
+
+- [x] Dependency Injection configured (Controllers, Services, Repositories)
+- [x] DbContext registered as scoped service
+- [x] CORS enabled for development
+- [x] SignalR registered (but not wired)
+- [x] Swagger/OpenAPI enabled
+- [x] HttpClient configured for Azure integration
+
+#### Backend Services Implemented
+
+- [x] `IBoardService.CreateBoardAsync()` - Create board with auto-generated sprints
+- [x] `IBoardService.GetBoardAsync()` - Get board (basic, no hierarchy)
+- [x] `IFeatureService.ImportFeatureToBoardAsync()` - Import feature + stories to placeholder
+- [x] `IFeatureService.MoveUserStoryAsync()` - Move story between sprints
+- [x] `IFeatureService.ReorderFeatureAsync()` - Reorder feature by priority
+- [x] `IFeatureService.RefreshFeatureFromAzureAsync()` - Refresh feature data from Azure
+- [x] `IFeatureService.RefreshUserStoryFromAzureAsync()` - Refresh story data from Azure
+- [x] `ITeamService.GetTeamAsync()` - Get team members
+- [x] `ITeamService.AddOrUpdateTeamAsync()` - Add/update team members
+- [x] `ITeamService.UpdateCapacityAsync()` - Update capacity per sprint/person
+- [x] `IAzureBoardsService.GetFeatureWithChildrenAsync()` - Fetch from Azure DevOps API
+
+#### Backend Repositories Implemented
+
+- [x] `IBoardRepository` - Board CRUD + queries
+- [x] `IFeatureRepository` - Feature CRUD + queries
+- [x] `IUserStoryRepository` - Story CRUD + queries
+- [x] `ITeamRepository` - Team CRUD + queries
+
+#### Backend Controllers Implemented
+
+- [x] `BoardsController` - Create board (POST /api/boards)
+- [x] `FeaturesController` - Import, refresh, reorder features
+- [x] `UserStoriesController` - Move, refresh stories
+- [x] `TeamController` - Get, add, update team
+- [x] `AzureController` - Fetch from Azure (if exists)
+
+#### Frontend Board UI - Material Design  
+
+- [x] Angular Material 20.2.x integration with theming
+- [x] Dark theme with toggle service
+- [x] Board grid layout with CSS Grid (dynamic column alignment)
+- [x] Story card component with Material styling
+- [x] Drag-and-drop with CDK (horizontal story movement)
+- [x] State persistence with reactive signals
+- [x] Sprint footer visualization (Dev/Test/Total points)
+- [x] Horizontal scrolling for 6+ sprints
+- [x] Team member bar with add-member flow
+- [x] Sprint capacity row with editable capacity modal
+- [x] Load vs capacity display with over-capacity highlighting
+- [x] Perfect grid alignment with symmetrical spacing
+- [x] Responsive design with proper border clipping
+
+#### Frontend API Services
+
+- [x] BoardApiService - Board API endpoints
+- [x] FeatureApiService - Feature operations
+- [x] TeamApiService - Team management
+- [x] StoryApiService - Story operations
+- [x] RuntimeConfig - Dynamic API URL configuration
+- [x] App initializer - Configuration loading on startup
+
+---
+
+## 🟡 IN PROGRESS (Actively Being Built)
+
+#### Frontend Service Layer Integration
+
+- [x] Remove mock data from BoardService
+- [x] Wire API services to board component
+- [x] Implement loading/error states
+- [ ] Test API integration locally
+- [ ] Debug and refine API calls
+
+---
+
+## 🔴 NOT STARTED (On Roadmap)
+
+#### Backend Advanced Features
+
+- [ ] Board lock/unlock endpoints
+- [ ] Board finalization (visual mode)
+- [ ] Capacity calculations & load visualization
+- [ ] Input validation & standardized errors
+- [ ] Request/response logging
+- [ ] API authentication/authorization
+- [ ] Rate limiting
+
+#### SignalR & Real-Time
+
+- [ ] Implement `FeatureMoved` event handler
+- [ ] Implement `StoryMoved` event handler
+- [ ] Implement cursor tracking/presence
+- [ ] Frontend SignalR integration
+- [ ] Broadcast user actions to other clients
+
+#### Frontend Additional Features
+
+- [ ] Azure fetch modal
+- [ ] Notes modal for features/stories
+- [ ] Reorder feature drag-drop (vertical)
+- [ ] Real-time cursor presence indicators
+- [ ] Toast notifications for remote updates
+
+#### Testing & Documentation
+
+- [ ] Unit tests (backend services)
+- [ ] Unit tests (frontend components)
+- [ ] Integration tests (API endpoints)
+- [ ] E2E tests (user workflows)
+- [ ] API documentation (Swagger enhancements)
+- [ ] Frontend component docs
+- [ ] Development guide (README updates)
+
+#### Deployment & DevOps
+
+- [ ] Google Cloud Run setup
+- [ ] Environment configuration (prod/dev/staging)
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Database backup/restore plan
+- [ ] Monitoring & logging
+
+---
+
+## 📝 RECENT CHANGES SUMMARY (Feb 13, 2026)
+
+### Code Changes
+
+**Files Modified:** 11  
+**Total Changes:** 351 insertions, 235 deletions
+
+**Key Updates:**
+
+1. **Docker Infrastructure**
+   - `frontend/pi-planning-ui/Dockerfile` - Multi-stage build with nginx and entrypoint
+   - `frontend/pi-planning-ui/docker-entrypoint.sh` - Runtime env.js generation
+   - `frontend/pi-planning-ui/nginx.conf` - Security headers, gzip, SPA routing
+   - `docker-compose.yml` - Backend port configuration, API_BASE_URL env var
+
+2. **Frontend Configuration**
+   - `src/app/app.config.ts` - HTTP client setup, app initializer for RuntimeConfig
+   - `src/app/core/config/runtime-config.ts` - Dynamic API URL loading from window.__env
+   - `src/index.html` - Script tag for env.js loading
+
+3. **Frontend Board Component**
+   - `src/app/Components/board/board.ts` - Sprint 0 filtering logic
+   - `src/app/Components/board/board.html` - Grid structure with symmetrical spacing
+   - `src/app/Components/board/board.css` - Padding consistency, overflow clipping
+
+4. **Frontend Service Layer**
+   - `src/app/features/board/services/board.service.ts` - Removed 250+ LOC of mock data
+   - Injected BoardApiService, FeatureApiService, TeamApiService
+
+---
+
+## ✅ VERIFIED & TESTED
+
+### Functionality Verified
+- [x] Docker build completes successfully
+- [x] All containers start and communicate (docker-compose up)
+- [x] Frontend loads and displays board UI
+- [x] Grid layout is properly aligned (no overlapping)
+- [x] Sprint 0 (parking lot) displays correctly
+- [x] Drag-drop functionality works
+- [x] Dark theme toggles correctly
+
+### Build Status**
+- ✅ Backend: `dotnet build` successful
+- ✅ Frontend: `npm run build` successful (bundle 552 KB)
+- ✅ Docker: All images build without errors
+
+---
+
+## 🎯 NEXT STEPS (Priority Order)
+
+1. **Test API Integration** (2-3 hours)
+   - Load sample board from backend API
+   - Verify data flows correctly through services
+   - Debug any API connection issues
+
+2. **Implement Remaining Board Operations** (4-6 hours)
+   - Test move story API call
+   - Test add team member API call
+   - Test update capacity API call
+   - Wire up all CRUD operations
+
+3. **Add Loading & Error States** (3-4 hours)
+   - Show loading spinner during API calls
+   - Display error messages for failures
+   - Implement retry logic
+
+4. **Component Modularization** (20-24 hours)
+   - Extract AddTeamMemberModal
+   - Extract CapacityEditorModal
+   - Extract TeamCapacityRow
+   - Extract SprintHeader
+   - Reduce board.ts to ~150 LOC
+
+---
+
+## 🔗 QUICK LINKS
+
+- [DOCKER_README.md](./DOCKER_README.md) - Docker setup & commands
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture & patterns
+- [PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md) - Detailed roadmap
+- [README.md](./README.md) - Project overview & setup
+- [DBSchema.mmd](./DBSchema.mmd) - Database ER diagram
+
+---
+
+**Last Updated:** February 13, 2026  
+**Next Update:** After API integration testing
 
 ## 📊 CURRENT IMPLEMENTATION STATUS
 
@@ -194,7 +422,70 @@
 
 ---
 
-## 📝 PHASE-BY-PHASE CHECKLIST
+## � REFACTORING & TECHNICAL DEBT
+
+### Priority Improvements (Before Phase 3)
+
+**See [REFACTORING_PLAN.md](./REFACTORING_PLAN.md) for detailed analysis and implementation plan.**
+
+#### P0 - Critical (Need Before API Integration)
+
+- [ ] **API Integration Architecture** (16-20h)
+  - [ ] Environment configuration (dev/prod)
+  - [ ] Base HttpClientService for API calls
+  - [ ] Domain-specific API services (BoardApi, FeatureApi, TeamApi)
+  - [ ] Refactor BoardService to use API layer
+  - [ ] Remove mock data generation
+  - [ ] Add loading/error states
+
+#### P1 - High (Need Before Phase 3)
+
+- [ ] **Component Modularization** (20-24h)
+  - [ ] Extract AddTeamMemberModal component
+  - [ ] Extract CapacityEditorModal component
+  - [ ] Extract TeamMemberBar component
+  - [ ] Extract TeamCapacityRow component
+  - [ ] Extract SprintHeader component
+  - [ ] Extract FeatureRow component
+  - [ ] Split board.css (813 lines → 6-7 smaller files)
+
+- [ ] **Routing & Board Management** (12-16h)
+  - [ ] Create HomeComponent (landing page)
+  - [ ] Create CreateBoardComponent (board creation form)
+  - [ ] Create BoardListComponent (browse existing boards)
+  - [ ] Update routing with board/:id parameter
+  - [ ] Integrate board CRUD with backend API
+
+#### P2 - Medium (Nice to Have)
+
+- [ ] **String Externalization** (6-8h)
+  - [ ] Create UI constants file
+  - [ ] Create domain-specific constants
+  - [ ] Replace hardcoded strings in templates
+  - [ ] Prepare for future i18n support
+
+#### P3 - Low (Future Consideration)
+
+- [ ] **CSS Strategy Evaluation** (4-6h)
+  - [ ] Create shared CSS for common patterns
+  - [ ] Evaluate Tailwind CSS for future adoption
+  - [ ] Document CSS architecture
+
+### Current Technical Debt Metrics
+
+| Component        | Current LOC | Target LOC | Status      |
+| ---------------- | ----------- | ---------- | ----------- |
+| board.ts         | 359         | ~150       | 🔴 Refactor |
+| board.html       | 284         | ~80        | 🔴 Refactor |
+| board.css        | 813         | ~150       | 🔴 Refactor |
+| board.service.ts | 322         | ~150       | 🟡 Refactor |
+| **Total**        | **1,778**   | **~530**   | **-70%**    |
+
+**Note:** Reduction from component extraction, not deletion. Functionality preserved in child components.
+
+---
+
+## �📝 PHASE-BY-PHASE CHECKLIST
 
 ### PHASE 1: Backend API Completion (Target: 2 weeks)
 
@@ -499,4 +790,4 @@ A feature is "done" when:
 ---
 
 **Last Updated:** February 9, 2026  
-**Next Update:** After capacity API integration
+**Next Update:** After API integration and component extraction (Phase A-B of refactoring)

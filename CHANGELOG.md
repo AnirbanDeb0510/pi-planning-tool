@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned - Refactoring & Architecture Improvements (Feb 9, 2026)
+
+- Created comprehensive refactoring plan (see REFACTORING_PLAN.md)
+- Identified technical debt: board component exceeds 1,700 LOC
+- Planned API integration layer with environment config
+- Planned component modularization (6 new child components)
+- Planned routing enhancement (create/load board flows)
+- Planned string externalization to constants
+- Prioritized improvements before Phase 3
+
 ### Added - Team Member & Capacity UI (Feb 9, 2026)
 
 - Team member bar with role badges and add-member modal
