@@ -1,199 +1,70 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import {
   BoardResponseDto,
   FeatureResponseDto,
-  SprintDto,
   UserStoryDto,
   TeamMemberResponseDto,
-  TeamMemberSprintDto,
 } from '../../../shared/models/board.dto';
+import { BoardApiService, StoryApiService, TeamApiService } from './board-api.service';
 
+/**
+ * Board Service - State Management Layer
+ * Manages board state using signals and coordinates with API services
+ * No longer contains mock data - uses injected API services instead
+ */
 @Injectable({ providedIn: 'root' })
 export class BoardService {
-  /**
-   * Mock data - board state
-   * In production, this would be replaced with HTTP calls to the backend API
-   */
-  private mockBoard: BoardResponseDto = {
-    id: 1,
-    name: 'Q1 2026 Planning',
-    organization: 'Acme Corp',
-    project: 'Platform',
-    isLocked: false,
-    isFinalized: false,
-    devTestToggle: false,
-    startDate: new Date('2026-02-10'),
-    sprints: [],
-    features: [],
-    teamMembers: [],
-  };
+  private boardApi = inject(BoardApiService);
+  private storyApi = inject(StoryApiService);
+  private teamApi = inject(TeamApiService);
 
-  // Signal-based state
-  private boardSignal = signal<BoardResponseDto>(this.initializeBoardWithMockData());
+  // State signals
+  private boardSignal = signal<BoardResponseDto | null>(null);
+  private loadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
 
-  // Public read-only signal
+  // Public read-only signals
   public board = this.boardSignal.asReadonly();
-
-  constructor() {
-    console.log('BoardService initialized with mock data');
-  }
+  public loading = this.loadingSignal.asReadonly();
+  public error = this.errorSignal.asReadonly();
 
   /**
-   * Initialize board with mock sprints, features, and stories
+   * Load board by ID from API
    */
-  private initializeBoardWithMockData(): BoardResponseDto {
-    const board = { ...this.mockBoard };
+  public loadBoard(id: number): void {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
 
-    // Generate sprints (0 = placeholder, 1-6 = actual sprints)
-    board.sprints = this.generateMockSprints();
-
-    // Generate features with stories
-    board.features = this.generateMockFeatures(board.sprints);
-
-    // Generate team members
-    board.teamMembers = this.generateMockTeamMembers(board.sprints);
-
-    return board;
-  }
-
-  /**
-   * Generate mock sprints matching backend structure
-   */
-  private generateMockSprints(): SprintDto[] {
-    const sprints: SprintDto[] = [];
-    const startDate = new Date('2026-02-10');
-
-    // Sprint 0: Placeholder
-    sprints.push({
-      id: 0,
-      name: 'Sprint 0 (Parking Lot)',
-      startDate: new Date(startDate),
-      endDate: new Date(startDate),
-    });
-
-    // Sprints 1-6: Real sprints (14-day duration)
-    for (let i = 1; i <= 6; i++) {
-      const sprintStart = new Date(startDate);
-      sprintStart.setDate(sprintStart.getDate() + (i - 1) * 14);
-
-      const sprintEnd = new Date(sprintStart);
-      sprintEnd.setDate(sprintEnd.getDate() + 13);
-
-      sprints.push({
-        id: i,
-        name: `Sprint ${i}`,
-        startDate: sprintStart,
-        endDate: sprintEnd,
-      });
-    }
-
-    return sprints;
-  }
-
-  /**
-   * Generate mock features with stories
-   */
-  private generateMockFeatures(sprints: SprintDto[]): FeatureResponseDto[] {
-    const featureNames = ['Auth', 'UI', 'Integration'];
-    const features: FeatureResponseDto[] = [];
-
-    featureNames.forEach((name, idx) => {
-      const featureId = idx + 1;
-      const feature: FeatureResponseDto = {
-        id: featureId,
-        title: name,
-        azureId: `FEAT-${featureId}`,
-        priority: idx + 1,
-        valueArea: idx % 2 === 0 ? 'Architectural' : 'Business',
-        userStories: this.generateMockStoriesForFeature(featureId),
-      };
-      features.push(feature);
-    });
-
-    return features;
-  }
-
-  /**
-   * Generate stories for a feature
-   * Stories are placed in Sprint 0 (parking lot) for now
-   */
-  private generateMockStoriesForFeature(featureId: number): UserStoryDto[] {
-    const storyData = [
-      { title: 'Implement core logic', dev: 5, test: 3 },
-      { title: 'Add validation', dev: 3, test: 2 },
-      { title: 'Create UI components', dev: 8, test: 4 },
-    ];
-
-    return storyData.map((data, idx) => ({
-      id: featureId * 100 + idx + 1,
-      title: data.title,
-      azureId: `STORY-${featureId}-${idx + 1}`,
-      storyPoints: data.dev + data.test,
-      devStoryPoints: data.dev,
-      testStoryPoints: data.test,
-      sprintId: 0, // All start in parking lot (Sprint 0)
-      originalSprintId: 0,
-      isMoved: false,
-    }));
-  }
-
-  /**
-   * Calculate working days for a sprint based on duration (Mon-Fri).
-   */
-  private getWorkingDays(sprint: SprintDto): number {
-    if (!sprint.startDate || !sprint.endDate) {
-      return 0;
-    }
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const totalDays = Math.max(
-      1,
-      Math.round((sprint.endDate.getTime() - sprint.startDate.getTime()) / msPerDay) + 1,
-    );
-    return Math.floor((totalDays / 7) * 5);
-  }
-
-  /**
-   * Generate mock team members with capacity
-   */
-  private generateMockTeamMembers(sprints: SprintDto[]): TeamMemberResponseDto[] {
-    const teamNames = ['Alice', 'Bob', 'Charlie', 'Diana'];
-
-    return teamNames.map((name, idx) => {
-      const isDev = idx % 2 === 0;
-      const isTest = idx % 2 === 1;
-
-      return {
-        id: idx + 1,
-        name,
-        isDev,
-        isTest,
-        sprintCapacities: sprints.map((sprint) => {
-          const workingDays = sprint.id === 0 ? 0 : this.getWorkingDays(sprint);
-          return {
-            sprintId: sprint.id,
-            capacityDev: isDev ? workingDays : 0,
-            capacityTest: isTest ? workingDays : 0,
-          };
-        }),
-      };
+    this.boardApi.getBoard(id).subscribe({
+      next: (board: BoardResponseDto) => {
+        this.boardSignal.set(board);
+        this.loadingSignal.set(false);
+        console.log('Board loaded:', board);
+      },
+      error: (error) => {
+        this.errorSignal.set(error.message || 'Failed to load board');
+        this.loadingSignal.set(false);
+        console.error('Error loading board:', error);
+      },
     });
   }
 
   /**
-   * Get the current board state
+   * Get the current board state (or null if not loaded)
    */
-  public getBoard(): BoardResponseDto {
+  public getBoard(): BoardResponseDto | null {
     return this.board();
   }
 
   /**
-   * Move a story from one sprint to another (including parking lot)
-   * Updates local state with deep copy to ensure change detection
+   * Move a story from one sprint to another
+   * Updates local state optimistically, then syncs with backend
    */
   public moveStory(storyId: number, fromSprintId: number, toSprintId: number): void {
     const currentBoard = this.boardSignal();
+    if (!currentBoard) return;
 
-    // Find and update the story in features
+    // Optimistic update
     let found = false;
     const updatedFeatures = currentBoard.features.map((feature: FeatureResponseDto) => {
       const updatedStories = feature.userStories.map((s: UserStoryDto) => {
@@ -214,21 +85,35 @@ export class BoardService {
     });
 
     if (found) {
-      // Create a deep copy to trigger change detection
+      // Update local state immediately
       const updatedBoard = {
         ...currentBoard,
         features: updatedFeatures,
       };
       this.boardSignal.set(updatedBoard);
-      console.log(`Story ${storyId} moved from Sprint ${fromSprintId} to Sprint ${toSprintId}`);
+
+      // Sync with backend (if using real API)
+      this.storyApi.moveStory(currentBoard.id, storyId, toSprintId).subscribe({
+        next: () => {
+          console.log(`Story ${storyId} moved from Sprint ${fromSprintId} to Sprint ${toSprintId}`);
+        },
+        error: (error) => {
+          console.error('Error moving story:', error);
+          // Rollback on error
+          this.boardSignal.set(currentBoard);
+          this.errorSignal.set('Failed to move story. Please try again.');
+        },
+      });
     }
   }
 
   /**
-   * Toggle dev/test display mode (for UI purposes)
+   * Toggle dev/test display mode
    */
   public toggleDevTestToggle(): void {
     const currentBoard = this.boardSignal();
+    if (!currentBoard) return;
+
     const updatedBoard = {
       ...currentBoard,
       devTestToggle: !currentBoard.devTestToggle,
@@ -237,85 +122,128 @@ export class BoardService {
   }
 
   /**
-   * Add a new team member with default capacities per sprint.
+   * Add a new team member with default capacities per sprint
    */
   public addTeamMember(name: string, role: 'dev' | 'test', devTestEnabled: boolean): void {
     const currentBoard = this.boardSignal();
-    const nextId = Math.max(0, ...currentBoard.teamMembers.map((m) => m.id)) + 1;
+    if (!currentBoard) return;
 
     const isDev = devTestEnabled ? role === 'dev' : true;
     const isTest = devTestEnabled ? role === 'test' : false;
 
-    const newMember: TeamMemberResponseDto = {
+    // Calculate working days for default capacity
+    const getWorkingDays = (startDate: Date, endDate: Date): number => {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / msPerDay) + 1;
+      return Math.floor((totalDays / 7) * 5);
+    };
+
+    // Create temporary member for optimistic update
+    const nextId = Math.max(0, ...currentBoard.teamMembers.map((m) => m.id)) + 1;
+    const tempMember: TeamMemberResponseDto = {
       id: nextId,
       name,
       isDev,
       isTest,
-      sprintCapacities: currentBoard.sprints.map((sprint) => {
-        const workingDays = sprint.id === 0 ? 0 : this.getWorkingDays(sprint);
-        return {
-          sprintId: sprint.id,
-          capacityDev: isDev ? workingDays : 0,
-          capacityTest: isTest ? workingDays : 0,
-        };
-      }),
+      sprintCapacities: currentBoard.sprints
+        .filter((s) => s.id > 0)
+        .map((sprint) => {
+          const workingDays = getWorkingDays(sprint.startDate, sprint.endDate);
+          return {
+            sprintId: sprint.id,
+            capacityDev: isDev ? workingDays : 0,
+            capacityTest: isTest ? workingDays : 0,
+          };
+        }),
     };
 
+    // Optimistic update
     const updatedBoard = {
       ...currentBoard,
-      teamMembers: [...currentBoard.teamMembers, newMember],
+      teamMembers: [...currentBoard.teamMembers, tempMember],
     };
-
     this.boardSignal.set(updatedBoard);
+
+    // Sync with backend
+    this.teamApi.addTeamMember(currentBoard.id, name, isDev, isTest).subscribe({
+      next: (member) => {
+        // Replace temp member with real member from backend
+        const finalBoard = {
+          ...updatedBoard,
+          teamMembers: updatedBoard.teamMembers.map((m) =>
+            m.id === nextId ? member : m
+          ),
+        };
+        this.boardSignal.set(finalBoard);
+        console.log('Team member added:', member);
+      },
+      error: (error) => {
+        console.error('Error adding team member:', error);
+        // Rollback on error
+        this.boardSignal.set(currentBoard);
+        this.errorSignal.set('Failed to add team member. Please try again.');
+      },
+    });
   }
 
   /**
-   * Update capacities for a team member in a specific sprint.
+   * Update capacities for a team member in a specific sprint
    */
   public updateTeamMemberCapacity(
     memberId: number,
     sprintId: number,
     capacityDev: number,
-    capacityTest: number,
+    capacityTest: number
   ): void {
     const currentBoard = this.boardSignal();
+    if (!currentBoard) return;
 
+    // Optimistic update
     const updatedMembers = currentBoard.teamMembers.map((member) => {
-      if (member.id !== memberId) {
-        return member;
-      }
+      if (member.id !== memberId) return member;
 
       const updatedCapacities = member.sprintCapacities.map((cap) => {
-        if (cap.sprintId !== sprintId) {
-          return cap;
-        }
-        return {
-          ...cap,
-          capacityDev,
-          capacityTest,
-        };
+        if (cap.sprintId !== sprintId) return cap;
+        return { ...cap, capacityDev, capacityTest };
       });
 
-      return {
-        ...member,
-        sprintCapacities: updatedCapacities,
-      };
+      return { ...member, sprintCapacities: updatedCapacities };
     });
 
-    const updatedBoard = {
-      ...currentBoard,
-      teamMembers: updatedMembers,
-    };
-
+    const updatedBoard = { ...currentBoard, teamMembers: updatedMembers };
     this.boardSignal.set(updatedBoard);
+
+    // Sync with backend
+    this.teamApi
+      .updateCapacity(currentBoard.id, memberId, sprintId, capacityDev, capacityTest)
+      .subscribe({
+        next: () => {
+          console.log(`Capacity updated for member ${memberId} in sprint ${sprintId}`);
+        },
+        error: (error) => {
+          console.error('Error updating capacity:', error);
+          // Rollback on error
+          this.boardSignal.set(currentBoard);
+          this.errorSignal.set('Failed to update capacity. Please try again.');
+        },
+      });
   }
 
   /**
-   * Submit board state (in production, this would persist to backend)
+   * Clear error message
+   */
+  public clearError(): void {
+    this.errorSignal.set(null);
+  }
+
+  /**
+   * Submit/finalize board
    */
   public submitBoard(): void {
     const currentBoard = this.boardSignal();
+    if (!currentBoard) return;
+
     console.log('Board submitted:', currentBoard);
-    // In production: this.http.post('/api/boards/1/submit', currentBoard).subscribe(...)
+    // Implementation for board finalization would go here
   }
 }

@@ -1,0 +1,108 @@
+<div class="board-list-container">
+  <div class="board-list-content">
+    <div class="header">
+      <h1>Your Boards</h1>
+      <div class="header-actions">
+        <button class="btn-primary" (click)="navigateToCreate()">
+          + Create New
+        </button>
+        <button class="btn-secondary" (click)="goBack()">
+          ← Back to Home
+        </button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input
+        type="text"
+        class="search-input"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search boards..."
+      />
+      <div class="filter-chips">
+        <label class="filter-chip">
+          <input
+            type="checkbox"
+            [(ngModel)]="showLockedOnly"
+            (change)="onFilterChange()"
+          />
+          Locked Only
+        </label>
+        <label class="filter-chip">
+          <input
+            type="checkbox"
+            [(ngModel)]="showFinalizedOnly"
+            (change)="onFilterChange()"
+          />
+          Finalized Only
+        </label>
+      </div>
+    </div>
+
+    <div *ngIf="loading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading boards...</p>
+    </div>
+
+    <div *ngIf="error()" class="error-state">
+      <p>{{ error() }}</p>
+      <button class="btn-primary" (click)="loadBoards()">Retry</button>
+    </div>
+
+    <div *ngIf="!loading() && !error() && boards().length === 0" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <h3>No boards found</h3>
+      <p>Create your first board to get started</p>
+      <button class="btn-primary" (click)="navigateToCreate()">
+        Create Board
+      </button>
+    </div>
+
+    <div *ngIf="!loading() && !error() && boards().length > 0" class="boards-grid">
+      <div
+        *ngFor="let board of boards()"
+        class="board-card"
+        (click)="openBoard(board.id)"
+      >
+        <div class="board-card-header">
+          <h3>{{ board.name }}</h3>
+          <div class="board-badges">
+            <span *ngIf="board.isLocked" class="badge locked">🔒 Locked</span>
+            <span *ngIf="board.isFinalized" class="badge finalized">✅ Finalized</span>
+          </div>
+        </div>
+
+        <div class="board-card-body">
+          <div class="board-info">
+            <span *ngIf="board.organization" class="info-item">
+              <strong>Org:</strong> {{ board.organization }}
+            </span>
+            <span *ngIf="board.project" class="info-item">
+              <strong>Project:</strong> {{ board.project }}
+            </span>
+            <span class="info-item">
+              <strong>Sprints:</strong> {{ board.sprintCount }}
+            </span>
+            <span class="info-item">
+              <strong>Features:</strong> {{ board.featureCount }}
+            </span>
+          </div>
+
+          <div class="board-date">
+            Created: {{ formatDate(board.createdAt) }}
+          </div>
+        </div>
+
+        <div class="board-card-footer">
+          <button
+            class="btn-link"
+            (click)="openBoard(board.id); $event.stopPropagation()"
+          >
+            Open →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

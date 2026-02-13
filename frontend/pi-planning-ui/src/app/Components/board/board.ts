@@ -1,5 +1,6 @@
-import { Component, inject, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   CdkDragDrop,
   DragDropModule,
@@ -24,13 +25,17 @@ import {
   templateUrl: './board.html',
   styleUrls: ['./board.css'],
 })
-export class Board {
-  private boardService = inject(BoardService);
+export class Board implements OnInit {
+  protected boardService = inject(BoardService);
   private userService = inject(UserService);
+  private route = inject(ActivatedRoute);
+  protected router = inject(Router); // Make public for template
   private cdr = inject(ChangeDetectorRef);
 
   // Board state from service
   protected board = this.boardService.board;
+  protected loading = this.boardService.loading;
+  protected error = this.boardService.error;
 
   // Local UI state
   protected cursorName = signal(this.userService.getName() || 'Guest');
@@ -44,15 +49,35 @@ export class Board {
   protected selectedSprintId = signal<number | null>(null);
   protected capacityEdits = signal<Record<number, { dev: number; test: number }>>({});
 
+  ngOnInit(): void {
+    // Load board from route parameter
+    this.route.params.subscribe((params) => {
+      const boardId = Number(params['id']);
+      if (boardId) {
+        this.boardService.loadBoard(boardId);
+      } else {
+        console.error('No board ID provided');
+        this.router.navigate(['/']);
+      }
+    });
+  }
+
   /**
    * Get all sprints from the board (skip Sprint 0 for main display)
    */
   protected getDisplayedSprints(): SprintDto[] {
-    return this.board().sprints.filter((s) => s.id > 0);
+    const currentBoard = this.board();
+    if (!currentBoard) return [];
+    return currentBoard.sprints.filter((s) => this.isParkingLotSprint(s) === false);
+  }
+
+  private isParkingLotSprint(sprint: SprintDto): boolean {
+    return sprint.name?.trim().toLowerCase() === 'sprint 0';
   }
 
   protected getTeamMembers(): TeamMemberResponseDto[] {
-    return this.board().teamMembers;
+    const currentBoard = this.board();
+    return currentBoard ? currentBoard.teamMembers : [];
   }
 
   protected getMemberRoleLabel(member: TeamMemberResponseDto): string {
@@ -114,6 +139,8 @@ export class Board {
    * First column: feature (fixed), second: parking lot (fixed), rest: sprints (flex)
    */
   protected getGridTemplateColumns(): string {
+    const currentBoard = this.board();
+    if (!currentBoard) return '';
     const sprints = this.getDisplayedSprints();
     const featureCol = '140px';
     const parkingCol = '240px';
@@ -194,13 +221,14 @@ export class Board {
    * Get connected drop lists for a feature (parking lot + all sprints, excluding Sprint 0)
    */
   getConnectedLists(featureId: number): string[] {
+    const currentBoard = this.board();
+    if (!currentBoard) return [];
     const lists = [`feature_${featureId}_parkingLot`];
-    this.board().sprints.forEach((sprint) => {
-      // Skip Sprint 0 (placeholder) - it's only for parking lot, not as a sprint column
-      if (sprint.id > 0) {
+    currentBoard.sprints
+      .filter((sprint) => this.isParkingLotSprint(sprint) === false)
+      .forEach((sprint) => {
         lists.push(`feature_${featureId}_sprint_${sprint.id}`);
-      }
-    });
+      });
     return lists;
   }
 
@@ -241,11 +269,14 @@ export class Board {
    * Get sprint totals (dev, test, total) across all features
    */
   getSprintTotals(sprintId: number): { dev: number; test: number; total: number } {
+    const currentBoard = this.board();
+    if (!currentBoard) return { dev: 0, test: 0, total: 0 };
+    
     let dev = 0,
       test = 0,
       total = 0;
 
-    this.board().features.forEach((feature) => {
+    currentBoard.features.forEach((feature) => {
       const sprintStories = this.getStoriesInSprint(feature, sprintId);
       sprintStories.forEach((story) => {
         dev += story.devStoryPoints ?? 0;

@@ -1,0 +1,173 @@
+<div class="create-board-container">
+  <div class="create-board-card">
+    <div class="card-header">
+      <h2>Create New Board</h2>
+      <button class="btn-back" (click)="goBack()">← Back</button>
+    </div>
+
+    <form class="board-form" (ngSubmit)="onSubmit()">
+      <div class="form-section">
+        <h3>Board Information</h3>
+
+        <div class="form-group">
+          <label for="name" class="required">Board Name</label>
+          <input
+            id="name"
+            type="text"
+            class="form-input"
+            [(ngModel)]="formData.name"
+            name="name"
+            placeholder="e.g., Q1 2026 Planning"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="organization">Organization</label>
+            <input
+              id="organization"
+              type="text"
+              class="form-input"
+              [(ngModel)]="formData.organization"
+              name="organization"
+              placeholder="e.g., Acme Corp"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="project">Project</label>
+            <input
+              id="project"
+              type="text"
+              class="form-input"
+              [(ngModel)]="formData.project"
+              name="project"
+              placeholder="e.g., Platform"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Sprint Configuration</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numSprints" class="required">Number of Sprints</label>
+            <input
+              id="numSprints"
+              type="number"
+              class="form-input"
+              [(ngModel)]="formData.numSprints"
+              name="numSprints"
+              min="1"
+              max="12"
+              required
+            />
+            <small>Typically 5-6 sprints per PI</small>
+          </div>
+
+          <div class="form-group">
+            <label for="sprintDuration" class="required">Sprint Duration (days)</label>
+            <input
+              id="sprintDuration"
+              type="number"
+              class="form-input"
+              [(ngModel)]="formData.sprintDuration"
+              name="sprintDuration"
+              min="7"
+              max="30"
+              required
+            />
+            <small>Usually 10-14 days</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="startDate" class="required">Start Date</label>
+          <input
+            id="startDate"
+            type="date"
+            class="form-input"
+            [(ngModel)]="formData.startDate"
+            name="startDate"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Options</h3>
+
+        <div class="form-group-checkbox">
+          <input
+            id="devTestToggle"
+            type="checkbox"
+            [(ngModel)]="formData.devTestToggle"
+            name="devTestToggle"
+          />
+          <label for="devTestToggle">
+            Enable Dev/Test split tracking
+            <small>Separate development and testing story points</small>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="azureStoryPointField">Azure Story Point Field</label>
+          <input
+            id="azureStoryPointField"
+            type="text"
+            class="form-input"
+            [(ngModel)]="formData.azureStoryPointField"
+            name="azureStoryPointField"
+            placeholder="Microsoft.VSTS.Scheduling.StoryPoints"
+          />
+          <small>Default: Microsoft.VSTS.Scheduling.StoryPoints</small>
+        </div>
+
+        <div *ngIf="formData.devTestToggle" class="form-row">
+          <div class="form-group">
+            <label for="azureDevStoryPointField">Azure Dev Story Point Field</label>
+            <input
+              id="azureDevStoryPointField"
+              type="text"
+              class="form-input"
+              [(ngModel)]="formData.azureDevStoryPointField"
+              name="azureDevStoryPointField"
+              placeholder="Custom.DevStoryPoints"
+            />
+            <small>Default: Custom.DevStoryPoints</small>
+          </div>
+
+          <div class="form-group">
+            <label for="azureTestStoryPointField">Azure Test Story Point Field</label>
+            <input
+              id="azureTestStoryPointField"
+              type="text"
+              class="form-input"
+              [(ngModel)]="formData.azureTestStoryPointField"
+              name="azureTestStoryPointField"
+              placeholder="Custom.TestStoryPoints"
+            />
+            <small>Default: Custom.TestStoryPoints</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="goBack()" [disabled]="loading()">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="loading()">
+          <span *ngIf="!loading()">Create Board</span>
+          <span *ngIf="loading()">Creating...</span>
+        </button>
+      </div>
+
+      <div *ngIf="error()" class="error-message">
+        {{ error() }}
+      </div>
+    </form>
+  </div>
+</div>

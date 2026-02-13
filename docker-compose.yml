@@ -21,6 +21,7 @@ services:
       - db
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__DefaultConnection: "Host=pi-postgres;Database=PIPlanningDB;Username=postgres;Password=YourStrong!Passw0rd"
     ports:
       - "8080:8080"
@@ -33,6 +34,8 @@ services:
     container_name: pi-frontend
     depends_on:
       - backend
+    environment:
+      API_BASE_URL: "http://pi-backend:8080"
     ports:
       - "4200:80"
     restart: always
