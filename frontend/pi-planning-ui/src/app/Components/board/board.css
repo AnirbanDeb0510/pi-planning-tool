@@ -89,6 +89,29 @@
   background: #e8eaf6;
 }
 
+.add-feature-button {
+  border: 1px dashed #2e7d32;
+  background: transparent;
+  color: #2e7d32;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.add-feature-button:hover {
+  background: #e8f5e9;
+}
+
+.error-message-inline {
+  background: #ffebee;
+  color: #c62828;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
 /* ===== TEAM CAPACITY ROW ===== */
 .team-capacity-row {
   display: grid;
@@ -428,6 +451,11 @@
 
 /* ===== FEATURE ROWS ===== */
 
+.feature-rows {
+  display: flex;
+  flex-direction: column;
+}
+
 .feature-row {
   /* grid so columns align with header (gridTemplateColumns set inline from component) */
   display: grid;
@@ -442,6 +470,14 @@
   margin-bottom: 24px;
 }
 
+.feature-row.cdk-drag-preview {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.feature-row.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
 .feature-name {
   display: flex;
   flex-direction: column;
@@ -451,6 +487,33 @@
   text-align: center;
   justify-content: center;
   align-items: center;
+  position: relative;
+  padding-left: 36px;
+}
+
+.feature-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.feature-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #616161;
+  cursor: grab;
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.feature-drag-handle:active {
+  cursor: grabbing;
 }
 
 .feature-name h3 {
@@ -460,6 +523,53 @@
   color: #1a237e;
   word-break: break-word;
   line-height: 1.4;
+}
+
+.feature-name .azure-badge {
+  background: #0078d4;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:host-context(.dark-theme) .feature-name .azure-badge {
+  background: #106ebe;
+}
+
+.feature-menu-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin: -8px;
+}
+
+.feature-name:hover .feature-menu-btn {
+  opacity: 1;
+}
+
+.feature-menu-btn mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.checkbox-group {
+  margin: 12px 0;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  cursor: pointer;
 }
 
 .feature-total {
@@ -734,6 +844,20 @@ input:checked + .slider:before {
 .btn-secondary {
   background: #e0e0e0;
   color: #424242;
+}
+
+.btn-danger {
+  background: #d32f2f;
+  color: white;
+}
+
+.warning-text {
+  background: #ffebee;
+  color: #b71c1c;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 .capacity-edit-row {

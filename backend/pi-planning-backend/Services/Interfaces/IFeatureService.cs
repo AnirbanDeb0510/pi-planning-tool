@@ -8,6 +8,7 @@ namespace PiPlanningBackend.Services.Interfaces
         Task<FeatureDto?> RefreshFeatureFromAzureAsync(int boardId, int featureId, string organization, string project, string pat);
         Task<UserStoryDto?> RefreshUserStoryFromAzureAsync(int boardId, int storyId, string organization, string project, string pat);
         Task MoveUserStoryAsync(int boardId, int storyId, int targetSprintId);
-        Task ReorderFeatureAsync(int boardId, int featureId, int newPriority);
+        Task ReorderFeaturesAsync(int boardId, List<ReorderFeatureItemDto> features);
+        Task<bool> DeleteFeatureAsync(int boardId, int featureId);
     }
 }

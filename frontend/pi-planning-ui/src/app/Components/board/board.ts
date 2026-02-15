@@ -8,6 +8,9 @@ import {
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
 import { FormsModule } from '@angular/forms';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { StoryCard } from '../story-card/story-card';
 import { UserService } from '../../Services/user.service';
 import { BoardService } from '../../features/board/services/board.service';
@@ -21,7 +24,7 @@ import {
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, DragDropModule, StoryCard, FormsModule],
+  imports: [CommonModule, DragDropModule, StoryCard, FormsModule, MatMenuModule, MatIconModule, MatButtonModule],
   templateUrl: './board.html',
   styleUrls: ['./board.css'],
 })
@@ -44,10 +47,32 @@ export class Board implements OnInit {
   public showDevTest = signal(false);
   protected showAddMemberModal = signal(false);
   protected showCapacityModal = signal(false);
+  protected showImportFeatureModal = signal(false);
   protected newMemberName = signal('');
   protected newMemberRole = signal<'dev' | 'test'>('dev');
   protected selectedSprintId = signal<number | null>(null);
   protected capacityEdits = signal<Record<number, { dev: number; test: number }>>({});
+  
+  // Import feature form state
+  protected importFeatureId = signal('');
+  protected importPat = signal('');
+  protected rememberPatForImport = signal(false);
+  protected importLoading = signal(false);
+  protected importError = signal<string | null>(null);
+
+  // Refresh feature form state
+  protected showRefreshFeatureModal = signal(false);
+  protected selectedFeature = signal<FeatureResponseDto | null>(null);
+  protected refreshPat = signal('');
+  protected rememberPatForRefresh = signal(false);
+  protected refreshLoading = signal(false);
+  protected refreshError = signal<string | null>(null);
+
+  // Delete feature confirmation state
+  protected showDeleteFeatureModal = signal(false);
+  protected featureToDelete = signal<FeatureResponseDto | null>(null);
+  protected deleteLoading = signal(false);
+  protected deleteError = signal<string | null>(null);
 
   ngOnInit(): void {
     // Load board from route parameter
@@ -63,6 +88,189 @@ export class Board implements OnInit {
   }
 
   /**
+   * Open import feature modal
+   */
+  openImportFeatureModal(): void {
+    this.importFeatureId.set('');
+    const storedPat = this.boardService.getStoredPat();
+    if (storedPat) {
+      this.importPat.set(storedPat);
+      this.rememberPatForImport.set(true);
+    } else {
+      this.importPat.set('');
+      this.rememberPatForImport.set(false);
+    }
+    this.importError.set(null);
+    this.showImportFeatureModal.set(true);
+  }
+
+  /**
+   * Close import feature modal
+   */
+  closeImportFeatureModal(): void {
+    this.showImportFeatureModal.set(false);
+    this.importLoading.set(false);
+    this.importError.set(null);
+  }
+
+  /**
+   * Import feature from Azure DevOps
+   */
+  async importFeatureFromAzure(): Promise<void> {
+    const currentBoard = this.board();
+    if (!currentBoard) return;
+
+    const featureId = this.importFeatureId().trim();
+    const pat = this.importPat().trim();
+
+    if (!featureId || !pat) {
+      this.importError.set('Please provide Feature ID and PAT');
+      return;
+    }
+
+    if (!currentBoard.organization || !currentBoard.project) {
+      this.importError.set('Board is missing organization or project information');
+      return;
+    }
+
+    this.importLoading.set(true);
+    this.importError.set(null);
+
+    try {
+      await this.boardService.importFeature(
+        currentBoard.id,
+        currentBoard.organization,
+        currentBoard.project,
+        featureId,
+        pat
+      );
+      if (this.rememberPatForImport()) {
+        this.boardService.storePat(pat);
+      } else {
+        this.boardService.clearPat();
+      }
+      this.closeImportFeatureModal();
+    } catch (error: any) {
+      this.importError.set(error.message || 'Failed to import feature');
+    } finally {
+      this.importLoading.set(false);
+    }
+  }
+
+  /**
+   * Open refresh feature modal
+   */
+  openRefreshFeatureModal(feature: FeatureResponseDto): void {
+    this.selectedFeature.set(feature);
+    
+    // Prepopulate PAT if stored and valid
+    const storedPat = this.boardService.getStoredPat();
+    if (storedPat) {
+      this.refreshPat.set(storedPat);
+      this.rememberPatForRefresh.set(true);
+    } else {
+      this.refreshPat.set('');
+      this.rememberPatForRefresh.set(false);
+    }
+    
+    this.refreshError.set(null);
+    this.showRefreshFeatureModal.set(true);
+  }
+
+  /**
+   * Close refresh feature modal
+   */
+  closeRefreshFeatureModal(): void {
+    this.showRefreshFeatureModal.set(false);
+    this.selectedFeature.set(null);
+    this.refreshLoading.set(false);
+    this.refreshError.set(null);
+  }
+
+  /**
+   * Refresh feature from Azure DevOps
+   */
+  async refreshFeatureFromAzure(): Promise<void> {
+    const feature = this.selectedFeature();
+    const currentBoard = this.board();
+    const pat = this.refreshPat().trim();
+    
+    if (!feature || !currentBoard || !pat) return;
+
+    if (!currentBoard.organization || !currentBoard.project) {
+      this.refreshError.set('Board is missing organization or project information');
+      return;
+    }
+
+    this.refreshLoading.set(true);
+    this.refreshError.set(null);
+    
+    try {
+      await this.boardService.refreshFeature(
+        currentBoard.id,
+        feature.id,
+        currentBoard.organization,
+        currentBoard.project,
+        pat
+      );
+      
+      // Store PAT if checkbox is checked
+      if (this.rememberPatForRefresh()) {
+        this.boardService.storePat(pat);
+      } else {
+        this.boardService.clearPat();
+      }
+      
+      this.closeRefreshFeatureModal();
+    } catch (error: any) {
+      this.refreshError.set(error.message || 'Failed to refresh feature');
+    } finally {
+      this.refreshLoading.set(false);
+    }
+  }
+
+  /**
+   * Open delete feature confirmation modal
+   */
+  openDeleteFeatureModal(feature: FeatureResponseDto): void {
+    this.featureToDelete.set(feature);
+    this.deleteError.set(null);
+    this.showDeleteFeatureModal.set(true);
+  }
+
+  /**
+   * Close delete feature confirmation modal
+   */
+  closeDeleteFeatureModal(): void {
+    this.showDeleteFeatureModal.set(false);
+    this.featureToDelete.set(null);
+    this.deleteLoading.set(false);
+    this.deleteError.set(null);
+  }
+
+  /**
+   * Delete feature and its user stories
+   */
+  async deleteFeature(): Promise<void> {
+    const feature = this.featureToDelete();
+    const currentBoard = this.board();
+    
+    if (!feature || !currentBoard) return;
+
+    this.deleteLoading.set(true);
+    this.deleteError.set(null);
+    
+    try {
+      await this.boardService.deleteFeature(currentBoard.id, feature.id);
+      this.closeDeleteFeatureModal();
+    } catch (error: any) {
+      this.deleteError.set(error.message || 'Failed to delete feature');
+    } finally {
+      this.deleteLoading.set(false);
+    }
+  }
+
+  /**
    * Get all sprints from the board (skip Sprint 0 for main display)
    */
   protected getDisplayedSprints(): SprintDto[] {
@@ -73,6 +281,16 @@ export class Board implements OnInit {
 
   private isParkingLotSprint(sprint: SprintDto): boolean {
     return sprint.name?.trim().toLowerCase() === 'sprint 0';
+  }
+
+  /**
+   * Get the Sprint 0 (parking lot) ID from the board
+   */
+  private getParkingLotSprintId(): number {
+    const currentBoard = this.board();
+    if (!currentBoard) return 0;
+    const sprint0 = currentBoard.sprints.find((s) => this.isParkingLotSprint(s));
+    return sprint0?.id ?? 0;
   }
 
   protected getTeamMembers(): TeamMemberResponseDto[] {
@@ -204,13 +422,45 @@ export class Board implements OnInit {
   }
 
   /**
+   * Drag-drop handler - reorder features
+   */
+  dropFeature(event: CdkDragDrop<FeatureResponseDto[]>): void {
+    const currentBoard = this.board();
+    if (!currentBoard) return;
+
+    if (event.previousIndex === event.currentIndex) return;
+
+    moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+
+    const updates: Array<{ featureId: number; newPriority: number }> = [];
+    event.container.data.forEach((feature, index) => {
+      const newPriority = index + 1;
+      if (feature.priority !== newPriority) {
+        feature.priority = newPriority;
+        updates.push({ featureId: feature.id, newPriority });
+      }
+    });
+
+    if (updates.length === 0) return;
+
+    this.boardService
+      .reorderFeatures(currentBoard.id, updates)
+      .catch((error) => {
+        console.error('Error reordering features:', error);
+        this.boardService.loadBoard(currentBoard.id);
+      });
+
+    this.cdr.detectChanges();
+  }
+
+  /**
    * Helper: parse sprint ID from drop list ID
-   * 'feature_1_parkingLot' → 0
+   * 'feature_1_parkingLot' → Sprint 0 ID
    * 'feature_1_sprint_2' → 2
    */
   private parseSprintIdFromDropListId(id: string): number {
     if (id.includes('parkingLot')) {
-      return 0; // Parking lot is Sprint 0
+      return this.getParkingLotSprintId(); // Return actual Sprint 0 ID
     }
     // For sprint IDs: 'feature_X_sprint_Y' → extract Y
     const parts = id.split('_');
@@ -243,7 +493,8 @@ export class Board implements OnInit {
    * Get stories for a feature in parking lot (Sprint 0)
    */
   getParkingLotStories(feature: FeatureResponseDto): UserStoryDto[] {
-    return feature.userStories.filter((story) => story.sprintId === 0);
+    const parkingLotId = this.getParkingLotSprintId();
+    return feature.userStories.filter((story) => story.sprintId === parkingLotId);
   }
 
   /**

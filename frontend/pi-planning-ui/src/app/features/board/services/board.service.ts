@@ -5,7 +5,8 @@ import {
   UserStoryDto,
   TeamMemberResponseDto,
 } from '../../../shared/models/board.dto';
-import { BoardApiService, StoryApiService, TeamApiService } from './board-api.service';
+import { BoardApiService, StoryApiService, TeamApiService, FeatureApiService, AzureApiService } from './board-api.service';
+import { firstValueFrom } from 'rxjs';
 
 /**
  * Board Service - State Management Layer
@@ -15,13 +16,18 @@ import { BoardApiService, StoryApiService, TeamApiService } from './board-api.se
 @Injectable({ providedIn: 'root' })
 export class BoardService {
   private boardApi = inject(BoardApiService);
+  private featureApi = inject(FeatureApiService);
   private storyApi = inject(StoryApiService);
   private teamApi = inject(TeamApiService);
+  private azureApi = inject(AzureApiService);
 
   // State signals
   private boardSignal = signal<BoardResponseDto | null>(null);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
+
+  // PAT storage with timestamp for expiry
+  private patStorage = signal<{ pat: string; timestamp: number } | null>(null);
 
   // Public read-only signals
   public board = this.boardSignal.asReadonly();
@@ -54,6 +60,39 @@ export class BoardService {
    */
   public getBoard(): BoardResponseDto | null {
     return this.board();
+  }
+
+  /**
+   * Import feature from Azure DevOps
+   * First fetches the feature from Azure, then imports it to the board
+   */
+  public async importFeature(
+    boardId: number,
+    organization: string,
+    project: string,
+    featureId: string,
+    pat: string
+  ): Promise<void> {
+    try {
+      // Step 1: Fetch feature from Azure DevOps
+      console.log('Fetching feature from Azure:', { organization, project, featureId });
+      const featureDto = await firstValueFrom(
+        this.azureApi.getFeatureWithChildren(organization, project, featureId, pat)
+      );
+
+      // Step 2: Import the feature to the board
+      console.log('Importing feature to board:', featureDto);
+      const importedFeature = await firstValueFrom(
+        this.featureApi.importFeature(boardId, featureDto)
+      );
+
+      // Step 3: Reload the board to ensure UI matches backend state
+      console.log('Feature imported successfully, reloading board...');
+      this.loadBoard(boardId);
+    } catch (error: any) {
+      console.error('Error importing feature:', error);
+      throw new Error(error.message || 'Failed to import feature');
+    }
   }
 
   /**
@@ -227,6 +266,94 @@ export class BoardService {
           this.errorSignal.set('Failed to update capacity. Please try again.');
         },
       });
+  }
+
+  /**
+   * Refresh feature from Azure DevOps
+   */
+  public async refreshFeature(
+    boardId: number,
+    featureId: number,
+    organization: string,
+    project: string,
+    pat: string
+  ): Promise<void> {
+    try {
+      console.log('Refreshing feature from Azure:', { boardId, featureId });
+      await firstValueFrom(
+        this.featureApi.refreshFeature(boardId, featureId, organization, project, pat)
+      );
+
+      // Reload board to show updated data
+      console.log('Feature refreshed successfully, reloading board...');
+      this.loadBoard(boardId);
+    } catch (error: any) {
+      console.error('Error refreshing feature:', error);
+      throw new Error(error.message || 'Failed to refresh feature');
+    }
+  }
+
+  /**
+   * Reorder features by priority
+   */
+  public async reorderFeatures(
+    boardId: number,
+    features: Array<{ featureId: number; newPriority: number }>
+  ): Promise<void> {
+    try {
+      await firstValueFrom(this.featureApi.reorderFeatures(boardId, features));
+      this.loadBoard(boardId);
+    } catch (error: any) {
+      console.error('Error reordering features:', error);
+      throw new Error(error.message || 'Failed to reorder features');
+    }
+  }
+
+  /**
+   * Delete feature and its user stories
+   */
+  public async deleteFeature(boardId: number, featureId: number): Promise<void> {
+    try {
+      console.log('Deleting feature:', { boardId, featureId });
+      await firstValueFrom(this.featureApi.deleteFeature(boardId, featureId));
+
+      // Reload board to show updated data
+      console.log('Feature deleted successfully, reloading board...');
+      this.loadBoard(boardId);
+    } catch (error: any) {
+      console.error('Error deleting feature:', error);
+      throw new Error(error.message || 'Failed to delete feature');
+    }
+  }
+
+  /**
+   * Store PAT with timestamp for 10-minute expiry
+   */
+  public storePat(pat: string): void {
+    this.patStorage.set({ pat, timestamp: Date.now() });
+  }
+
+  /**
+   * Get stored PAT if not expired (10 minutes)
+   */
+  public getStoredPat(): string | null {
+    const stored = this.patStorage();
+    if (!stored) return null;
+
+    const tenMinutes = 10 * 60 * 1000;
+    if (Date.now() - stored.timestamp > tenMinutes) {
+      this.patStorage.set(null); // Expired
+      return null;
+    }
+
+    return stored.pat;
+  }
+
+  /**
+   * Clear stored PAT
+   */
+  public clearPat(): void {
+    this.patStorage.set(null);
   }
 
   /**

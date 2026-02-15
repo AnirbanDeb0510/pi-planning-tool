@@ -87,6 +87,8 @@ namespace PiPlanningBackend.Services.Implementations
             {
                 Id = board.Id,
                 Name = board.Name,
+                Organization = board.Organization,
+                Project = board.Project,
                 IsLocked = board.IsLocked,
                 IsFinalized = board.IsFinalized,
                 DevTestToggle = board.DevTestToggle,

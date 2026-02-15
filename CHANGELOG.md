@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Azure Feature Management (Feb 15, 2026)
+
+- Import features and child stories from Azure DevOps
+- Refresh a feature from Azure DevOps (PAT required)
+- Delete feature with cascading user stories
+- Batch feature reorder endpoint and drag-and-drop UI
+- Azure ID badges on feature and story cards
+- Optional in-memory PAT remember (10 minutes)
+
 ### Planned - Refactoring & Architecture Improvements (Feb 9, 2026)
 
 - Created comprehensive refactoring plan (see REFACTORING_PLAN.md)

@@ -23,17 +23,18 @@ export const BOARD_API = {
  * Feature API Endpoints
  */
 export const FEATURE_API = {
-  IMPORT: `${API_PREFIX}/features/import`,
-  REORDER: (featureId: number) => `${API_PREFIX}/features/${featureId}/reorder`,
-  REFRESH: (featureId: number) => `${API_PREFIX}/features/${featureId}/refresh`,
+  IMPORT: (boardId: number) => `${API_PREFIX}/v1/boards/${boardId}/features/import`,
+  REORDER: (boardId: number) => `${API_PREFIX}/v1/boards/${boardId}/features/reorder`,
+  REFRESH: (boardId: number, featureId: number) => `${API_PREFIX}/v1/boards/${boardId}/features/${featureId}/refresh`,
+  DELETE: (boardId: number, featureId: number) => `${API_PREFIX}/v1/boards/${boardId}/features/${featureId}`,
 } as const;
 
 /**
  * User Story API Endpoints
  */
 export const STORY_API = {
-  MOVE: (storyId: number) => `${API_PREFIX}/userstories/${storyId}/move`,
-  REFRESH: (storyId: number) => `${API_PREFIX}/userstories/${storyId}/refresh`,
+  MOVE: (boardId: number, storyId: number) => `${API_PREFIX}/boards/${boardId}/stories/${storyId}/move`,
+  REFRESH: (boardId: number, storyId: number) => `${API_PREFIX}/boards/${boardId}/stories/${storyId}/refresh`,
 } as const;
 
 /**
@@ -47,9 +48,11 @@ export const TEAM_API = {
 } as const;
 
 /**
- * Azure DevOps Integration API Endpoints (if needed in future)
+ * Azure DevOps Integration API Endpoints
  */
 export const AZURE_API = {
+  GET_FEATURE: (organization: string, project: string, featureId: string) => 
+    `${API_PREFIX}/v1/azure/feature/${organization}/${project}/${featureId}`,
   AUTHENTICATE: `${API_PREFIX}/azure/auth`,
   SEARCH_FEATURES: `${API_PREFIX}/azure/features/search`,
 } as const;

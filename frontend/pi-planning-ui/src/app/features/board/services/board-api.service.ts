@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClientService } from '../../../core/services/http-client.service';
-import { BOARD_API, FEATURE_API, STORY_API, TEAM_API } from '../../../core/constants/api-endpoints.constants';
+import { BOARD_API, FEATURE_API, STORY_API, TEAM_API, AZURE_API } from '../../../core/constants/api-endpoints.constants';
 import {
   BoardResponseDto,
   FeatureResponseDto,
@@ -68,22 +68,35 @@ export class BoardApiService implements IBoardApiService {
 export class FeatureApiService implements IFeatureApiService {
   private http = inject(HttpClientService);
 
-  importFeature(boardId: number, azureFeatureId: string): Observable<FeatureResponseDto> {
-    return this.http.post<FeatureResponseDto>(FEATURE_API.IMPORT, {
-      boardId,
-      azureFeatureId,
+  importFeature(boardId: number, featureDto: any): Observable<FeatureResponseDto> {
+    return this.http.post<FeatureResponseDto>(FEATURE_API.IMPORT(boardId), featureDto);
+  }
+
+  reorderFeatures(
+    boardId: number,
+    features: Array<{ featureId: number; newPriority: number }>
+  ): Observable<void> {
+    return this.http.patch<void>(FEATURE_API.REORDER(boardId), {
+      features,
     });
   }
 
-  reorderFeature(boardId: number, featureId: number, newPriority: number): Observable<void> {
-    return this.http.patch<void>(FEATURE_API.REORDER(featureId), {
-      boardId,
-      newPriority,
-    });
+  refreshFeature(
+    boardId: number,
+    featureId: number,
+    organization: string,
+    project: string,
+    pat: string
+  ): Observable<FeatureResponseDto> {
+    return this.http.patch<FeatureResponseDto>(
+      FEATURE_API.REFRESH(boardId, featureId),
+      {},
+      { params: { organization, project, pat } }
+    );
   }
 
-  refreshFeature(boardId: number, featureId: number): Observable<FeatureResponseDto> {
-    return this.http.post<FeatureResponseDto>(FEATURE_API.REFRESH(featureId), { boardId });
+  deleteFeature(boardId: number, featureId: number): Observable<void> {
+    return this.http.delete<void>(FEATURE_API.DELETE(boardId, featureId));
   }
 }
 
@@ -95,14 +108,13 @@ export class StoryApiService implements IStoryApiService {
   private http = inject(HttpClientService);
 
   moveStory(boardId: number, storyId: number, targetSprintId: number): Observable<void> {
-    return this.http.patch<void>(STORY_API.MOVE(storyId), {
-      boardId,
+    return this.http.patch<void>(STORY_API.MOVE(boardId, storyId), {
       targetSprintId,
     });
   }
 
   refreshStory(boardId: number, storyId: number): Observable<UserStoryDto> {
-    return this.http.post<UserStoryDto>(STORY_API.REFRESH(storyId), { boardId });
+    return this.http.patch<UserStoryDto>(STORY_API.REFRESH(boardId, storyId), {});
   }
 }
 
@@ -147,5 +159,28 @@ export class TeamApiService implements ITeamApiService {
 
   removeTeamMember(boardId: number, memberId: number): Observable<void> {
     return this.http.delete<void>(TEAM_API.REMOVE_MEMBER(boardId, memberId));
+  }
+}
+
+/**
+ * Azure DevOps API Service Implementation
+ */
+@Injectable({ providedIn: 'root' })
+export class AzureApiService {
+  private http = inject(HttpClientService);
+
+  /**
+   * Fetch feature with children from Azure DevOps
+   */
+  getFeatureWithChildren(
+    organization: string,
+    project: string,
+    featureId: string,
+    pat: string
+  ): Observable<FeatureResponseDto> {
+    return this.http.get<FeatureResponseDto>(
+      AZURE_API.GET_FEATURE(organization, project, featureId),
+      { params: { pat } }
+    );
   }
 }

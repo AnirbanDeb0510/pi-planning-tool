@@ -35,11 +35,20 @@ namespace PiPlanningBackend.Controllers
             return Ok(f);
         }
 
-        // PATCH api/boards/{boardId}/features/{id}/reorder
-        [HttpPatch("{id}/reorder")]
-        public async Task<IActionResult> ReorderFeature(int boardId, int id, ReorderFeatureDto dto)
+        // PATCH api/boards/{boardId}/features/reorder
+        [HttpPatch("reorder")]
+        public async Task<IActionResult> ReorderFeatures(int boardId, ReorderFeatureDto dto)
         {
-            await _featureService.ReorderFeatureAsync(boardId, id, dto.NewPriority);
+            await _featureService.ReorderFeaturesAsync(boardId, dto.Features);
+            return NoContent();
+        }
+
+        // DELETE api/boards/{boardId}/features/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteFeature(int boardId, int id)
+        {
+            var deleted = await _featureService.DeleteFeatureAsync(boardId, id);
+            if (!deleted) return NotFound();
             return NoContent();
         }
     }

@@ -20,11 +20,25 @@ namespace PiPlanningBackend.Repositories.Implementations
         public async Task<Feature?> GetByIdAsync(int id)
             => await _db.Features.Include(f => f.UserStories).FirstOrDefaultAsync(f => f.Id == id);
 
+        public async Task<int> GetMaxPriorityAsync(int boardId)
+        {
+            var maxPriority = await _db.Features
+                .Where(f => f.BoardId == boardId)
+                .MaxAsync(f => (int?)f.Priority) ?? 0;
+            return maxPriority;
+        }
+
         public async Task AddAsync(Feature feature) => await _db.Features.AddAsync(feature);
 
         public Task UpdateAsync(Feature feature)
         {
             _db.Features.Update(feature);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Feature feature)
+        {
+            _db.Features.Remove(feature);
             return Task.CompletedTask;
         }
 

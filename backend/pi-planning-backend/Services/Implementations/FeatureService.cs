@@ -111,20 +111,23 @@ namespace PiPlanningBackend.Services.Implementations
 
             if (existing != null)
             {
-                // update minimal fields
+                // update minimal fields - preserve priority to maintain user's reordering
                 existing.Title = featureDto.Title;
-                existing.Priority = featureDto.Priority;
                 existing.ValueArea = featureDto.ValueArea;
+                // Do NOT update Priority - keep existing order
                 await _featureRepo.UpdateAsync(existing);
             }
             else
             {
+                // Calculate next priority for new feature
+                var maxPriority = await _featureRepo.GetMaxPriorityAsync(boardId);
+
                 existing = new Feature
                 {
                     BoardId = boardId,
                     AzureId = featureDto.AzureId,
                     Title = featureDto.Title,
-                    Priority = featureDto.Priority,
+                    Priority = maxPriority + 1,
                     ValueArea = featureDto.ValueArea
                 };
 
@@ -185,7 +188,7 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task MoveUserStoryAsync(int boardId, int storyId, int targetSprintId)
         {
-            var story = await _storyRepo.GetByIdAsync(storyId);
+            var story = await _storyRepo.GetByIdWithDetailsAsync(storyId);
 
             if (story == null || story.Feature == null || story.Feature.BoardId != boardId) return;
 
@@ -195,14 +198,32 @@ namespace PiPlanningBackend.Services.Implementations
             await _storyRepo.SaveChangesAsync();
         }
 
-        public async Task ReorderFeatureAsync(int boardId, int featureId, int newPriority)
+        public async Task ReorderFeaturesAsync(int boardId, List<ReorderFeatureItemDto> features)
+        {
+            if (features.Count == 0) return;
+
+            foreach (var item in features)
+            {
+                var feature = await _featureRepo.GetByIdAsync(item.FeatureId);
+                if (feature == null || feature.BoardId != boardId) continue;
+
+                feature.Priority = item.NewPriority;
+                await _featureRepo.UpdateAsync(feature);
+            }
+
+            await _featureRepo.SaveChangesAsync();
+        }
+
+        public async Task<bool> DeleteFeatureAsync(int boardId, int featureId)
         {
             var feature = await _featureRepo.GetByIdAsync(featureId);
-            if (feature == null || feature.BoardId != boardId) return;
+            if (feature == null || feature.BoardId != boardId) return false;
 
-            feature.Priority = newPriority;
-            await _featureRepo.UpdateAsync(feature);
+            // Delete feature - EF Core will cascade delete user stories
+            await _featureRepo.DeleteAsync(feature);
             await _featureRepo.SaveChangesAsync();
+
+            return true;
         }
 
     }

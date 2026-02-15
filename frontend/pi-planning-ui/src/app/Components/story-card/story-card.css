@@ -36,7 +36,15 @@
   box-shadow: 0 4px 8px rgba(124, 77, 255, 0.2);
 }
 
+.story-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .story-card h3 {
+  flex: 1;
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
@@ -48,6 +56,22 @@
 
 :host-context(.dark-theme) .story-card h3 {
   color: #e0e0e0;
+}
+
+.azure-badge {
+  background: #0078d4;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:host-context(.dark-theme) .azure-badge {
+  background: #106ebe;
 }
 
 .points {

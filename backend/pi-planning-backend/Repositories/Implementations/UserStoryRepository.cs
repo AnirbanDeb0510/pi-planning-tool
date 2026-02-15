@@ -16,6 +16,11 @@ namespace PiPlanningBackend.Repositories.Implementations
         public async Task<UserStory?> GetByIdAsync(int id)
             => await _db.UserStories.FindAsync(id);
 
+        public async Task<UserStory?> GetByIdWithDetailsAsync(int id)
+            => await _db.UserStories
+                .Include(s => s.Feature)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
         public async Task AddAsync(UserStory story) => await _db.UserStories.AddAsync(story);
 
         public Task UpdateAsync(UserStory story)

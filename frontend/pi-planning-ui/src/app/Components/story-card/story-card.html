@@ -1,5 +1,8 @@
 <div class="story-card">
-  <h3>{{ story.title }}</h3>
+  <div class="story-header">
+    <h3>{{ story.title }}</h3>
+    <span class="azure-badge" *ngIf="story.azureId">{{ story.azureId }}</span>
+  </div>
 
   <div class="points">
     <ng-container

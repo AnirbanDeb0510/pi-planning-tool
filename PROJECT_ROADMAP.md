@@ -21,10 +21,11 @@
 #### Core APIs (Partially Implemented)
 - ✅ `POST /api/boards` - Create board with auto-generated sprints
 - ✅ `POST /api/v1/boards/{boardId}/features/import` - Import feature + child stories
-- ✅ `PATCH /api/v1/boards/{boardId}/features/{id}/reorder` - Move feature (priority)
+- ✅ `PATCH /api/v1/boards/{boardId}/features/reorder` - Move feature (priority)
 - ✅ `PATCH /api/boards/{boardId}/stories/{storyId}/move` - Move story (sprint assignment)
 - ✅ `PATCH /api/v1/boards/{boardId}/features/{id}/refresh` - Refresh feature from Azure
 - ✅ `PATCH /api/boards/{boardId}/stories/{storyId}/refresh` - Refresh story from Azure
+- ✅ `DELETE /api/v1/boards/{boardId}/features/{id}` - Delete feature (cascades stories)
 - ✅ `POST /api/boards/{boardId}/team` - Add/update team members
 - ✅ `GET /api/boards/{boardId}/team` - Get team
 - ✅ `PATCH /api/boards/{boardId}/team/sprints/{sprintId}/team/{teamMemberId}` - Update capacity
