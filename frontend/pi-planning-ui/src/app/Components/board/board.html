@@ -15,8 +15,57 @@
   </div>
 </div>
 
+<!-- PAT Validation Modal -->
+<div class="modal-backdrop" *ngIf="showPatModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Azure DevOps PAT Required</h3>
+      <button type="button" class="modal-close" (click)="closePatModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="pat-info">
+        This board contains features from Azure DevOps. Please provide a Personal Access Token (PAT) to verify access.
+      </p>
+      <div class="form-group">
+        <label for="pat-input">Personal Access Token (PAT)</label>
+        <input
+          id="pat-input"
+          type="password"
+          class="modal-input"
+          [value]="patModalInput()"
+          (input)="patModalInput.set($any($event.target).value)"
+          placeholder="Enter your Azure DevOps PAT"
+          [disabled]="patValidationLoading()"
+        />
+        <small class="pat-hint">Your PAT will not be stored. It's used only to verify access.</small>
+      </div>
+      <div *ngIf="patValidationError()" class="form-error">
+        {{ patValidationError() }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="closePatModal()"
+        [disabled]="patValidationLoading()"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn-primary"
+        type="button"
+        (click)="validatePat()"
+        [disabled]="patValidationLoading()"
+      >
+        {{ patValidationLoading() ? 'Validating...' : 'Validate & Open Board' }}
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Board Content -->
-<div *ngIf="!loading() && !error() && board()">
+<div *ngIf="!loading() && !error() && board() && patValidated()">
 <!-- Dev-Test Toggle -->
 <div class="toggle-container">
   <label class="switch">

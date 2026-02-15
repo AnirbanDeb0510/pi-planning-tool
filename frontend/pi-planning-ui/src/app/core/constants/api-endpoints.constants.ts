@@ -12,7 +12,9 @@ export const BOARD_API = {
   BASE: `${API_PREFIX}/boards`,
   GET_BOARD: (id: number) => `${API_PREFIX}/boards/${id}`,
   CREATE_BOARD: `${API_PREFIX}/boards`,
-  GET_BOARD_LIST: `${API_PREFIX}/boards`,
+  GET_BOARD_LIST: `${API_PREFIX}/boards`, // Query params: search, organization, project, isLocked, isFinalized
+  SEARCH_BOARDS: `${API_PREFIX}/boards`, // Same as GET_BOARD_LIST
+  GET_BOARD_PREVIEW: (id: number) => `${API_PREFIX}/boards/${id}/preview`, // Lightweight endpoint for PAT validation check
   LOCK_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/lock`,
   UNLOCK_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/unlock`,
   FINALIZE_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/finalize`,

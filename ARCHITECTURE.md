@@ -139,7 +139,58 @@ workingDays = floor((totalDays / 7) * 5)
 Example: Sprint Feb 10-21 (12 calendar days) = 8 working days max capacity
 
 ---
+## 🔒 Security Architecture - PAT Validation
 
+### Board Preview & Access Control
+
+The system implements a two-phase board loading strategy to prevent unauthorized data access:
+
+**Phase 1: Board Preview (Lightweight Metadata)**
+```
+GET /api/boards/{id}/preview
+Returns: {
+  id, name, organization, project,
+  featureCount, sampleFeatureAzureId,
+  isLocked, isFinalized
+}
+```
+- NO sensitive data (features, stories, team members)
+- Used to determine if PAT validation required
+- Safe to call without authentication
+
+**Phase 2: PAT Validation Flow**
+```
+1. User navigates to /boards/{id}
+2. Frontend calls preview endpoint
+3. If featureCount > 0:
+   a. Show PAT modal (user not yet authenticated)
+   b. User enters PAT
+   c. Validate PAT by calling Azure API:
+      - Organization: from preview
+      - Project: from preview
+      - Feature ID: sampleFeatureAzureId from preview
+   d. If valid → Store PAT temporarily (10 min TTL)
+   e. If invalid → Show error, allow retry
+4. If featureCount === 0:
+   - Skip PAT validation (no Azure features)
+5. Load full board data: GET /api/boards/{id}
+```
+
+### Security Benefits
+
+- **Data Leak Prevention:** Full board API never called until PAT validated
+- **Network Tab Safety:** Sensitive data not visible in browser dev tools
+- **Minimal Exposure:** Preview only returns metadata needed for validation
+- **Temporary PAT Storage:** 10-minute TTL, cleared on tab close
+- **Re-validation:** PAT required on each navigation (no persistent session storage)
+
+### Implementation Files
+
+- Backend: `BoardsController.GetBoardPreview()`, `BoardService.GetBoardPreviewAsync()`
+- Frontend: `BoardService.getBoardPreview()`, `Board.ngOnInit()`, PAT modal
+- Types: `BoardSummaryDto` with optional `sampleFeatureAzureId`
+
+---
 ## �🔄 Data Flow Examples
 
 ### Flow 1: Create Board → Auto-Generate Sprints

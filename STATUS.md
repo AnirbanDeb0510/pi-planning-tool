@@ -39,6 +39,25 @@
 
 ### 🟢 COMPLETE (Production Ready)
 
+#### Board Management & Search
+
+- [x] Board search API endpoint with filters (search, organization, project, status)
+- [x] BoardSummaryDto for lightweight board metadata responses
+- [x] Board preview endpoint for PAT validation (secure data access)
+- [x] Board list UI with search, filters, and board cards
+- [x] Navigation flow: Home → Board List → Board Details
+- [x] Dynamic app title showing board name
+- [x] Clickable header for home navigation
+
+#### Security - PAT Validation
+
+- [x] Board preview endpoint (no sensitive data exposure)
+- [x] PAT validation modal on board access
+- [x] Azure DevOps access verification before full board load
+- [x] Preview returns: organization, project, sampleFeatureAzureId for validation
+- [x] Temporary PAT storage (10-minute TTL, no persistence)
+- [x] Data leak prevention: full board only loads after PAT validated
+
 #### Docker & Deployment Infrastructure
 
 - [x] Docker Compose with PostgreSQL, .NET Backend, Angular Frontend

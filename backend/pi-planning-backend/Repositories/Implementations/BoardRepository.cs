@@ -56,5 +56,37 @@ namespace PiPlanningBackend.Repositories.Implementations
                     .ThenInclude(tm => tm.TeamMemberSprints)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
         }
+
+        public async Task<Board?> GetBoardWithFeaturesAsync(int boardId)
+        {
+            return await _context.Boards
+                .Include(b => b.Features)
+                .FirstOrDefaultAsync(b => b.Id == boardId);
+        }
+
+        public async Task<IEnumerable<Board>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null)
+        {
+            var query = _context.Boards
+                .Include(b => b.Sprints)
+                .Include(b => b.Features)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                query = query.Where(b => b.Name.Contains(searchTerm));
+
+            if (!string.IsNullOrWhiteSpace(organization))
+                query = query.Where(b => b.Organization == organization);
+
+            if (!string.IsNullOrWhiteSpace(project))
+                query = query.Where(b => b.Project == project);
+
+            if (isLocked.HasValue)
+                query = query.Where(b => b.IsLocked == isLocked.Value);
+
+            if (isFinalized.HasValue)
+                query = query.Where(b => b.IsFinalized == isFinalized.Value);
+
+            return await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
+        }
     }
 }

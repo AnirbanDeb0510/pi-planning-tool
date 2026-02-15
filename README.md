@@ -9,17 +9,25 @@ A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boa
 ## 🚀 Features
 
 - **Azure Boards Integration**: Fetch Features and User Stories via Azure DevOps REST API.
+- **Board Search & Management**:
+  - Search and filter boards by name, organization, project, or status.
+  - Board preview endpoint for secure access control.
+  - PAT validation before accessing boards with Azure features.
 - **Interactive Board**: Draggable cards representing User Stories, organized by Feature (rows) and Sprint (columns).
 - **Capacity & Load Management**:
-  - Team members’ capacity per sprint.
+  - Team members' capacity per sprint.
   - Dev/Test split for story points and capacities.
   - Load vs capacity visualization.
 - **Real-time Collaboration**: Multi-user updates via **SignalR** with cursor presence.
-- **Board Management**:
+- **Board Configuration**:
   - Unique board ID.
   - Optional password protection.
   - Start date for planning.
   - Finalization mode with visual indicators for moved stories.
+- **Security**:
+  - PAT validation for Azure DevOps access.
+  - Lightweight preview endpoint prevents data leaks.
+  - Temporary PAT storage (10-minute TTL).
 - **Team Management**:
   - Add/update team members per board.
   - Automatic assignment of Dev/Test capacities per sprint based on `DevTestToggle` and `SprintDuration`.

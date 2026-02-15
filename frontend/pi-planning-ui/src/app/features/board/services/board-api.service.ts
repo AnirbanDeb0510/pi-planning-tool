@@ -32,6 +32,18 @@ export class BoardApiService implements IBoardApiService {
     return this.http.post<BoardCreatedDto>(BOARD_API.CREATE_BOARD, dto);
   }
 
+  searchBoards(filters?: BoardFilters): Observable<BoardSummaryDto[]> {
+    const params: any = {};
+    if (filters) {
+      if (filters.search) params.search = filters.search;
+      if (filters.organization) params.organization = filters.organization;
+      if (filters.project) params.project = filters.project;
+      if (filters.isLocked !== undefined) params.isLocked = filters.isLocked.toString();
+      if (filters.isFinalized !== undefined) params.isFinalized = filters.isFinalized.toString();
+    }
+    return this.http.get<BoardSummaryDto[]>(BOARD_API.SEARCH_BOARDS, { params });
+  }
+
   getBoardList(filters?: BoardFilters): Observable<BoardSummaryDto[]> {
     const params: any = {};
     if (filters) {
@@ -42,6 +54,10 @@ export class BoardApiService implements IBoardApiService {
       if (filters.isFinalized !== undefined) params.isFinalized = filters.isFinalized.toString();
     }
     return this.http.get<BoardSummaryDto[]>(BOARD_API.GET_BOARD_LIST, { params });
+  }
+
+  getBoardPreview(boardId: number): Observable<BoardSummaryDto> {
+    return this.http.get<BoardSummaryDto>(BOARD_API.GET_BOARD_PREVIEW(boardId));
   }
 
   lockBoard(id: number): Observable<void> {
