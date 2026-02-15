@@ -45,7 +45,7 @@ namespace PiPlanningBackend.DTOs
     public class TeamMemberSprintDto
     {
         public int SprintId { get; set; }
-        public double CapacityDev { get; set; }
-        public double CapacityTest { get; set; }
+        public int CapacityDev { get; set; }
+        public int CapacityTest { get; set; }
     }
 }

@@ -21,10 +21,8 @@ namespace PiPlanningBackend.Models
         public Sprint Sprint { get; set; } = null!;
 
         // Capacity split for Dev and Test
-        [Column(TypeName = "float")]
-        public double CapacityDev { get; set; }
+        public int CapacityDev { get; set; }
 
-        [Column(TypeName = "float")]
-        public double CapacityTest { get; set; }
+        public int CapacityTest { get; set; }
     }
 }

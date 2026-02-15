@@ -171,9 +171,11 @@ export class BoardService {
     const isTest = devTestEnabled ? role === 'test' : false;
 
     // Calculate working days for default capacity
-    const getWorkingDays = (startDate: Date, endDate: Date): number => {
+    const getWorkingDays = (startDate: Date | string, endDate: Date | string): number => {
+      const start = startDate instanceof Date ? startDate : new Date(startDate);
+      const end = endDate instanceof Date ? endDate : new Date(endDate);
       const msPerDay = 24 * 60 * 60 * 1000;
-      const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / msPerDay) + 1;
+      const totalDays = Math.round((end.getTime() - start.getTime()) / msPerDay) + 1;
       return Math.floor((totalDays / 7) * 5);
     };
 
@@ -221,6 +223,73 @@ export class BoardService {
         // Rollback on error
         this.boardSignal.set(currentBoard);
         this.errorSignal.set('Failed to add team member. Please try again.');
+      },
+    });
+  }
+
+  /**
+   * Update team member details (name/role)
+   */
+  public updateTeamMember(
+    memberId: number,
+    name: string,
+    role: 'dev' | 'test',
+    devTestEnabled: boolean
+  ): void {
+    const currentBoard = this.boardSignal();
+    if (!currentBoard) return;
+
+    const isDev = devTestEnabled ? role === 'dev' : true;
+    const isTest = devTestEnabled ? role === 'test' : false;
+
+    const updatedMembers = currentBoard.teamMembers.map((member) =>
+      member.id === memberId
+        ? { ...member, name, isDev, isTest }
+        : member
+    );
+
+    const updatedBoard = { ...currentBoard, teamMembers: updatedMembers };
+    this.boardSignal.set(updatedBoard);
+
+    this.teamApi.updateTeamMember(currentBoard.id, memberId, name, isDev, isTest).subscribe({
+      next: (member) => {
+        const finalBoard = {
+          ...updatedBoard,
+          teamMembers: updatedBoard.teamMembers.map((m) =>
+            m.id === memberId ? member : m
+          ),
+        };
+        this.boardSignal.set(finalBoard);
+      },
+      error: (error) => {
+        console.error('Error updating team member:', error);
+        this.boardSignal.set(currentBoard);
+        this.errorSignal.set('Failed to update team member. Please try again.');
+      },
+    });
+  }
+
+  /**
+   * Remove a team member
+   */
+  public removeTeamMember(memberId: number): void {
+    const currentBoard = this.boardSignal();
+    if (!currentBoard) return;
+
+    const updatedBoard = {
+      ...currentBoard,
+      teamMembers: currentBoard.teamMembers.filter((m) => m.id !== memberId),
+    };
+    this.boardSignal.set(updatedBoard);
+
+    this.teamApi.removeTeamMember(currentBoard.id, memberId).subscribe({
+      next: () => {
+        console.log(`Team member ${memberId} removed`);
+      },
+      error: (error) => {
+        console.error('Error removing team member:', error);
+        this.boardSignal.set(currentBoard);
+        this.errorSignal.set('Failed to remove team member. Please try again.');
       },
     });
   }

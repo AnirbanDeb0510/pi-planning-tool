@@ -117,6 +117,17 @@ export interface ITeamApiService {
   addTeamMember(boardId: number, name: string, isDev: boolean, isTest: boolean): Observable<TeamMemberResponseDto>;
 
   /**
+   * Update team member details
+   */
+  updateTeamMember(
+    boardId: number,
+    memberId: number,
+    name: string,
+    isDev: boolean,
+    isTest: boolean
+  ): Observable<TeamMemberResponseDto>;
+
+  /**
    * Update team member capacity for a sprint
    */
   updateCapacity(
