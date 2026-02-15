@@ -147,8 +147,8 @@ namespace PiPlanningBackend.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     TeamMemberId = table.Column<int>(type: "integer", nullable: false),
                     SprintId = table.Column<int>(type: "integer", nullable: false),
-                    CapacityDev = table.Column<double>(type: "float", nullable: false),
-                    CapacityTest = table.Column<double>(type: "float", nullable: false)
+                    CapacityDev = table.Column<int>(type: "integer", nullable: false),
+                    CapacityTest = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {

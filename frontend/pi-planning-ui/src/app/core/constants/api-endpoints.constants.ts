@@ -41,10 +41,12 @@ export const STORY_API = {
  * Team API Endpoints
  */
 export const TEAM_API = {
-  GET_MEMBERS: (boardId: number) => `${API_PREFIX}/team/${boardId}`,
-  ADD_MEMBER: (boardId: number) => `${API_PREFIX}/team/${boardId}`,
-  UPDATE_CAPACITY: (boardId: number) => `${API_PREFIX}/team/${boardId}/capacity`,
-  REMOVE_MEMBER: (boardId: number, memberId: number) => `${API_PREFIX}/team/${boardId}/${memberId}`,
+  GET_MEMBERS: (boardId: number) => `${API_PREFIX}/boards/${boardId}/team`,
+  ADD_MEMBER: (boardId: number) => `${API_PREFIX}/boards/${boardId}/team`,
+  UPDATE_MEMBER: (boardId: number, memberId: number) => `${API_PREFIX}/boards/${boardId}/team/${memberId}`,
+  UPDATE_CAPACITY: (boardId: number, memberId: number, sprintId: number) =>
+    `${API_PREFIX}/boards/${boardId}/team/${memberId}/sprints/${sprintId}`,
+  REMOVE_MEMBER: (boardId: number, memberId: number) => `${API_PREFIX}/boards/${boardId}/team/${memberId}`,
 } as const;
 
 /**

@@ -79,9 +79,23 @@
 - [x] `IFeatureService.RefreshUserStoryFromAzureAsync()` - Refresh story data from Azure
 - [x] `IFeatureService.DeleteFeatureAsync()` - Delete feature with cascading stories
 - [x] `ITeamService.GetTeamAsync()` - Get team members
-- [x] `ITeamService.AddOrUpdateTeamAsync()` - Add/update team members
-- [x] `ITeamService.UpdateCapacityAsync()` - Update capacity per sprint/person
+- [x] `ITeamService.AddOrUpdateTeamAsync()` - Add/update team members (with input validation)
+- [x] `ITeamService.UpdateCapacityAsync()` - Update capacity per sprint/person (with bounds validation)
 - [x] `IAzureBoardsService.GetFeatureWithChildrenAsync()` - Fetch from Azure DevOps API
+
+#### Backend Data Validation - Three-Layer Architecture
+
+- [x] **DTO-Level Validation:** Data annotations on TeamMemberDto and UpdateTeamMemberCapacityDto
+  - Name: [Required], [StringLength(100, MinimumLength=1)]
+  - Capacity: [Range(0, int.MaxValue)]
+- [x] **Service-Level Business Logic:** 
+  - Name non-empty check in Add/Update operations
+  - Role validation (at least one: Dev or Test)
+  - Capacity bounds check (value ≤ sprint working days)
+  - Working days formula: floor((totalDays / 7) * 5) from sprint dates
+- [x] **Type System Hardening:**
+  - All capacity fields: double → int (positive integers only)
+  - Consistent across Models, DTOs, and TypeScript interfaces
 
 #### Backend Repositories Implemented
 
@@ -123,9 +137,33 @@
 - [x] RuntimeConfig - Dynamic API URL configuration
 - [x] App initializer - Configuration loading on startup
 
+#### Frontend Form Validation & Error Handling
+
+- [x] **Member Form Validation:**
+  - Name validation: non-empty, max 100 characters
+  - Real-time error display with error signal state
+- [x] **Capacity Form Validation:**
+  - Integer validation: Number.isInteger() check
+  - Bounds checking: capacity ≤ sprint working days
+  - HTML constraints: type="number" step="1" min="0"
+  - Real-time error display with error signal state
+- [x] **CSS Styling:**
+  - .form-error class with red accent and light background
+  - Proper padding and border-left highlight
+
 ---
 
 ## 🟡 IN PROGRESS (Actively Being Built)
+
+#### Team Member CRUD Operations
+
+- [x] Add team member with validation (backend + frontend)
+- [x] Update team member with validation (backend + frontend)
+- [x] Update capacity with bounds validation (backend + frontend)
+- [x] Three-layer validation architecture (DTO + Service + Frontend)
+- [x] Database migration for integer capacity types
+- [ ] End-to-end testing of member operations
+- [ ] Global role toggle handler implementation
 
 #### Frontend Service Layer Integration
 

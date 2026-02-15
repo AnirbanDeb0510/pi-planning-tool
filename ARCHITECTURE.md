@@ -95,7 +95,52 @@
 
 ---
 
-## 🔄 Data Flow Examples
+## � Data Validation Architecture
+
+### Three-Layer Validation Strategy
+
+Team member data is validated at three distinct layers for defense-in-depth:
+
+**Layer 1: Frontend Form Validation**
+- Component checks before API call (member name, capacity bounds)
+- HTML constraints prevent invalid input (step="1", min="0")
+- Error signals display to user, prevent form submission
+- Files: board.ts, board.html, board.css
+
+**Layer 2: DTO-Level Data Annotations**
+- ASP.NET Core automatic ModelState validation
+- [Required], [StringLength], [Range] attributes
+- Returns HTTP 400 if validation fails (prevents controller)
+- Files: TeamMemberDto.cs, UpdateTeamMemberCapacityDto.cs
+
+**Layer 3: Service Business Logic Validation**
+- Complex rules enforced in service methods
+- Add/Update: Name non-empty, at least one role (Dev or Test)
+- UpdateCapacity: Capacity ≤ sprint working days
+- GlobalExceptionHandlingMiddleware catches ArgumentException → HTTP 400
+- Files: TeamService.cs
+
+### Capacity Type System
+
+All capacity fields use **int** (positive integers only):
+- Database columns: integer (not float)
+- C# models: int type
+- DTOs: int type
+- TypeScript interfaces: number type (stored as int)
+- HTML inputs: type="number" step="1" prevents decimals
+
+**Working Days Calculation:**
+```
+totalDays = (endDate - startDate).Days + 1
+workingDays = floor((totalDays / 7) * 5)
+// Result: 5 working days per 7 calendar days
+```
+
+Example: Sprint Feb 10-21 (12 calendar days) = 8 working days max capacity
+
+---
+
+## �🔄 Data Flow Examples
 
 ### Flow 1: Create Board → Auto-Generate Sprints
 

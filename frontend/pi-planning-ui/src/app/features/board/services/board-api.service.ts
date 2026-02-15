@@ -142,6 +142,20 @@ export class TeamApiService implements ITeamApiService {
     });
   }
 
+  updateTeamMember(
+    boardId: number,
+    memberId: number,
+    name: string,
+    isDev: boolean,
+    isTest: boolean
+  ): Observable<TeamMemberResponseDto> {
+    return this.http.put<TeamMemberResponseDto>(TEAM_API.UPDATE_MEMBER(boardId, memberId), {
+      name,
+      isDev,
+      isTest,
+    });
+  }
+
   updateCapacity(
     boardId: number,
     memberId: number,
@@ -149,9 +163,7 @@ export class TeamApiService implements ITeamApiService {
     capacityDev: number,
     capacityTest: number
   ): Observable<void> {
-    return this.http.patch<void>(TEAM_API.UPDATE_CAPACITY(boardId), {
-      memberId,
-      sprintId,
+    return this.http.patch<void>(TEAM_API.UPDATE_CAPACITY(boardId, memberId, sprintId), {
       capacityDev,
       capacityTest,
     });

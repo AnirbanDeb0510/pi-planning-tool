@@ -189,11 +189,11 @@ namespace PiPlanningBackend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<double>("CapacityDev")
-                        .HasColumnType("float");
+                    b.Property<int>("CapacityDev")
+                        .HasColumnType("integer");
 
-                    b.Property<double>("CapacityTest")
-                        .HasColumnType("float");
+                    b.Property<int>("CapacityTest")
+                        .HasColumnType("integer");
 
                     b.Property<int>("SprintId")
                         .HasColumnType("integer");
@@ -287,7 +287,7 @@ namespace PiPlanningBackend.Migrations
             modelBuilder.Entity("PiPlanningBackend.Models.TeamMember", b =>
                 {
                     b.HasOne("PiPlanningBackend.Models.Board", "Board")
-                        .WithMany()
+                        .WithMany("TeamMembers")
                         .HasForeignKey("BoardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -338,6 +338,8 @@ namespace PiPlanningBackend.Migrations
                     b.Navigation("Features");
 
                     b.Navigation("Sprints");
+
+                    b.Navigation("TeamMembers");
                 });
 
             modelBuilder.Entity("PiPlanningBackend.Models.Feature", b =>

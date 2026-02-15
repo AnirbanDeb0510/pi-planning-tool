@@ -56,6 +56,12 @@ namespace PiPlanningBackend.Repositories.Implementations
                 .FirstOrDefaultAsync(t => t.SprintId == sprintId && t.TeamMemberId == memberId);
         }
 
+        public Task DeleteTeamMemberAsync(TeamMember member)
+        {
+            _db.TeamMembers.Remove(member);
+            return Task.CompletedTask;
+        }
+
         public async Task SaveChangesAsync()
         {
             await _db.SaveChangesAsync();

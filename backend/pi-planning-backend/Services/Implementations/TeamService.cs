@@ -28,108 +28,170 @@ namespace PiPlanningBackend.Services.Implementations
             }).ToList();
         }
 
-        public async Task AddOrUpdateTeamAsync(int boardId, List<TeamMemberDto> membersDto)
+        public async Task<TeamMemberResponseDto> AddTeamMemberAsync(int boardId, TeamMemberDto memberDto)
         {
-            Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId) ?? throw new Exception("Board not found");
-            List<TeamMember> existingMembers = await _teamRepository.GetTeamAsync(boardId);
+            // Validate input
+            if (string.IsNullOrWhiteSpace(memberDto.Name))
+                throw new ArgumentException("Team member name cannot be empty");
 
-            foreach (TeamMemberDto dto in membersDto)
+            if (!memberDto.IsDev && !memberDto.IsTest)
+                throw new ArgumentException("Team member must have at least one role (Dev or Test)");
+
+            Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
+                ?? throw new Exception("Board not found");
+
+            var member = new TeamMember
             {
-                TeamMember member;
+                BoardId = boardId,
+                Name = memberDto.Name,
+                IsDev = memberDto.IsDev,
+                IsTest = memberDto.IsTest
+            };
 
-                if (dto.Id > 0)
+            await _teamRepository.AddTeamMemberAsync(member);
+
+            foreach (Sprint sprint in board.Sprints)
+            {
+                var (capacityDev, capacityTest) = GetDefaultCapacities(board, sprint, member);
+
+                TeamMemberSprint tms = new()
                 {
-                    // update existing member
-                    member = existingMembers.FirstOrDefault(m => m.Id == dto.Id)
-                             ?? throw new Exception($"Team member with Id {dto.Id} not found");
-                    member.Name = dto.Name;
-                    member.IsDev = dto.IsDev;
-                    member.IsTest = dto.IsTest;
-                }
-                else
+                    SprintId = sprint.Id,
+                    TeamMember = member,
+                    CapacityDev = capacityDev,
+                    CapacityTest = capacityTest
+                };
+
+                member.TeamMemberSprints.Add(tms);
+                await _teamRepository.AddTeamMemberSprintAsync(tms);
+            }
+
+            await _teamRepository.SaveChangesAsync();
+
+            return MapTeamMemberResponse(member);
+        }
+
+        public async Task<TeamMemberResponseDto?> UpdateTeamMemberAsync(int boardId, int memberId, TeamMemberDto memberDto)
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(memberDto.Name))
+                throw new ArgumentException("Team member name cannot be empty");
+
+            if (!memberDto.IsDev && !memberDto.IsTest)
+                throw new ArgumentException("Team member must have at least one role (Dev or Test)");
+
+            var member = await _teamRepository.GetTeamMemberAsync(memberId);
+            if (member == null || member.BoardId != boardId) return null;
+
+            // Check if role has changed
+            bool roleChanged = member.IsDev != memberDto.IsDev || member.IsTest != memberDto.IsTest;
+
+            member.Name = memberDto.Name;
+            member.IsDev = memberDto.IsDev;
+            member.IsTest = memberDto.IsTest;
+
+            // If role changed, recalculate capacities for all sprints
+            if (roleChanged)
+            {
+                Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
+                    ?? throw new Exception("Board not found");
+
+                foreach (var tms in member.TeamMemberSprints)
                 {
-                    // add new member
-                    member = new TeamMember
+                    var sprint = board.Sprints.FirstOrDefault(s => s.Id == tms.SprintId);
+                    if (sprint != null)
                     {
-                        Name = dto.Name,
-                        IsDev = dto.IsDev,
-                        IsTest = dto.IsTest
-                    };
-                    await _teamRepository.AddAsync(boardId, member);
-                }
-
-                // assign capacities for each sprint
-                foreach (Sprint sprint in board.Sprints)
-                {
-                    TeamMemberSprint? existingTms = member.TeamMemberSprints
-                        .FirstOrDefault(tms => tms.SprintId == sprint.Id);
-
-                    if (existingTms == null)
-                    {
-                        double capacityDev = 0;
-                        double capacityTest = 0;
-
-                        // Determine capacity based on board.DevTestToggle and member role
-                        if (board.DevTestToggle)
-                        {
-                            if (member.IsDev) capacityDev = board.SprintDuration; // or working days
-                            if (member.IsTest) capacityTest = board.SprintDuration;
-                        }
-                        else
-                        {
-                            // Use DevCapacity for all if toggle is false
-                            capacityDev = board.SprintDuration;
-                        }
-
-                        TeamMemberSprint tms = new()
-                        {
-                            SprintId = sprint.Id,
-                            TeamMemberId = member.Id,
-                            CapacityDev = capacityDev,
-                            CapacityTest = capacityTest
-                        };
-
-                        member.TeamMemberSprints.Add(tms);
-                    }
-                    else
-                    {
-                        // Optionally, update existing capacities if needed
-                        if (board.DevTestToggle)
-                        {
-                            existingTms.CapacityDev = member.IsDev ? board.SprintDuration : 0;
-                            existingTms.CapacityTest = member.IsTest ? board.SprintDuration : 0;
-                        }
-                        else
-                        {
-                            existingTms.CapacityDev = board.SprintDuration;
-                            existingTms.CapacityTest = 0;
-                        }
+                        var (capacityDev, capacityTest) = GetDefaultCapacities(board, sprint, member);
+                        tms.CapacityDev = capacityDev;
+                        tms.CapacityTest = capacityTest;
                     }
                 }
             }
 
             await _teamRepository.SaveChangesAsync();
+
+            return MapTeamMemberResponse(member);
         }
 
-        public async Task<TeamMemberSprint?> UpdateCapacityAsync(int sprintId, int teamMemberId, double capacity)
+        public async Task<bool> DeleteTeamMemberAsync(int boardId, int memberId)
+        {
+            var member = await _teamRepository.GetTeamMemberAsync(memberId);
+            if (member == null || member.BoardId != boardId) return false;
+
+            await _teamRepository.DeleteTeamMemberAsync(member);
+            await _teamRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<TeamMemberSprint?> UpdateCapacityAsync(int boardId, int sprintId, int teamMemberId, UpdateTeamMemberCapacityDto dto)
         {
             var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId);
             if (tms == null) return null;
+            if (tms.Sprint?.BoardId != boardId) return null;
+
+            // Calculate max allowed capacity (working days in sprint)
+            double maxCapacity = 0;
+            if (tms.Sprint!.StartDate.HasValue && tms.Sprint.EndDate.HasValue)
+            {
+                var totalDays = (tms.Sprint.EndDate.Value - tms.Sprint.StartDate.Value).Days + 1;
+                maxCapacity = Math.Floor((totalDays / 7.0) * 5);
+            }
+
+            // Validate capacity doesn't exceed sprint duration
+            if (dto.CapacityDev > maxCapacity || dto.CapacityTest > maxCapacity)
+                throw new ArgumentException($"Capacity cannot exceed sprint duration ({maxCapacity} working days)");
 
             if (tms.Sprint!.Board!.DevTestToggle)
             {
-                // Assign based on member type
-                if (tms.TeamMember.IsDev) tms.CapacityDev = capacity;
-                if (tms.TeamMember.IsTest) tms.CapacityTest = capacity;
+                tms.CapacityDev = tms.TeamMember.IsDev ? dto.CapacityDev : 0;
+                tms.CapacityTest = tms.TeamMember.IsTest ? dto.CapacityTest : 0;
             }
             else
             {
-                tms.CapacityDev = capacity;
+                tms.CapacityDev = dto.CapacityDev;
                 tms.CapacityTest = 0;
             }
 
             await _teamRepository.SaveChangesAsync();
             return tms;
+        }
+
+        private static (int capacityDev, int capacityTest) GetDefaultCapacities(Board board, Sprint sprint, TeamMember member)
+        {
+            int workingDays = 0;
+
+            // Calculate working days from sprint dates (5 working days per 7 calendar days)
+            if (sprint.StartDate.HasValue && sprint.EndDate.HasValue)
+            {
+                var totalDays = (sprint.EndDate.Value - sprint.StartDate.Value).Days + 1;
+                workingDays = (int)Math.Floor((totalDays / 7.0) * 5);
+            }
+
+            if (board.DevTestToggle)
+            {
+                var dev = member.IsDev ? workingDays : 0;
+                var test = member.IsTest ? workingDays : 0;
+                return (dev, test);
+            }
+
+            return (workingDays, 0);
+        }
+
+        private static TeamMemberResponseDto MapTeamMemberResponse(TeamMember member)
+        {
+            return new TeamMemberResponseDto
+            {
+                Id = member.Id,
+                Name = member.Name,
+                IsDev = member.IsDev,
+                IsTest = member.IsTest,
+                SprintCapacities = member.TeamMemberSprints.Select(tms => new TeamMemberSprintDto
+                {
+                    SprintId = tms.SprintId,
+                    CapacityDev = tms.CapacityDev,
+                    CapacityTest = tms.CapacityTest
+                }).ToList()
+            };
         }
     }
 }

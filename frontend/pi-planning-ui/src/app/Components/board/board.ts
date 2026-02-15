@@ -46,12 +46,17 @@ export class Board implements OnInit {
   protected cursorY = signal(0);
   public showDevTest = signal(false);
   protected showAddMemberModal = signal(false);
+  protected editingMember = signal<TeamMemberResponseDto | null>(null);
+  protected showDeleteMemberModal = signal(false);
+  protected memberToDelete = signal<TeamMemberResponseDto | null>(null);
   protected showCapacityModal = signal(false);
   protected showImportFeatureModal = signal(false);
   protected newMemberName = signal('');
   protected newMemberRole = signal<'dev' | 'test'>('dev');
+  protected memberFormError = signal('');
   protected selectedSprintId = signal<number | null>(null);
   protected capacityEdits = signal<Record<number, { dev: number; test: number }>>({});
+  protected capacityFormError = signal('');
   
   // Import feature form state
   protected importFeatureId = signal('');
@@ -572,20 +577,68 @@ export class Board implements OnInit {
   protected openAddMember(): void {
     this.newMemberName.set('');
     this.newMemberRole.set('dev');
+    this.editingMember.set(null);
+    this.showAddMemberModal.set(true);
+  }
+
+  protected openEditMember(member: TeamMemberResponseDto): void {
+    this.newMemberName.set(member.name);
+    if (member.isDev && !member.isTest) {
+      this.newMemberRole.set('dev');
+    } else if (member.isTest && !member.isDev) {
+      this.newMemberRole.set('test');
+    } else {
+      this.newMemberRole.set('dev');
+    }
+    this.editingMember.set(member);
     this.showAddMemberModal.set(true);
   }
 
   protected closeAddMember(): void {
+    this.editingMember.set(null);
     this.showAddMemberModal.set(false);
   }
 
   protected saveNewMember(): void {
+    this.memberFormError.set('');
+    
     const name = this.newMemberName().trim();
     if (!name) {
+      this.memberFormError.set('Team member name cannot be empty');
       return;
     }
-    this.boardService.addTeamMember(name, this.newMemberRole(), this.showDevTest());
+
+    if (name.length > 100) {
+      this.memberFormError.set('Team member name must be 100 characters or less');
+      return;
+    }
+
+    const editing = this.editingMember();
+    if (editing) {
+      this.boardService.updateTeamMember(editing.id, name, this.newMemberRole(), this.showDevTest());
+    } else {
+      this.boardService.addTeamMember(name, this.newMemberRole(), this.showDevTest());
+    }
     this.showAddMemberModal.set(false);
+    this.editingMember.set(null);
+    this.memberFormError.set('');
+  }
+
+  protected openDeleteMember(member: TeamMemberResponseDto): void {
+    this.memberToDelete.set(member);
+    this.showDeleteMemberModal.set(true);
+  }
+
+  protected closeDeleteMember(): void {
+    this.memberToDelete.set(null);
+    this.showDeleteMemberModal.set(false);
+  }
+
+  protected confirmDeleteMember(): void {
+    const member = this.memberToDelete();
+    if (!member) return;
+    this.boardService.removeTeamMember(member.id);
+    this.closeDeleteMember();
   }
 
   protected openCapacityEditor(sprintId: number): void {
@@ -608,16 +661,63 @@ export class Board implements OnInit {
   protected updateCapacityEdit(memberId: number, field: 'dev' | 'test', value: number): void {
     const edits = { ...this.capacityEdits() };
     const existing = edits[memberId] ?? { dev: 0, test: 0 };
-    edits[memberId] = { ...existing, [field]: value };
+    
+    // When toggle is OFF, preserve role-based capacity field
+    if (!this.showDevTest()) {
+      const member = this.getTeamMembers().find(m => m.id === memberId);
+      if (member) {
+        // Preserve which role's capacity field we're editing
+        if (member.isDev) {
+          edits[memberId] = { dev: value, test: 0 };
+        } else if (member.isTest) {
+          edits[memberId] = { dev: 0, test: value };
+        }
+      }
+    } else {
+      edits[memberId] = { ...existing, [field]: value };
+    }
+    
     this.capacityEdits.set(edits);
   }
 
   protected saveCapacityEdits(): void {
+    this.capacityFormError.set('');
+    
     const sprintId = this.selectedSprintId();
     if (sprintId === null) {
       return;
     }
+
+    // Find the sprint to get max capacity
+    const sprint = this.board()?.sprints.find(s => s.id === sprintId);
+    if (!sprint) return;
+
+    // Calculate sprint duration in working days
+    const startDate = new Date(sprint.startDate);
+    const endDate = new Date(sprint.endDate);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / msPerDay) + 1;
+    const maxCapacity = Math.floor((totalDays / 7) * 5);
+
+    // Validate capacities
     const edits = this.capacityEdits();
+    for (const [id, values] of Object.entries(edits)) {
+      // Check for integer values
+      if (!Number.isInteger(values.dev) || !Number.isInteger(values.test)) {
+        this.capacityFormError.set('Capacity must be a positive integer');
+        return;
+      }
+      if (values.dev < 0 || values.test < 0) {
+        this.capacityFormError.set('Capacity cannot be negative');
+        return;
+      }
+      if (values.dev > maxCapacity || values.test > maxCapacity) {
+        this.capacityFormError.set(`Capacity cannot exceed sprint duration (${maxCapacity} working days)`);
+        return;
+      }
+    }
+
+    // Save if validation passes
     Object.entries(edits).forEach(([id, values]) => {
       this.boardService.updateTeamMemberCapacity(Number(id), sprintId, values.dev, values.test);
     });

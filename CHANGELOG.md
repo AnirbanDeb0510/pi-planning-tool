@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Team Member Data Validation (Feb 15, 2026)
+
+- **Backend DTO Validation:** Data annotations on TeamMemberDto and UpdateTeamMemberCapacityDto
+  - Name field: Required, max 100 characters
+  - Capacity fields: Range validation (0 to int.MaxValue)
+  
+- **Backend Service Layer Validation:** 
+  - AddTeamMemberAsync/UpdateTeamMemberAsync: Non-empty names, at least one role required
+  - UpdateCapacityAsync: Capacity bounds checked against sprint working days
+  - Working days formula: floor((totalDays / 7) * 5)
+  
+- **Frontend Form Validation:**
+  - Member form: Name validation (non-empty, max 100 chars)
+  - Capacity form: Integer validation with bounds checking
+  - Error signals with real-time display
+  
+- **Frontend HTML Constraints:**
+  - Capacity inputs: type="number" step="1" min="0"
+  - Prevents invalid entry at browser level
+  
+- **Type System Updates:**
+  - All capacity fields changed from double to int
+  - Database migration: ChangeCapacityToInt
+  
+- **Files Modified:** 8 backend/frontend files with consistent validation across layers
+
 ### Added - Azure Feature Management (Feb 15, 2026)
 
 - Import features and child stories from Azure DevOps
