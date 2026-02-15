@@ -148,6 +148,45 @@ namespace PiPlanningBackend.Services.Implementations
             };
         }
 
+        public async Task<IEnumerable<BoardSummaryDto>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null)
+        {
+            var boards = await _boardRepository.SearchBoardsAsync(searchTerm, organization, project, isLocked, isFinalized);
+
+            return boards.Select(b => new BoardSummaryDto
+            {
+                Id = b.Id,
+                Name = b.Name,
+                Organization = b.Organization,
+                Project = b.Project,
+                CreatedAt = b.CreatedAt,
+                IsLocked = b.IsLocked,
+                IsFinalized = b.IsFinalized,
+                SprintCount = b.Sprints.Count,
+                FeatureCount = b.Features.Count
+            }).ToList();
+        }
+
+        public async Task<BoardSummaryDto?> GetBoardPreviewAsync(int boardId)
+        {
+            var board = await _boardRepository.GetBoardWithFeaturesAsync(boardId);
+            if (board == null)
+                return null;
+
+            return new BoardSummaryDto
+            {
+                Id = board.Id,
+                Name = board.Name,
+                Organization = board.Organization,
+                Project = board.Project,
+                CreatedAt = board.CreatedAt,
+                IsLocked = board.IsLocked,
+                IsFinalized = board.IsFinalized,
+                SprintCount = 0,  // Not needed for preview
+                FeatureCount = board.Features.Count,
+                SampleFeatureAzureId = board.Features.Count > 0 ? board.Features.First().AzureId : null
+            };
+        }
+
     }
 
     public static class PasswordHelper

@@ -79,17 +79,100 @@ export class Board implements OnInit {
   protected deleteLoading = signal(false);
   protected deleteError = signal<string | null>(null);
 
+  // PAT validation state
+  protected showPatModal = signal(false);
+  protected patModalInput = signal('');
+  protected patValidationError = signal<string | null>(null);
+  protected patValidationLoading = signal(false);
+  protected currentBoardId = signal<number | null>(null);
+  protected patValidated = signal(false);
+  protected boardPreview = signal<any>(null);  // Store board preview for PAT validation
+
   ngOnInit(): void {
     // Load board from route parameter
-    this.route.params.subscribe((params) => {
+    this.route.params.subscribe(async (params) => {
       const boardId = Number(params['id']);
       if (boardId) {
-        this.boardService.loadBoard(boardId);
+        this.currentBoardId.set(boardId);
+        this.patValidated.set(false);
+        this.patModalInput.set('');
+        this.patValidationError.set(null);
+        
+        // First, check if board requires PAT validation using lightweight preview endpoint
+        const preview = await this.boardService.getBoardPreview(boardId);
+        
+        if (preview && preview.featureCount > 0 && preview.sampleFeatureAzureId) {
+          // Board has features - store preview data and show PAT modal before loading board data
+          this.boardPreview.set(preview);
+          this.showPatModal.set(true);
+        } else {
+          // No PAT needed, load board immediately
+          this.patValidated.set(true);
+          this.boardService.loadBoard(boardId);
+        }
       } else {
         console.error('No board ID provided');
         this.router.navigate(['/']);
       }
     });
+  }
+
+  /**
+   * Validate PAT and proceed to load board if valid
+   */
+  protected async validatePat(): Promise<void> {
+    const boardId = this.currentBoardId();
+    const pat = this.patModalInput();
+    const preview = this.boardPreview();
+
+    if (!boardId || !pat) {
+      this.patValidationError.set('Please enter a PAT');
+      return;
+    }
+
+    if (!preview || !preview.organization || !preview.project || !preview.sampleFeatureAzureId) {
+      this.patValidationError.set('Missing organization, project, or feature information');
+      return;
+    }
+
+    this.patValidationLoading.set(true);
+    this.patValidationError.set(null);
+
+    try {
+      const isValid = await this.boardService.validatePatForBoard(
+        preview.organization,
+        preview.project,
+        preview.sampleFeatureAzureId,
+        pat
+      );
+      
+      if (isValid) {
+        this.patValidated.set(true);
+        this.showPatModal.set(false);
+        this.patModalInput.set(''); // Clear input after successful validation
+        
+        // Now load the board with validated PAT
+        this.boardService.loadBoard(boardId);
+      } else {
+        this.patValidationError.set('Invalid PAT or no permission to access this board');
+      }
+    } catch (error) {
+      this.patValidationError.set('Error validating PAT. Please check your credentials.');
+      console.error('PAT validation error:', error);
+    } finally {
+      this.patValidationLoading.set(false);
+    }
+  }
+
+  /**
+   * Close PAT modal (cancel)
+   */
+  protected closePatModal(): void {
+    this.showPatModal.set(false);
+    this.patModalInput.set('');
+    this.patValidationError.set(null);
+    // Navigate away if PAT validation is required but user cancelled
+    this.router.navigate(['/']);
   }
 
   /**

@@ -50,5 +50,27 @@ namespace PiPlanningBackend.Controllers
 
             return Ok(board);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchBoards(
+            [FromQuery] string? search,
+            [FromQuery] string? organization,
+            [FromQuery] string? project,
+            [FromQuery] bool? isLocked,
+            [FromQuery] bool? isFinalized)
+        {
+            var boards = await _boardService.SearchBoardsAsync(search, organization, project, isLocked, isFinalized);
+            return Ok(boards);
+        }
+
+        [HttpGet("{id}/preview")]
+        public async Task<IActionResult> GetBoardPreview(int id)
+        {
+            var preview = await _boardService.GetBoardPreviewAsync(id);
+            if (preview == null)
+                return NotFound();
+
+            return Ok(preview);
+        }
     }
 }

@@ -5,6 +5,7 @@ import {
   UserStoryDto,
   TeamMemberResponseDto,
 } from '../../../shared/models/board.dto';
+import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, StoryApiService, TeamApiService, FeatureApiService, AzureApiService } from './board-api.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -416,6 +417,66 @@ export class BoardService {
     }
 
     return stored.pat;
+  }
+
+  /**
+   * Validate PAT by attempting to access a feature from Azure DevOps
+   * Returns true if PAT is valid, false otherwise
+   */
+  public async validatePatForBoard(
+    organization: string,
+    project: string,
+    featureAzureId: string,
+    pat: string
+  ): Promise<boolean> {
+    try {
+      // Make a test call to verify PAT access
+      // This is a read-only operation (fetch feature details)
+      const result = await firstValueFrom(
+        this.azureApi.getFeatureWithChildren(
+          organization,
+          project,
+          featureAzureId,
+          pat
+        )
+      );
+
+      if (result) {
+        // Valid PAT - store it temporarily  
+        this.patStorage.set({ pat, timestamp: Date.now() });
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('PAT validation failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if board requires PAT validation (has features)
+   */
+  public boardRequiresPatValidation(): boolean {
+    const board = this.boardSignal();
+    return board != null && board.features.length > 0;
+  }
+
+  /**
+   * Get board preview without loading full board data
+   * Returns BoardSummaryDto with organization, project, and sample feature ID for PAT validation
+   */
+  public async getBoardPreview(boardId: number): Promise<BoardSummaryDto | null> {
+    try {
+      const preview = await firstValueFrom(
+        this.boardApi.getBoardPreview(boardId)
+      );
+      return preview;
+    } catch (error) {
+      console.error('Error fetching board preview:', error);
+      this.errorSignal.set('Failed to load board information');
+      return null;
+    }
   }
 
   /**

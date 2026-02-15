@@ -47,4 +47,15 @@ export interface BoardSummaryDto {
   isFinalized: boolean;
   sprintCount: number;
   featureCount: number;
+  sampleFeatureAzureId?: string;  // Optional: for PAT validation when features exist
+}
+
+export interface PatValidationRequest {
+  pat: string;
+  featureId?: string; // Sample feature to validate access
+}
+
+export interface PatValidationResponse {
+  isValid: boolean;
+  message?: string;
 }

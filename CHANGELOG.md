@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Board Search & PAT Validation (Feb 15, 2026)
+
+- **Board Search API:**
+  - Backend endpoint: `GET /api/boards` with filters (search, organization, project, isLocked, isFinalized)
+  - Returns `BoardSummaryDto[]` with lightweight board metadata
+  - Repository/Service/Controller layers fully implemented
+  - Frontend board list component already consuming the API
+
+- **Board Preview Endpoint:**
+  - Lightweight endpoint: `GET /api/boards/{id}/preview`
+  - Returns board metadata WITHOUT sensitive data (features, stories, team members)
+  - Includes: id, name, organization, project, featureCount, sampleFeatureAzureId
+  - Enables PAT validation check before loading full board
+
+- **PAT Validation Security Flow:**
+  - Preview endpoint called first when navigating to board
+  - If board has features (featureCount > 0), PAT modal shown
+  - User enters PAT → Validates against Azure DevOps API
+  - Uses organization, project, and sampleFeatureAzureId from preview
+  - Only after valid PAT → Full board data loaded
+  - Prevents sensitive data exposure in network tab before authentication
+
+- **UI/UX Improvements:**
+  - App title dynamically shows board name when viewing board
+  - Browser tab title updates: "{Board Name} - PI Planning Tool"
+  - Clickable header title to navigate home
+  - App title changes from "pi-planning-ui" to "PI Planning Tool"
+
+- **Files Modified:** 
+  - Backend: BoardsController, BoardService, BoardRepository, DTOs (BoardSummaryDto)
+  - Frontend: BoardService, BoardApiService, Board component, App component, index.html
+
 ### Added - Team Member Data Validation (Feb 15, 2026)
 
 - **Backend DTO Validation:** Data annotations on TeamMemberDto and UpdateTeamMemberCapacityDto

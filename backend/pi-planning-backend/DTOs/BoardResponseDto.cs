@@ -1,5 +1,19 @@
 namespace PiPlanningBackend.DTOs
 {
+    public class BoardSummaryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Organization { get; set; }
+        public string? Project { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public bool IsLocked { get; set; }
+        public bool IsFinalized { get; set; }
+        public int SprintCount { get; set; }
+        public int FeatureCount { get; set; }
+        public string? SampleFeatureAzureId { get; set; }  // Optional: for PAT validation when features exist
+    }
+
     public class BoardResponseDto
     {
         public int Id { get; set; }
