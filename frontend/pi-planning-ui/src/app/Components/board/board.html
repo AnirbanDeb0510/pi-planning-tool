@@ -43,6 +43,7 @@
       </span>
     </div>
     <button class="add-member-button" type="button" (click)="openAddMember()">+ Add Member</button>
+    <button class="add-feature-button" type="button" (click)="openImportFeatureModal()">+ Add Feature</button>
   </div>
 </div>
 
@@ -140,13 +141,49 @@
 
     <!-- Feature Rows -->
     <div
-      class="feature-row"
-      *ngFor="let feature of board()!.features"
-      [style.gridTemplateColumns]="getGridTemplateColumns()"
+      class="feature-rows"
+      cdkDropList
+      cdkDropListOrientation="vertical"
+      [cdkDropListData]="board()!.features"
+      (cdkDropListDropped)="dropFeature($event)"
     >
+      <div
+        class="feature-row"
+        *ngFor="let feature of board()!.features"
+        [style.gridTemplateColumns]="getGridTemplateColumns()"
+        cdkDrag
+        [cdkDragData]="feature"
+      >
       <!-- Feature Name -->
       <div class="feature-name">
-        <h3>{{ feature.title }}</h3>
+        <span class="feature-drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon>
+        </span>
+        <div class="feature-header">
+          <h3>{{ feature.title }}</h3>
+          <span class="azure-badge" *ngIf="feature.azureId">{{ feature.azureId }}</span>
+          
+          <!-- Feature actions menu (only for Azure features) -->
+          <button 
+            *ngIf="feature.azureId" 
+            class="feature-menu-btn"
+            mat-icon-button
+            [matMenuTriggerFor]="featureMenu"
+            (click)="$event.stopPropagation()">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          
+          <mat-menu #featureMenu="matMenu">
+            <button mat-menu-item (click)="openRefreshFeatureModal(feature)">
+              <mat-icon>refresh</mat-icon>
+              <span>Refresh from Azure</span>
+            </button>
+            <button mat-menu-item (click)="openDeleteFeatureModal(feature)">
+              <mat-icon>delete</mat-icon>
+              <span>Delete Feature</span>
+            </button>
+          </mat-menu>
+        </div>
         <span class="feature-total">Total: {{ getFeatureTotal(feature) }} pts</span>
       </div>
 
@@ -203,6 +240,7 @@
           </div>
         </div>
       </ng-container>
+      </div>
     </div>
   </div>
   <!-- close board-content -->
@@ -292,6 +330,189 @@
       <div class="modal-footer">
         <button class="btn-secondary" type="button" (click)="closeCapacityEditor()">Cancel</button>
         <button class="btn-primary" type="button" (click)="saveCapacityEdits()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Feature Modal -->
+  <div class="modal-backdrop" *ngIf="showImportFeatureModal()" (click)="closeImportFeatureModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Import Feature from Azure DevOps</h3>
+        <button type="button" class="modal-close" (click)="closeImportFeatureModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Feature ID</div>
+        <input
+          class="modal-input"
+          type="text"
+          [(ngModel)]="importFeatureId"
+          placeholder="Enter Azure DevOps Feature ID"
+        />
+
+        <div class="modal-label">Organization</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.organization || ''"
+          disabled
+          placeholder="Auto-populated from board"
+        />
+
+        <div class="modal-label">Project</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.project || ''"
+          disabled
+          placeholder="Auto-populated from board"
+        />
+
+        <div class="modal-label">Personal Access Token (PAT)</div>
+        <input
+          class="modal-input"
+          type="password"
+          [(ngModel)]="importPat"
+          placeholder="Enter your Azure DevOps PAT"
+        />
+
+        <div class="checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="rememberPatForImport" />
+            Remember PAT for 10 minutes
+          </label>
+        </div>
+
+        <div *ngIf="importError()" class="error-message-inline">
+          {{ importError() }}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeImportFeatureModal()" [disabled]="importLoading()">
+          Cancel
+        </button>
+        <button class="btn-primary" type="button" (click)="importFeatureFromAzure()" [disabled]="importLoading()">
+          {{ importLoading() ? 'Importing...' : 'Import Feature' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refresh Feature Modal -->
+  <div class="modal-backdrop" *ngIf="showRefreshFeatureModal()" (click)="closeRefreshFeatureModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Refresh Feature from Azure DevOps</h3>
+        <button type="button" class="modal-close" (click)="closeRefreshFeatureModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Feature</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="selectedFeature()?.title || ''"
+          disabled
+        />
+
+        <div class="modal-label">Azure ID</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="selectedFeature()?.azureId || ''"
+          disabled
+        />
+
+        <div class="modal-label">Organization</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.organization || ''"
+          disabled
+          placeholder="Auto-populated from board"
+        />
+
+        <div class="modal-label">Project</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.project || ''"
+          disabled
+          placeholder="Auto-populated from board"
+        />
+
+        <div class="modal-label">Personal Access Token (PAT) *</div>
+        <input
+          class="modal-input"
+          type="password"
+          [(ngModel)]="refreshPat"
+          placeholder="Enter your Azure DevOps PAT"
+        />
+
+        <div class="checkbox-group">
+          <label>
+            <input 
+              type="checkbox" 
+              [(ngModel)]="rememberPatForRefresh" />
+            Remember PAT for 10 minutes
+          </label>
+        </div>
+
+        <div *ngIf="refreshError()" class="error-message-inline">
+          {{ refreshError() }}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeRefreshFeatureModal()" [disabled]="refreshLoading()">
+          Cancel
+        </button>
+        <button class="btn-primary" type="button" (click)="refreshFeatureFromAzure()" [disabled]="refreshLoading()">
+          {{ refreshLoading() ? 'Refreshing...' : 'Refresh Feature' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Feature Modal -->
+  <div class="modal-backdrop" *ngIf="showDeleteFeatureModal()" (click)="closeDeleteFeatureModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Delete Feature</h3>
+        <button type="button" class="modal-close" (click)="closeDeleteFeatureModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-label">Feature</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="featureToDelete()?.title || ''"
+          disabled
+        />
+
+        <div class="modal-label">Azure ID</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="featureToDelete()?.azureId || ''"
+          disabled
+        />
+
+        <div class="warning-text">
+          This will delete the feature and all associated user stories. This action cannot be undone.
+        </div>
+
+        <div *ngIf="deleteError()" class="error-message-inline">
+          {{ deleteError() }}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeDeleteFeatureModal()" [disabled]="deleteLoading()">
+          Cancel
+        </button>
+        <button class="btn-danger" type="button" (click)="deleteFeature()" [disabled]="deleteLoading()">
+          {{ deleteLoading() ? 'Deleting...' : 'Delete Feature' }}
+        </button>
       </div>
     </div>
   </div>

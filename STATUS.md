@@ -1,7 +1,7 @@
 # PI Planning Tool - Development Status & Checklist
 
 **Status:** Phase 2 - Frontend Board UI Completion with Docker Integration  
-**Last Updated:** February 13, 2026  
+**Last Updated:** February 15, 2026  
 **Team Lead:** Anirban Deb
 
 ---
@@ -74,9 +74,10 @@
 - [x] `IBoardService.GetBoardAsync()` - Get board (basic, no hierarchy)
 - [x] `IFeatureService.ImportFeatureToBoardAsync()` - Import feature + stories to placeholder
 - [x] `IFeatureService.MoveUserStoryAsync()` - Move story between sprints
-- [x] `IFeatureService.ReorderFeatureAsync()` - Reorder feature by priority
+- [x] `IFeatureService.ReorderFeaturesAsync()` - Reorder features by priority (batch)
 - [x] `IFeatureService.RefreshFeatureFromAzureAsync()` - Refresh feature data from Azure
 - [x] `IFeatureService.RefreshUserStoryFromAzureAsync()` - Refresh story data from Azure
+- [x] `IFeatureService.DeleteFeatureAsync()` - Delete feature with cascading stories
 - [x] `ITeamService.GetTeamAsync()` - Get team members
 - [x] `ITeamService.AddOrUpdateTeamAsync()` - Add/update team members
 - [x] `ITeamService.UpdateCapacityAsync()` - Update capacity per sprint/person
@@ -92,7 +93,7 @@
 #### Backend Controllers Implemented
 
 - [x] `BoardsController` - Create board (POST /api/boards)
-- [x] `FeaturesController` - Import, refresh, reorder features
+- [x] `FeaturesController` - Import, refresh, reorder, delete features
 - [x] `UserStoriesController` - Move, refresh stories
 - [x] `TeamController` - Get, add, update team
 - [x] `AzureController` - Fetch from Azure (if exists)
@@ -158,9 +159,9 @@
 
 #### Frontend Additional Features
 
-- [ ] Azure fetch modal
+- [x] Azure fetch/import modal
 - [ ] Notes modal for features/stories
-- [ ] Reorder feature drag-drop (vertical)
+- [x] Reorder feature drag-drop (vertical)
 - [ ] Real-time cursor presence indicators
 - [ ] Toast notifications for remote updates
 

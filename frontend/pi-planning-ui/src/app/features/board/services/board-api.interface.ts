@@ -65,12 +65,26 @@ export interface IFeatureApiService {
   /**
    * Reorder feature priority
    */
-  reorderFeature(boardId: number, featureId: number, newPriority: number): Observable<void>;
+  reorderFeatures(
+    boardId: number,
+    features: Array<{ featureId: number; newPriority: number }>
+  ): Observable<void>;
 
   /**
    * Refresh feature from Azure
    */
-  refreshFeature(boardId: number, featureId: number): Observable<FeatureResponseDto>;
+  refreshFeature(
+    boardId: number,
+    featureId: number,
+    organization: string,
+    project: string,
+    pat: string
+  ): Observable<FeatureResponseDto>;
+
+  /**
+   * Delete feature and its user stories
+   */
+  deleteFeature(boardId: number, featureId: number): Observable<void>;
 }
 
 /**

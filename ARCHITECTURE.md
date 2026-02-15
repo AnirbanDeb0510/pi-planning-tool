@@ -323,7 +323,7 @@ PATCH /api/boards/{id}/unlock
 ### Features
 
 ```
-GET /api/feature/{org}/{project}/{featureId} (from Azure)
+GET /api/v1/azure/feature/{org}/{project}/{featureId} (from Azure)
   Query: ?pat={personalAccessToken}
   Response: FeatureDto { azureId, title, priority, children: [UserStoryDto, ...] }
 
@@ -335,9 +335,12 @@ PATCH /api/v1/boards/{boardId}/features/{id}/refresh
   Query: ?org=&project=&pat=
   Response: FeatureDto { ... }
 
-PATCH /api/v1/boards/{boardId}/features/{id}/reorder
-  Request: ReorderFeatureDto { newPriority: int }
+PATCH /api/v1/boards/{boardId}/features/reorder
+   Request: ReorderFeatureDto { features: [{ featureId, newPriority }, ...] }
   Response: 204 No Content
+
+DELETE /api/v1/boards/{boardId}/features/{id}
+   Response: 204 No Content
 ```
 
 ### User Stories

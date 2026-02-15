@@ -6,6 +6,7 @@ namespace PiPlanningBackend.Repositories.Interfaces
     {
         Task<UserStory?> GetByAzureIdAsync(string azureId, int featureId);
         Task<UserStory?> GetByIdAsync(int id);
+        Task<UserStory?> GetByIdWithDetailsAsync(int id);
         Task AddAsync(UserStory story);
         Task UpdateAsync(UserStory story);
         Task SaveChangesAsync();

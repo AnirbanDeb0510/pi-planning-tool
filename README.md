@@ -294,7 +294,7 @@ erDiagram
 
 - Configure Azure DevOps Project & PAT at board creation.
 - Fetch Features & User Stories.
-- Optional: Save PAT locally in browser storage.
+- Optional: Remember PAT in memory for 10 minutes.
 - Field mapping configurable for:
   - Story Points
   - Dev Story Points
