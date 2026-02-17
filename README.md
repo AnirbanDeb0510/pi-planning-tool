@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Feb 9, 2026):** Core frontend board UI completed with Material Design, drag-and-drop, dark theme, responsive layout, and team member capacity UI. Backend API foundation in place. See [STATUS.md](STATUS.md) for detailed progress.
+**🎯 Current Status (Feb 17, 2026):** Board search with security hardening completed. Mandatory org/project filters. Ready for global exception middleware and validation layer. See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md) for next priorities.
 
 ---
 
