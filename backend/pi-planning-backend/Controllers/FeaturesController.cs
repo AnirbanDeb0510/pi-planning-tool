@@ -13,8 +13,9 @@ namespace PiPlanningBackend.Controllers
 
         // POST api/v1/boards/{boardId}/features/import
         [HttpPost("import")]
-        public async Task<IActionResult> ImportFeature(int boardId, [FromBody][Required] FeatureDto dto)
+        public async Task<IActionResult> ImportFeature(int boardId, [FromBody] FeatureDto dto)
         {
+            // ModelState validation handled globally by ValidateModelStateFilter
             var created = await _featureService.ImportFeatureToBoardAsync(boardId, dto);
             return CreatedAtAction(nameof(GetFeature), new { boardId, id = created.Id }, created);
         }
@@ -37,8 +38,9 @@ namespace PiPlanningBackend.Controllers
 
         // PATCH api/boards/{boardId}/features/reorder
         [HttpPatch("reorder")]
-        public async Task<IActionResult> ReorderFeatures(int boardId, ReorderFeatureDto dto)
+        public async Task<IActionResult> ReorderFeatures(int boardId, [FromBody] ReorderFeatureDto dto)
         {
+            // ModelState validation handled globally by ValidateModelStateFilter
             await _featureService.ReorderFeaturesAsync(boardId, dto.Features);
             return NoContent();
         }

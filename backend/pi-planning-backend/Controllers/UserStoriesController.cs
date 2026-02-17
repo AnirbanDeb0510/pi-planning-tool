@@ -13,8 +13,9 @@ namespace PiPlanningBackend.Controllers
 
         // PATCH api/boards/{boardId}/stories/{storyId}/move
         [HttpPatch("{storyId}/move")]
-        public async Task<IActionResult> MoveStory(int boardId, int storyId, MoveStoryDto dto)
+        public async Task<IActionResult> MoveStory(int boardId, int storyId, [FromBody] MoveStoryDto dto)
         {
+            // ModelState validation handled globally by ValidateModelStateFilter
             await _featureService.MoveUserStoryAsync(boardId, storyId, dto.TargetSprintId);
             return NoContent();
         }

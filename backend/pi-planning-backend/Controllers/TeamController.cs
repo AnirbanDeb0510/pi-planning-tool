@@ -25,6 +25,7 @@ namespace PiPlanningBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddTeamMember(int boardId, [FromBody] TeamMemberDto member)
         {
+            // ModelState validation handled globally by ValidateModelStateFilter
             var created = await _service.AddTeamMemberAsync(boardId, member);
             return Ok(created);
         }
@@ -32,6 +33,7 @@ namespace PiPlanningBackend.Controllers
         [HttpPut("{teamMemberId}")]
         public async Task<IActionResult> UpdateTeamMember(int boardId, int teamMemberId, [FromBody] TeamMemberDto member)
         {
+            // ModelState validation handled globally by ValidateModelStateFilter
             var updated = await _service.UpdateTeamMemberAsync(boardId, teamMemberId, member);
             if (updated == null) return NotFound();
             return Ok(updated);
@@ -48,6 +50,7 @@ namespace PiPlanningBackend.Controllers
         [HttpPatch("{teamMemberId}/sprints/{sprintId}")]
         public async Task<IActionResult> UpdateCapacity(int boardId, int teamMemberId, int sprintId, [FromBody] UpdateTeamMemberCapacityDto dto)
         {
+            // ModelState validation handled globally by ValidateModelStateFilter
             var updated = await _service.UpdateCapacityAsync(boardId, sprintId, teamMemberId, dto);
             if (updated == null) return NotFound();
 
