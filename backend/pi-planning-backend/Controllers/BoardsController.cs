@@ -19,9 +19,7 @@ namespace PiPlanningBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBoard(BoardCreateDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
+            // ModelState validation handled globally by ValidateModelStateFilter
             var board = await _boardService.CreateBoardAsync(dto);
 
             var response = new BoardCreatedDto

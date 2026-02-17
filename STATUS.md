@@ -1,12 +1,38 @@
 # PI Planning Tool - Development Status & Checklist
 
-**Status:** Phase 2 - Frontend Board UI Completion with Docker Integration  
-**Last Updated:** February 15, 2026  
+**Status:** Phase 2 - Backend Stabilization & Board Management  
+**Last Updated:** February 17, 2026  
 **Team Lead:** Anirban Deb
 
 ---
 
-## 🎉 RECENT ACCOMPLISHMENTS (Feb 10-13, 2026)
+## 🎉 RECENT ACCOMPLISHMENTS (Feb 15-17, 2026)
+
+### Global Exception Handling & Input Validation
+
+**Completed:**
+- ✅ GlobalExceptionHandlingMiddleware with 7 exception types (ArgumentNull, ArgumentException, InvalidOperation, DbUpdateConcurrency, DbUpdate, KeyNotFound, Generic)
+- ✅ ValidateModelStateFilter (ActionFilter) for global automatic validation
+- ✅ Standardized error response format with timestamp and field-level details
+- ✅ Enhanced 5 request DTOs with validation attributes ([Required], [Range], [StringLength], [MinLength])
+- ✅ Removed 20+ manual ModelState checks from controllers
+- ✅ Middleware registered early in pipeline (before MapControllers)
+- ✅ Filter registered globally in AddControllers options
+- ✅ Full build verification: Backend 0 errors | Frontend 0 compilation errors
+
+**Security Hardening:**
+- ✅ Validation at API boundary prevents invalid data
+- ✅ Consistent error responses prevent information leakage
+- ✅ Proper HTTP status codes for all error types
+- ✅ Backward compatible: [FromBody] fully compatible
+
+**Documentation:**
+- ✅ ROADMAP_CURRENT.md updated with completed phases
+- ✅ STATUS.md updated with validation accomplishments
+
+---
+
+### Docker Infrastructure & Runtime Configuration (Feb 10-13, 2026)
 
 ### Docker Infrastructure & Runtime Configuration
 

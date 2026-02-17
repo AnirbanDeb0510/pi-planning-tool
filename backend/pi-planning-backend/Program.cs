@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PiPlanningBackend.Data;
+using PiPlanningBackend.Filters;
 using PiPlanningBackend.Hubs;
+using PiPlanningBackend.Middleware;
 using PiPlanningBackend.Services.Interfaces;
 using PiPlanningBackend.Services.Implementations;
 using PiPlanningBackend.Repositories.Interfaces;
@@ -9,7 +11,11 @@ using PiPlanningBackend.Repositories.Implementations;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Register ValidateModelStateFilter globally - applies to all controller actions
+    options.Filters.Add<ValidateModelStateFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -48,6 +54,9 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+// Global exception handling (MUST be early in pipeline)
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -57,8 +66,6 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 // app.UseHttpsRedirection();
 app.MapControllers();
-// TODO: Global Exception handling middleware
-app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 app.MapHub<PlanningHub>("/hub/planning");
 
 app.Run();

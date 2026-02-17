@@ -1,16 +1,16 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
 **Last Updated:** February 17, 2026  
-**Status:** Active Development - Security & Validation Phase  
+**Status:** Active Development - Board Management Phase  
 **Branch:** `boardSearchFiltering`
 
 ---
 
-## 🎯 CURRENT PHASE: Security & Input Validation
+## 🎯 CURRENT PHASE: Backend Stabilization & Board Management
 
 ### ✅ COMPLETED (Week of Feb 10-17)
 
-#### Board Search & Security Hardening
+#### Phase 1: Board Search & Security Hardening
 - ✅ **Board Search API** - `GET /api/boards` with filters (search, organization, project, isLocked, isFinalized)
 - ✅ **Board Preview Endpoint** - `GET /api/boards/{id}/preview` (secure, lightweight data)
 - ✅ **PAT Validation Security Flow** - Modal validation before accessing board features
@@ -18,69 +18,21 @@
 - ✅ **Organization/Project Mandatory (API)** - Server-side validation with `[BindRequired]`
 - ✅ **Frontend Board List UI** - Search, filtering, board cards with dynamic navigation
 
+#### Phase 1: Global Exception Handling & Input Validation
+- ✅ **GlobalExceptionHandlingMiddleware** - Centralized exception handling for 7 exception types
+- ✅ **ValidateModelStateFilter** - Global ActionFilter for automatic ModelState validation
+- ✅ **DTO Validation Attributes** - Enhanced 5 request DTOs with `[Required]`, `[Range]`, `[StringLength]`, `[MinLength]`
+- ✅ **Controller Cleanup** - Removed 20+ manual ModelState checks from 4 controllers
+- ✅ **Standardized Error Responses** - Consistent JSON format with field-level error details
+- ✅ **Build Verification** - Backend: 0 errors | Frontend: 0 compilation errors
+
 ---
 
 ## 🚀 NEXT PRIORITIES (Ordered by Dependency & Impact)
 
-### PHASE 1: Backend API & Validation (Current Sprint)
+### PHASE 2: Board Management API (Current Sprint)
 
-#### 1. **Global Exception Middleware** (Blocking) — Est. 2-3 hours
-**Why:** Standardizes error responses across all endpoints; prevents information leakage
-
-- Create `GlobalExceptionHandlingMiddleware.cs`
-- Implement centralized exception handling
-- Log all exceptions
-- Return standardized error responses (500, 400, 404, etc.)
-- Handle validation exceptions from `[BindRequired]`
-
-**Files to Create:**
-- `Middleware/GlobalExceptionHandlingMiddleware.cs`
-
-**Files to Modify:**
-- `Program.cs` - Register middleware in pipeline
-
-**Acceptance Criteria:**
-- ✅ All exceptions return standard JSON format
-- ✅ Sensitive error details not exposed to clients
-- ✅ Build: 0 errors
-
----
-
-#### 2. **Input Validation & Error Handling** (High) — Est. 3-4 hours
-**Why:** Prevents invalid data from reaching the database; improves API reliability
-
-**Scope:**
-- DTOs: Add data annotations for all inputs
-  - Strings: [Required], [StringLength]
-  - Numbers: [Range]
-  - Collections: [MinLength], [MaxLength]
-  
-- Service Layer: Validate business rules
-  - Team member capacity bounds
-  - Sprint date validations
-  - Board name uniqueness (if required)
-  
-- Controllers: Return validation errors cleanly (already partial via `[BindRequired]`)
-
-**Key DTOs to Enhance:**
-- BoardCreateDto
-- TeamMemberDto
-- UpdateFeaturePriorityDto
-- MoveStoryDto
-- ImportFeaturesDto
-
-**Files to Modify:**
-- `DTOs/*.cs` - Add data annotations
-- `Services/Implementations/*.cs` - Add business rule validation
-
-**Acceptance Criteria:**
-- ✅ All required fields validated before business logic
-- ✅ Error responses include field-specific messages
-- ✅ Build: 0 errors
-
----
-
-#### 3. **Board State Endpoints** (Medium) — Est. 3-4 hours
+#### 1. **Board State Endpoints** (High) — Est. 3-4 hours
 **Why:** Enables frontend to fetch full board with hierarchy; critical for board view
 
 **Endpoints Needed:**
@@ -100,9 +52,7 @@
 
 ---
 
-### PHASE 2: Board State Management (Next Sprint)
-
-#### 4. **Board Lock/Unlock Endpoints** (High) — Est. 2-3 hours
+#### 2. **Board Lock/Unlock Endpoints** (High) — Est. 2-3 hours
 **Why:** Enables board state control; foundation for finalization workflow
 
 **Endpoints:**
@@ -124,7 +74,7 @@
 
 ---
 
-#### 5. **Board Finalization Mode** (High) — Est. 2-3 hours
+#### 3. **Board Finalization Mode** (High) — Est. 2-3 hours
 **Why:** Enables board completion workflow; prevents accidental changes
 
 **Endpoints:**
@@ -176,7 +126,7 @@
 
 ---
 
-#### 7. **Real-time Collaboration (SignalR)** (Medium-High) — Est. 4-6 hours
+#### 5. **Real-time Collaboration (SignalR)** (Medium-High) — Est. 4-6 hours
 **Why:** Enables multi-user concurrent editing; core feature of the tool
 
 **Features:**
@@ -200,31 +150,29 @@
 ## 📊 Dependency Chain
 
 ```
-Phase 1 (Backend):
-  Global Exception Middleware
-       ↓ (blocks validation layer)
-  Input Validation & Error Handling
-       ↓ (depends on clean API)
-  Board State Endpoints
-
-Phase 2 (Board Management):
-  Board Lock/Unlock
-  Board Finalization
-       ↓ (need clean API before frontend can use)
-
-Phase 3 (Frontend):
-  UI Component Modularization
-  Real-time Collaboration (SignalR)
+Completed (Phase 1):
+  ✅ Global Exception Middleware
+  ✅ Input Validation & Error Handling
+       ↓
+Current (Phase 2):
+  → Board State Endpoints
+  → Board Lock/Unlock
+  → Board Finalization
+       ↓
+Next (Phase 3):
+  → UI Component Modularization
+  → Real-time Collaboration (SignalR)
 ```
 
 ---
 
 ## 📈 Success Metrics
 
-- [ ] All 7 priorities completed with 0 build errors
-- [ ] API returns consistent error responses
+- [x] ✅ Phase 1 complete: Global exception handling & input validation
+- [ ] All 5 remaining priorities completed with 0 build errors
+- [x] ✅ API returns consistent error responses
 - [ ] Frontend consumes all new endpoints
-- [ ] No technical debt added
+- [x] ✅ No technical debt added
 - [ ] Code coverage > 80% for critical paths
 
 ---

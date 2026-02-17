@@ -9,7 +9,7 @@
 
 The PI Planning Tool is a **collaborative board planning application** (inspired by Miro/Mural) that enables Agile teams to plan Program Increments (PIs) with real-time multi-user support, Azure DevOps integration, and capacity management.
 
-**Current Status:** ~30% complete  
+**Current Status:** ~35% complete  
 **Architecture:** Clean, well-designed, scalable  
 **Blockers:** None; ready to build
 
@@ -57,16 +57,17 @@ The PI Planning Tool is a **collaborative board planning application** (inspired
 - CORS enabled
 - SignalR registered (not wired)
 
-### ⚠️ IN PROGRESS
+### ⚠️ IN PROGRESS & COMPLETED
 
-**Backend APIs**
+**Backend APIs - ✅ COMPLETED**
 - ✅ Board search with filters
 - ✅ Board preview endpoint
 - ✅ Organization/project mandatory validation
-- ❌ Global exception middleware
-- ❌ Comprehensive input validation
-- ❌ Board lock/unlock endpoints
-- ❌ Board finalization endpoints
+- ✅ Global exception middleware (7 exception types)
+- ✅ Comprehensive input validation (DTOs + global filter)
+
+**Backend APIs - ⏳ IN PROGRESS**
+- ❌ Board state endpoints (lock/unlock/finalize)
 
 **Frontend UI**
 - ✅ Board list component with search
@@ -89,15 +90,15 @@ See **[ROADMAP_CURRENT.md](./ROADMAP_CURRENT.md)** for detailed priorities, esti
 
 ### High-Level Phases
 
-**PHASE 1: Backend API & Validation** (Current - 2 weeks)
-- Global exception middleware
-- Input validation & error handling  
-- Board state endpoints (lock, unlock, finalize)
+**PHASE 1: Backend API & Validation** ✅ COMPLETE (Week of Feb 10-17)
+- ✅ Global exception middleware
+- ✅ Input validation & error handling  
+- ⏳ Board state endpoints (lock, unlock, finalize) - NEXT
 
-**PHASE 2: Board State Management** (Weeks 3-4)
+**PHASE 2: Board Management** (Weeks 3-4)
+- Board state endpoints (GET /api/boards/{id} with full hierarchy)
 - Board lock/unlock functionality
 - Board finalization workflow
-- State persistence & validation
 
 **PHASE 3: Frontend UI & Components** (Weeks 5-8)
 - Component modularization (reduce board.ts complexity)
@@ -114,7 +115,14 @@ See **[ROADMAP_CURRENT.md](./ROADMAP_CURRENT.md)** for detailed priorities, esti
 
 ## 🚀 PROGRESS UPDATE (February 17, 2026)
 
-### ✅ Recently Completed
+### ✅ Recently Completed (Feb 15-17)
+- **Global Exception Middleware** - Centralized handling for 7 exception types
+- **Input Validation Layer** - Global ActionFilter + enhanced DTOs with validation attributes
+- **ValidateModelStateFilter** - Automatic ModelState validation across all endpoints
+- **Error Response Standardization** - Consistent JSON format with field-level error details
+- **Controller Cleanup** - Removed 20+ manual validation checks
+
+### ✅ Previously Completed (Feb 10-13)
 - Board search API with filters (organization, project, search, status)
 - Board preview endpoint (secure, lightweight access)
 - PAT validation security flow with modal
