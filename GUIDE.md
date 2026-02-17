@@ -57,23 +57,24 @@ The PI Planning Tool is a **collaborative board planning application** (inspired
 - CORS enabled
 - SignalR registered (not wired)
 
-### ⚠️ INCOMPLETE
+### ⚠️ IN PROGRESS
 
 **Backend APIs**
-- ✅ Complete board fetch (tested)
+- ✅ Board search with filters
+- ✅ Board preview endpoint
+- ✅ Organization/project mandatory validation
+- ❌ Global exception middleware
+- ❌ Comprehensive input validation
 - ❌ Board lock/unlock endpoints
-- ❌ Finalization logic exposed
-- ❌ Global exception handling (basic middleware present, needs refinement)
-- ❌ Input validation
-- ❌ Request logging
+- ❌ Board finalization endpoints
 
 **Frontend UI**
-- ❌ No styling applied
-- ❌ No Material components in use
-- ❌ No data binding to backend
-- ❌ No drag-drop wired
-- ❌ No Azure fetch UI
-- ❌ No real-time display
+- ✅ Board list component with search
+- ✅ PAT validation modal
+- ❌ Board detail view (grid layout)
+- ❌ Drag-drop wired to backend
+- ❌ Team capacity visualization
+- ❌ Real-time collaboration
 
 **Real-Time**
 - ❌ SignalR message handlers
@@ -82,121 +83,92 @@ The PI Planning Tool is a **collaborative board planning application** (inspired
 
 ---
 
-## 🗺️ YOUR ROADMAP (4 PHASES, ~8 WEEKS)
+## 🗺️ PROJECT ROADMAP (4 PHASES, ~12 WEEKS)
 
-### PHASE 1: Backend API Completion (2 weeks)
-**Goal:** All backend endpoints production-ready so frontend can consume them
+See **[ROADMAP_CURRENT.md](./ROADMAP_CURRENT.md)** for detailed priorities, estimates, and acceptance criteria.
 
-**Key Deliverables:**
-1. **Complete Board Fetch** - `GET /api/boards/{id}` returns full hierarchy
-2. **Exception Handling** - Global middleware for standardized errors
-3. **Validation** - Input validation on all endpoints
-4. **Documentation** - Swagger fully documented
-5. **Status:** `🔴 NOT STARTED`
+### High-Level Phases
 
-**Why First?** Frontend is blocked. Can't build UI without data APIs.
+**PHASE 1: Backend API & Validation** (Current - 2 weeks)
+- Global exception middleware
+- Input validation & error handling  
+- Board state endpoints (lock, unlock, finalize)
 
-### PHASE 2: Frontend Board View (2-3 weeks)
-**Goal:** Functional, styled board where users see sprints, features, stories
+**PHASE 2: Board State Management** (Weeks 3-4)
+- Board lock/unlock functionality
+- Board finalization workflow
+- State persistence & validation
 
-**Key Deliverables:**
-1. **Board Layout** - Features × Sprints grid with Material Design
-2. **Data Binding** - Fetch board from backend, render stories
-3. **Drag-Drop** - Drag stories to different sprints (horizontal)
-4. **Drag-Drop** - Drag features to reorder (vertical)
-5. **Team Panel** - Show team members and their capacity
-6. **Status:** `🔴 NOT STARTED`
+**PHASE 3: Frontend UI & Components** (Weeks 5-8)
+- Component modularization (reduce board.ts complexity)
+- Real-time collaboration with SignalR
+- Cursor presence & live updates
 
-**Why Second?** Backend drives frontend. Parallel is OK but API-first is safer.
-
-### PHASE 3: Azure & Real-Time (2 weeks)
-**Goal:** Fetch features from Azure DevOps, multi-user collaboration with SignalR
-
-**Key Deliverables:**
-1. **Azure Fetch Modal** - Form to fetch feature by ID
-2. **Import Flow** - Click "Add to Board", feature appears in placeholder
-3. **Real-Time Sync** - SignalR broadcasts moves to other clients
-4. **Cursor Presence** - Show who's looking at what
-5. **Status:** `🔴 NOT STARTED`
-
-**Why Third?** UI must work before adding real-time complexity.
-
-### PHASE 4: Polish & Deployment (1 week)
-**Goal:** Production-ready with tests, docs, cloud deployment
-
-**Key Deliverables:**
-1. **Unit Tests** - Services & components
-2. **E2E Tests** - Full user workflows
-3. **Documentation** - README, API docs, dev guide
-4. **Performance** - Virtual scrolling, lazy loading if needed
-5. **Cloud Deploy** - Google Cloud Run setup
-6. **Status:** `🔴 NOT STARTED`
+**PHASE 4: Polish & Deployment** (Weeks 9-12)
+- Unit & E2E tests
+- Performance optimization
+- Documentation finalization
+- Cloud deployment (Google Cloud Run)
 
 ---
 
-## 🚀 NEXT IMMEDIATE ACTIONS (THIS WEEK)
+## 🚀 PROGRESS UPDATE (February 17, 2026)
 
-### Day 1-2: Backend Board Fetch
-**DO THIS FIRST** - Everything else depends on it
+### ✅ Recently Completed
+- Board search API with filters (organization, project, search, status)
+- Board preview endpoint (secure, lightweight access)
+- PAT validation security flow with modal
+- Board list UI with search and filtering
+- Mandatory organization & project parameters (frontend + API)
+- [BindRequired] attribute for server-side validation
+- Clean documentation (removed outdated docs)
 
+### 🔄 Currently Working On
+- **Branch:** `boardSearchFiltering` (Ready for PR)
+- **Next:** Global exception middleware (blocking for validation layer)
+
+---
+
+## 🎯 NEXT IMMEDIATE ACTIONS (THIS SPRINT)
+
+### Priority 1: Global Exception Middleware (Today)
 ```bash
-# Step 1: Create BoardResponseDto
-# File: DTOs/BoardResponseDto.cs
-# Returns: Board with sprints, features (with children), team members
-
-# Step 2: Update repository
-# File: Repositories/Implementations/BoardRepository.cs
-# Add: GetBoardWithFullHierarchyAsync() with eager loading
-
-# Step 3: Update service
-# File: Services/Implementations/BoardService.cs
-# Add: GetBoardWithHierarchyAsync() - map to DTO
-
-# Step 4: Update controller
-# File: Controllers/BoardsController.cs
-# Change: GET /api/boards/{id} to use new service method
-
-# Step 5: Test
-dotnet run
-# Visit: http://localhost:5000/swagger
-# Try: GET /api/boards/1
-```
-
-### Day 3-4: Controller Routing & Exception Handler
-```bash
-# Fix inconsistent routing
-# Fix: BoardsController vs BoardController
-
-# Add global exception handling
+# Add centralized error handling
 # File: Middleware/GlobalExceptionHandlingMiddleware.cs
-# Register in Program.cs
+# Register in: Program.cs
+# Benefit: Standard error responses, no info leakage
 ```
 
-### Day 5: Validation & Testing
+### Priority 2: Input Validation & Error Handling (Tomorrow-Next Day)
 ```bash
-# Add input validation
-# Test all endpoints with Postman/Swagger
-# Document API response schemas
+# Add data annotations to DTOs
+# Add business rule validation to services
+# Update all error responses for clarity
+# Files: DTOs/*.cs, Services/Implementations/*.cs
 ```
 
-**Expected Result:** Frontend team can start building immediately.
+### Priority 3: Board Lock/Unlock & Finalization (Next Week)
+```bash
+# Add board state management
+# PATCH /api/boards/{id}/lock
+# PATCH /api/boards/{id}/unlock
+# PATCH /api/boards/{id}/finalize
+# File: Controllers/BoardsController.cs
+```
+
+**Expected Result:** Solid, validated, production-ready backend API.
 
 ---
 
-## 📚 FOUR KEY DOCUMENTS TO READ
+## 📚 KEY DOCUMENTS TO READ
 
-1. **[NEXT_STEPS.md](./NEXT_STEPS.md)** ← Start here
-   - Detailed Week 1 tasks with code samples
-   - Exact file locations and implementations
-   - Quick checklist format
+1. **[ROADMAP_CURRENT.md](./ROADMAP_CURRENT.md)** ← Start here
+   - Current priorities and next steps
+   - Phase breakdown with time estimates
+   - Dependency chain visualization
+   - Success metrics and acceptance criteria
 
-2. **[PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md)** ← Review this
-   - 4-phase high-level plan
-   - Work breakdown by phase/week
-   - Architecture patterns explained
-   - 2000+ line comprehensive guide
-
-3. **[ARCHITECTURE.md](./ARCHITECTURE.md)** ← Reference this
+2. **[ARCHITECTURE.md](./ARCHITECTURE.md)** ← Reference while coding
    - System architecture diagram
    - Data flow examples (create board, import, move, lock)
    - Service layer patterns
@@ -204,12 +176,16 @@ dotnet run
    - Design decisions explained
    - Common gotchas
 
-4. **[STATUS.md](./STATUS.md)** ← Track your progress here
-   - Current implementation status
-   - Phase-by-phase checklists
-   - Milestone tracking
-   - Weekly check-in template
-   - Risk register
+3. **[CONFIGURATION.md](./CONFIGURATION.md)** ← Setup & deployment
+   - Docker runtime configuration
+   - Environment variables
+   - Local development setup
+   - Production deployment
+
+4. **[CHANGELOG.md](./CHANGELOG.md)** ← Track what's done
+   - What's been completed
+   - Feature history
+   - Version notes
 
 ---
 
@@ -326,8 +302,8 @@ A: It's the placeholder/parking lot. Imported features land here. Users manually
 
 ## 📞 SUPPORT & RESOURCES
 
-**Stuck?** Check these in order:
-1. NEXT_STEPS.md - Code examples for what you're doing
+**Need guidance?** Check these in order:
+1. ROADMAP_CURRENT.md - Current priorities & next steps
 2. ARCHITECTURE.md - Patterns & examples
 3. Existing code - Look for similar implementations
 4. Azure DevOps docs - For Azure API questions
@@ -337,6 +313,7 @@ A: It's the placeholder/parking lot. Imported features land here. Users manually
 - [Angular Material](https://material.angular.io/) - UI components
 - [CDK Drag-Drop](https://material.angular.io/cdk/drag-drop/overview) - Drag logic
 - [SignalR](https://learn.microsoft.com/en-us/aspnet/signalr/overview/) - Real-time
+- [ASP.NET Core Middleware](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware) - Exception handling
 
 ---
 
@@ -355,9 +332,7 @@ A: It's the placeholder/parking lot. Imported features land here. Users manually
 
 ## 📍 YOUR NEXT MOVE
 
-**Open [NEXT_STEPS.md](./NEXT_STEPS.md) and start with "Day 1-2: Backend Board Fetch"**
+**Open [ROADMAP_CURRENT.md](./ROADMAP_CURRENT.md) — Start with Global Exception Middleware**
 
-That's it. One clear task. Get board fetch working. Everything else follows.
-
-Good luck! 🚀
+Clear priorities. One sprint at a time. Let's build. 🚀
 

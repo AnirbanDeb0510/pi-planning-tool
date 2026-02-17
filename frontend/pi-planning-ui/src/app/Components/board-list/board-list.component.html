@@ -12,12 +12,40 @@
       </div>
     </div>
 
-    <div class="filters">
+    <!-- Mandatory Organization & Project Selection -->
+    <div class="mandatory-filters">
+      <div class="filter-section">
+        <label for="org-input">Organization Name (Required)</label>
+        <input
+          id="org-input"
+          type="text"
+          class="filter-input"
+          [(ngModel)]="organizationInput"
+          (ngModelChange)="onOrganizationChange()"
+          placeholder="e.g., MyOrganization"
+        />
+      </div>
+
+      <div class="filter-section">
+        <label for="project-input">Project Name (Required)</label>
+        <input
+          id="project-input"
+          type="text"
+          class="filter-input"
+          [(ngModel)]="projectInput"
+          (ngModelChange)="onProjectChange()"
+          placeholder="e.g., MyProject"
+        />
+      </div>
+    </div>
+
+    <!-- Optional Filters (shown only after org/project provided) -->
+    <div *ngIf="organizationInput() && projectInput()" class="filters">
       <input
         type="text"
         class="search-input"
         [(ngModel)]="searchTerm"
-        (ngModelChange)="onSearchChange()"
+        (ngModelChange)="loadBoards()"
         placeholder="Search boards..."
       />
       <div class="filter-chips">
@@ -25,7 +53,7 @@
           <input
             type="checkbox"
             [(ngModel)]="showLockedOnly"
-            (change)="onFilterChange()"
+            (change)="loadBoards()"
           />
           Locked Only
         </label>
@@ -33,10 +61,17 @@
           <input
             type="checkbox"
             [(ngModel)]="showFinalizedOnly"
-            (change)="onFilterChange()"
+            (change)="loadBoards()"
           />
           Finalized Only
         </label>
+      </div>
+    </div>
+
+    <!-- Message when org/project not provided -->
+    <div *ngIf="!organizationInput() || !projectInput()" class="selection-required">
+      <div class="selection-message">
+        <p>📋 Please enter your organization and project names to find boards.</p>
       </div>
     </div>
 
@@ -50,7 +85,7 @@
       <button class="btn-primary" (click)="loadBoards()">Retry</button>
     </div>
 
-    <div *ngIf="!loading() && !error() && boards().length === 0" class="empty-state">
+    <div *ngIf="!loading() && !error() && boards().length === 0 && organizationInput() && projectInput()" class="empty-state">
       <div class="empty-icon">📋</div>
       <h3>No boards found</h3>
       <p>Create your first board to get started</p>
@@ -59,7 +94,7 @@
       </button>
     </div>
 
-    <div *ngIf="!loading() && !error() && boards().length > 0" class="boards-grid">
+    <div *ngIf="!loading() && !error() && boards().length > 0 && organizationInput() && projectInput()" class="boards-grid">
       <div
         *ngFor="let board of boards()"
         class="board-card"

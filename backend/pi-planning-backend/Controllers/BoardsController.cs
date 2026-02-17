@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using PiPlanningBackend.DTOs;
 using PiPlanningBackend.Services.Interfaces;
 
@@ -54,12 +55,12 @@ namespace PiPlanningBackend.Controllers
         [HttpGet]
         public async Task<IActionResult> SearchBoards(
             [FromQuery] string? search,
-            [FromQuery] string? organization,
-            [FromQuery] string? project,
+            [FromQuery][BindRequired] string organization,
+            [FromQuery][BindRequired] string project,
             [FromQuery] bool? isLocked,
             [FromQuery] bool? isFinalized)
         {
-            var boards = await _boardService.SearchBoardsAsync(search, organization, project, isLocked, isFinalized);
+            var boards = await _boardService.SearchBoardsAsync(search, organization.Trim(), project.Trim(), isLocked, isFinalized);
             return Ok(boards);
         }
 
