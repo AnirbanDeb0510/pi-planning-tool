@@ -26,12 +26,18 @@ namespace PiPlanningBackend.Services.Implementations
         }
 
         // import a feature (from the UI after Fetch from Azure)
-        public async Task<FeatureDto> ImportFeatureToBoardAsync(int boardId, FeatureDto featureDto)
+        public async Task<FeatureDto> ImportFeatureToBoardAsync(int boardId, FeatureDto featureDto, bool checkFinalized = true)
         {
             var board = await _boardRepo.GetBoardWithSprintsAsync(boardId);
             if (board == null)
             {
                 return new FeatureDto();
+            }
+
+            // Guard: Prevent adding features if board is finalized (unless bypass flag is set for refresh)
+            if (checkFinalized && board.IsFinalized)
+            {
+                throw new InvalidOperationException("Cannot add features to a finalized board. Restore the board first.");
             }
 
             Feature? existing = await CreateOrModifyFeature(boardId, featureDto);
@@ -147,7 +153,8 @@ namespace PiPlanningBackend.Services.Implementations
 
             var workItem = await _azureService.GetFeatureWithChildrenAsync(organization, project, int.Parse(feature.AzureId!), pat);
 
-            return await ImportFeatureToBoardAsync(boardId, workItem);
+            // For refresh, bypass finalization check to allow updating on finalized boards
+            return await ImportFeatureToBoardAsync(boardId, workItem, checkFinalized: false);
         }
 
         public async Task<UserStoryDto?> RefreshUserStoryFromAzureAsync(int boardId, int storyId, string organization, string project, string pat)

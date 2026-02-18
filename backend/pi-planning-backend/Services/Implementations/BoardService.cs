@@ -187,6 +187,83 @@ namespace PiPlanningBackend.Services.Implementations
             };
         }
 
+        public async Task<(bool Success, List<string> Warnings)> ValidateBoardForFinalizationAsync(int boardId)
+        {
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
+            if (board == null)
+                return (false, new List<string> { "Board not found" });
+
+            var warnings = new List<string>();
+
+            // Check if board is already finalized
+            if (board.IsFinalized)
+                return (false, new List<string> { "Board is already finalized" });
+
+            // Warning checks (non-blocking)
+            if (board.TeamMembers.Count == 0)
+                warnings.Add("⚠️ No team members assigned to the board");
+
+            if (board.Features.Count == 0)
+                warnings.Add("⚠️ No features assigned to the board");
+
+            if (board.Sprints.Count <= 1) // Sprint 0 is always present
+                warnings.Add("⚠️ No planned sprints defined");
+
+            // Check if all features have stories
+            var featuresWithoutStories = board.Features.Where(f => f.UserStories.Count == 0).ToList();
+            if (featuresWithoutStories.Any())
+                warnings.Add($"⚠️ {featuresWithoutStories.Count} feature(s) have no user stories assigned");
+
+            // Check team member capacity distribution (warning only)
+            var teamMembersWithNoCapacity = board.TeamMembers
+                .Where(tm => tm.TeamMemberSprints.Count == 0)
+                .ToList();
+            if (teamMembersWithNoCapacity.Any())
+                warnings.Add($"⚠️ {teamMembersWithNoCapacity.Count} team member(s) have no capacity allocated");
+
+            return (true, warnings);
+        }
+
+        public async Task<BoardSummaryDto?> FinalizeBoardAsync(int boardId)
+        {
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
+            if (board == null)
+                return null;
+
+            // Set finalization flag and timestamp
+            board.IsFinalized = true;
+            board.FinalizedAt = DateTime.UtcNow;
+
+            // Set OriginalSprintId = CurrentSprintId for all user stories
+            foreach (var feature in board.Features)
+            {
+                foreach (var userStory in feature.UserStories)
+                {
+                    userStory.OriginalSprintId = userStory.SprintId;
+                }
+            }
+
+            await _boardRepository.SaveChangesAsync();
+
+            // Return summary board state
+            return await GetBoardPreviewAsync(boardId);
+        }
+
+        public async Task<BoardSummaryDto?> RestoreBoardAsync(int boardId)
+        {
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
+            if (board == null)
+                return null;
+
+            // Clear finalization flag (keep FinalizedAt for audit trail)
+            board.IsFinalized = false;
+
+            await _boardRepository.SaveChangesAsync();
+
+            // Return summary board state
+            return await GetBoardPreviewAsync(boardId);
+        }
+
     }
 
     public static class PasswordHelper

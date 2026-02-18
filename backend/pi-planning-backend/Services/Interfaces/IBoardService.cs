@@ -10,5 +10,8 @@ namespace PiPlanningBackend.Services.Interfaces
         Task<BoardResponseDto?> GetBoardWithHierarchyAsync(int boardId);
         Task<IEnumerable<BoardSummaryDto>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null);
         Task<BoardSummaryDto?> GetBoardPreviewAsync(int boardId);
+        Task<(bool Success, List<string> Warnings)> ValidateBoardForFinalizationAsync(int boardId);
+        Task<BoardSummaryDto?> FinalizeBoardAsync(int boardId);
+        Task<BoardSummaryDto?> RestoreBoardAsync(int boardId);
     }
 }

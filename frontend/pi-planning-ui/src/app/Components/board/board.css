@@ -65,6 +65,12 @@
   align-items: center;
 }
 
+.member-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #999;
+}
+
 .member-action mat-icon {
   font-size: 16px;
   width: 16px;
@@ -105,6 +111,13 @@
   background: #e8eaf6;
 }
 
+.add-member-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #bbb;
+  color: #aaa;
+}
+
 .add-feature-button {
   border: 1px dashed #2e7d32;
   background: transparent;
@@ -117,6 +130,74 @@
 
 .add-feature-button:hover {
   background: #e8f5e9;
+}
+
+.add-feature-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #bbb;
+  color: #aaa;
+}
+
+/* ===== FINALIZATION BUTTONS ===== */
+.finalization-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.btn-finalize,
+.btn-restore {
+  padding: 8px 16px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-finalize {
+  background: #4caf50;
+  color: white;
+  border: 1px solid #388e3c;
+}
+
+.btn-finalize:hover {
+  background: #388e3c;
+  box-shadow: 0 2px 6px rgba(56, 142, 60, 0.3);
+}
+
+.btn-restore {
+  background: #ff9800;
+  color: white;
+  border: 1px solid #e65100;
+}
+
+.btn-restore:hover:not([disabled]) {
+  background: #e65100;
+  box-shadow: 0 2px 6px rgba(230, 81, 0, 0.3);
+}
+
+.btn-restore[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.finalized-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #c8e6c9;
+  color: #1b5e20;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #81c784;
 }
 
 .error-message-inline {
@@ -182,6 +263,12 @@
   color: #3f51b5;
   font-size: 0.75rem;
   cursor: pointer;
+}
+
+.capacity-edit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #999;
 }
 
 .capacity-list {
@@ -565,6 +652,11 @@
   margin: -8px;
 }
 
+.feature-menu-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .feature-name:hover .feature-menu-btn {
   opacity: 1;
 }
@@ -930,6 +1022,82 @@ input:checked + .slider:before {
   line-height: 1.4;
 }
 
+/* ===== FINALIZATION MODAL ===== */
+.modal-finalize {
+  width: 500px;
+}
+
+.finalize-info {
+  font-size: 0.9rem;
+  color: #424242;
+  margin: 0 0 10px 0;
+  font-weight: 500;
+}
+
+.finalize-restrictions,
+.finalize-allowed {
+  font-size: 0.85rem;
+  color: #424242;
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.finalize-restrictions li {
+  color: #d32f2f;
+  margin: 4px 0;
+}
+
+.finalize-allowed li {
+  color: #2e7d32;
+  margin: 4px 0;
+}
+
+.warning-section {
+  margin-top: 12px;
+  padding: 10px;
+  background: #fff3cd;
+  border-radius: 8px;
+  border-left: 3px solid #ff9800;
+}
+
+.warning-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: #ff6f00;
+}
+
+.warnings-list {
+  font-size: 0.85rem;
+  color: #424242;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.warnings-list li {
+  color: #f57f17;
+  margin: 4px 0;
+}
+
+.btn-finalize-confirm {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-finalize-confirm:hover:not([disabled]) {
+  background: #388e3c;
+}
+
+.btn-finalize-confirm[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .capacity-edit-row {
   display: flex;
   align-items: center;
@@ -997,6 +1165,83 @@ input:checked + .slider:before {
   white-space: nowrap;
   box-shadow: 0 4px 8px rgba(63, 81, 181, 0.3);
 }
+
+.finalized-board-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 16px;
+  padding: 10px 14px;
+  background: #c8e6c9;
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+}
+
+.finalized-icon {
+  font-size: 1.2rem;
+  color: #2e7d32;
+}
+
+.finalized-text {
+  flex: 1;
+  color: #1b5e20;
+  font-size: 0.9rem;
+}
+
+.restore-banner-btn {
+  padding: 6px 12px;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.restore-banner-btn:hover:not([disabled]) {
+  background: #1b5e20;
+}
+
+.restore-banner-btn[disabled] {
+  opacity: 0.6;
+}
+
+/* ===== OPERATION BLOCKED ERROR ===== */
+.operation-blocked-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 8px;
+  padding: 10px 14px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+}
+
+.error-icon {
+  font-size: 1rem;
+}
+
+.error-text {
+  flex: 1;
+  color: #856404;
+  font-size: 0.9rem;
+}
+
+.error-close {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #856404;
+}
+
+.error-close:hover {
+  color: #664d03;
+}
+
+/* ===== DISABLED DRAG INDICATORS ===== */
+/* Note: CDK controls are NOT disabled on finalized boards - only add/delete operations are blocked */
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {

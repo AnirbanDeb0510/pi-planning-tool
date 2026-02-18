@@ -494,13 +494,69 @@ export class BoardService {
   }
 
   /**
+   * Get finalization warnings before submitting
+   */
+  public async getFinalizationWarnings(boardId: number): Promise<string[]> {
+    try {
+      const warnings = await firstValueFrom(this.boardApi.validateBoardForFinalization(boardId));
+      console.log('Finalization warnings:', warnings);
+      return warnings;
+    } catch (error: any) {
+      console.error('Error fetching finalization warnings:', error);
+      return [];
+    }
+  }
+
+  /**
    * Submit/finalize board
    */
-  public submitBoard(): void {
-    const currentBoard = this.boardSignal();
-    if (!currentBoard) return;
+  public async finalizeBoard(boardId: number): Promise<BoardResponseDto | null> {
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
 
-    console.log('Board submitted:', currentBoard);
-    // Implementation for board finalization would go here
+      // Call finalize endpoint
+      await firstValueFrom(this.boardApi.finalizeBoard(boardId));
+
+      // Reload board to get fresh state with finalized flag and originalSprintId updated
+      const updatedBoard = await firstValueFrom(this.boardApi.getBoard(boardId));
+      this.boardSignal.set(updatedBoard);
+      this.loadingSignal.set(false);
+
+      console.log('Board finalized successfully');
+      return updatedBoard;
+    } catch (error: any) {
+      const errorMsg = error.message || 'Failed to finalize board';
+      this.errorSignal.set(errorMsg);
+      this.loadingSignal.set(false);
+      console.error('Error finalizing board:', error);
+      throw new Error(errorMsg);
+    }
+  }
+
+  /**
+   * Restore board (allow further editing)
+   */
+  public async restoreBoard(boardId: number): Promise<BoardResponseDto | null> {
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      await firstValueFrom(this.boardApi.restoreBoard(boardId));
+
+      // Reload board to get updated state
+      const updatedBoard = await firstValueFrom(this.boardApi.getBoard(boardId));
+      this.boardSignal.set(updatedBoard);
+      this.loadingSignal.set(false);
+
+      console.log('Board restored successfully');
+      return updatedBoard;
+    } catch (error: any) {
+      const errorMsg = error.message || 'Failed to restore board';
+      this.errorSignal.set(errorMsg);
+      this.loadingSignal.set(false);
+      console.error('Error restoring board:', error);
+      throw new Error(errorMsg);
+    }
   }
 }

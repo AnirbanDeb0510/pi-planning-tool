@@ -34,6 +34,7 @@ namespace PiPlanningBackend.Models
         public bool IsLocked { get; set; }
         public string? PasswordHash { get; set; }
         public bool IsFinalized { get; set; }
+        public DateTime? FinalizedAt { get; set; }
         public bool DevTestToggle { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace PiPlanningBackend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,6 +30,7 @@ namespace PiPlanningBackend.Migrations
                     IsLocked = table.Column<bool>(type: "boolean", nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: true),
                     IsFinalized = table.Column<bool>(type: "boolean", nullable: false),
+                    FinalizedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DevTestToggle = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
