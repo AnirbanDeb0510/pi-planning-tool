@@ -1,59 +1,68 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
-**Last Updated:** February 17, 2026  
-**Status:** Active Development - Board Management Phase  
-**Branch:** `boardSearchFiltering`
+**Last Updated:** February 18, 2026  
+**Status:** Phase 2 Near Complete - Board Management UI/UX  
+**Branch:** `board-finalization-feature`
 
 ---
 
-## 🎯 CURRENT PHASE: Backend Stabilization & Board Management
+## 🎯 CURRENT PHASE: Board Management & Finalization Workflow
 
-### ✅ COMPLETED (Week of Feb 10-17)
+### ✅ COMPLETED (Phase 2: Board Management API & Finalization)
+
+#### Board State & Finalization Endpoints
+- ✅ **Board State Endpoint** - `GET /api/boards/{id}` - Full hierarchy with sprints, features, stories, team
+- ✅ **Board Finalization API** - `PATCH /api/boards/{id}/finalize` - Marks board as finalized
+- ✅ **Board Restore API** - `PATCH /api/boards/{id}/restore` - Unfinalizes board
+- ✅ **Finalization Validation** - `GET /api/boards/{id}/finalization-warnings` - Shows pre-finalization warnings
+- ✅ **Original Sprint Tracking** - Stores `OriginalSprintId` at finalization for post-plan analysis
+
+#### Board Finalization UI/UX
+- ✅ **Finalized Board Banner** - Visual indicator that board is finalized + restore button
+- ✅ **Operation Guards** - Add member/feature/delete/edit capacity blocked on finalized boards
+- ✅ **Visual Feedback** - Disabled buttons show 50% opacity with `cursor: not-allowed`
+- ✅ **Hover Tooltips** - Shows why operation is blocked (e.g., "Cannot add members on finalized board")
+- ✅ **Dark Mode Support** - All UI indicators properly visible in dark theme
+
+#### Board Analysis Features (Post-Finalization)
+- ✅ **Feature Reordering** - Users can reorder features on finalized boards for impact analysis
+- ✅ **Story Movement** - Users can move stories between sprints for impact analysis
+- ✅ **Story Indicators** - Icon badges (🆕/📍) show new and moved stories with sprint names
+- ✅ **Feature Refresh** - `PATCH /api/boards/{id}/features/{id}/refresh` updates feature data from Azure
+- ✅ **Story Impact Tracking** - Shows which stories were moved and which sprints they came from
+
+#### Code Quality
+- ✅ **No Duplicate Methods** - Used optional `checkFinalized = true` parameter for refresh bypass
+- ✅ **Interface Updates** - IFeatureService updated with optional parameter
+- ✅ **CSS Optimization** - Removed opacity overlays, added proper disabled state styling
+- ✅ **Dark Mode Contrast** - Improved indicator colors for dark theme (#ffd54f, #64b5f6)
+- ✅ **Build Status** - Backend: 0 errors | Frontend: 0 compilation errors
+
+---
+
+## ✅ COMPLETED (Phase 1+: Backend Stabilization)
 
 #### Phase 1: Board Search & Security Hardening
-- ✅ **Board Search API** - `GET /api/boards` with filters (search, organization, project, isLocked, isFinalized)
-- ✅ **Board Preview Endpoint** - `GET /api/boards/{id}/preview` (secure, lightweight data)
-- ✅ **PAT Validation Security Flow** - Modal validation before accessing board features
-- ✅ **Organization/Project Mandatory (Frontend)** - Text input fields instead of dropdowns
-- ✅ **Organization/Project Mandatory (API)** - Server-side validation with `[BindRequired]`
-- ✅ **Frontend Board List UI** - Search, filtering, board cards with dynamic navigation
+- ✅ **Board Search API** - `GET /api/boards` with filters
+- ✅ **Board Preview Endpoint** - `GET /api/boards/{id}/preview`
+- ✅ **PAT Validation Security Flow** - Modal validation
+- ✅ **Frontend Board List UI** - Search, filtering, board cards
 
 #### Phase 1: Global Exception Handling & Input Validation
-- ✅ **GlobalExceptionHandlingMiddleware** - Centralized exception handling for 7 exception types
-- ✅ **ValidateModelStateFilter** - Global ActionFilter for automatic ModelState validation
-- ✅ **DTO Validation Attributes** - Enhanced 5 request DTOs with `[Required]`, `[Range]`, `[StringLength]`, `[MinLength]`
-- ✅ **Controller Cleanup** - Removed 20+ manual ModelState checks from 4 controllers
-- ✅ **Standardized Error Responses** - Consistent JSON format with field-level error details
-- ✅ **Build Verification** - Backend: 0 errors | Frontend: 0 compilation errors
-
+- ✅ **GlobalExceptionHandlingMiddleware** - Centralized exception handling
+- ✅ **ValidateModelStateFilter** - Global ModelState validation
+- ✅ **DTO Validation Attributes** - Enhanced request DTOs
+- ✅ **Controller Cleanup** - Removed manual ModelState checks
+- ✅ **Standardized Error Responses** - Consistent JSON format
 ---
 
 ## 🚀 NEXT PRIORITIES (Ordered by Dependency & Impact)
 
-### PHASE 2: Board Management API (Current Sprint)
+### PHASE 2: Board Lock Endpoints (Pending - External Owner)
+**Status:** Not Started - To be handled by another team member
 
-#### 1. **Board State Endpoints** (High) — Est. 3-4 hours
-**Why:** Enables frontend to fetch full board with hierarchy; critical for board view
-
-**Endpoints Needed:**
-- `GET /api/boards/{id}` - Already partially implemented, verify it returns full hierarchy
-  - Board + Sprints + Features + Stories + TeamMembers
-- `GET /api/boards/{id}/sprints` - List sprints with capacity info (optional)
-- `GET /api/boards/{id}/team` - Get team members (already implemented)
-
-**Optimization:**
-- Use eager loading (.Include) to avoid N+1 queries
-- Consider pagination for large boards
-
-**Acceptance Criteria:**
-- ✅ Full board fetch returns all related data
-- ✅ No N+1 queries
-- ✅ Build: 0 errors
-
----
-
-#### 2. **Board Lock/Unlock Endpoints** (High) — Est. 2-3 hours
-**Why:** Enables board state control; foundation for finalization workflow
+#### **Board Lock/Unlock Endpoints** (High)
+**Why:** Enables board state control; foundation for feature lock
 
 **Endpoints:**
 - `PATCH /api/boards/{id}/lock` - Lock board (prevent further changes)
@@ -64,41 +73,31 @@
 - Validate user permissions (optional)
 - Return updated board state
 
-**Files to Create/Modify:**
-- `Controllers/BoardsController.cs` - Add endpoints
-
-**Acceptance Criteria:**
-- ✅ Lock/unlock endpoints work
-- ✅ Locked status prevents modifications (validator + service layer)
-- ✅ Build: 0 errors
-
----
-
-#### 3. **Board Finalization Mode** (High) — Est. 2-3 hours
-**Why:** Enables board completion workflow; prevents accidental changes
-
-**Endpoints:**
-- `PATCH /api/boards/{id}/finalize` - Finalize board (marks as complete)
-- `PATCH /api/boards/{id}/unfinalize` - Restore finalization (if needed)
-
-**Logic:**
-- Set `Board.IsFinalized` flag
-- Validate board state (all sprints assigned, etc.)
-- Return updated board state
-
 **Files to Modify:**
 - `Controllers/BoardsController.cs` - Add endpoints
 
-**Acceptance Criteria:**
-- ✅ Finalization endpoints work
-- ✅ Cannot finalize incomplete boards (validation)
-- ✅ Build: 0 errors
+**Notes:**
+- Finalization is complete and working
+- Lock is a separate feature for different workflow requirements
+- Can be implemented in parallel or as separate PR
 
 ---
 
-### PHASE 3: Frontend UI & UX (After Backend Stabilization)
+### PHASE 3: Frontend UI & UX Enhancements & Collaboration (Medium-High Priority - Future)
 
-#### 6. **UI Component Modularization** (Medium) — Est. 6-8 hours
+#### **Story Refresh Confirmation** (Optional Enhancement - Backlog)
+**Description:** When refreshing feature from Azure, if new user stories are found, prompt user to confirm before adding
+
+**Implementation:**
+- Backend: Return list of new stories discovered during refresh
+- Frontend: Show confirmation modal with new stories
+- User can accept or decline adding new stories
+
+**Status:** Parked for future enhancement (not blocking Phase 2)
+
+---
+
+#### **UI Component Modularization** (Medium) — Est. 6-8 hours
 **Why:** Reduces complexity; improves maintainability; reduces `board.ts` from 800+ to 300 LOC
 
 **New Components:**
@@ -126,7 +125,7 @@
 
 ---
 
-#### 5. **Real-time Collaboration (SignalR)** (Medium-High) — Est. 4-6 hours
+#### **Real-time Collaboration (SignalR)** (Medium-High) — Est. 4-6 hours
 **Why:** Enables multi-user concurrent editing; core feature of the tool
 
 **Features:**
@@ -154,14 +153,15 @@ Completed (Phase 1):
   ✅ Global Exception Middleware
   ✅ Input Validation & Error Handling
        ↓
-Current (Phase 2):
-  → Board State Endpoints
-  → Board Lock/Unlock
-  → Board Finalization
+Completed (Phase 2):
+  ✅ Board State Endpoints
+  ✅ Board Finalization & Analysis
+  ⏳ Board Lock/Unlock (External Owner)
        ↓
-Next (Phase 3):
+Future (Phase 3):
   → UI Component Modularization
   → Real-time Collaboration (SignalR)
+  → Story Refresh Confirmation Modal
 ```
 
 ---
@@ -169,17 +169,43 @@ Next (Phase 3):
 ## 📈 Success Metrics
 
 - [x] ✅ Phase 1 complete: Global exception handling & input validation
-- [ ] All 5 remaining priorities completed with 0 build errors
+- [x] ✅ Phase 2 complete: Board finalization with analysis features
 - [x] ✅ API returns consistent error responses
-- [ ] Frontend consumes all new endpoints
+- [x] ✅ Frontend implements all finalization UI/UX
 - [x] ✅ No technical debt added
+- [x] ✅ Backend: 0 errors | Frontend: 0 compilation errors
+- ⏳ Phase 2.5: Board lock/unlock (External owner)
+- [ ] Phase 3: Component modularization & SignalR
 - [ ] Code coverage > 80% for critical paths
 
 ---
 
-## 📝 Completed Branches
+## 📝 Completed Branches & PRs
 
-- ✅ `boardSearchFiltering` - Board search with mandatory org/project (Ready for PR)
+- ✅ `board-finalization-feature` - Board finalization, analysis features, UI/UX (Ready for PR)
+- ✅ `boardSearchFiltering` - Board search with mandatory org/project (Completed previously)
+
+---
+
+## 📋 Files Modified in This Sprint
+
+### Backend
+- `Services/Implementations/BoardService.cs` - Added finalize/restore methods + warning validation
+- `Services/Implementations/FeatureService.cs` - Added optional `checkFinalized` parameter for refresh
+- `Services/Interfaces/IFeatureService.cs` - Updated interface with optional parameter
+- `Controllers/BoardsController.cs` - Added finalization endpoints
+- `Models/UserStory.cs` - Added `OriginalSprintId` tracking
+- `Migrations/` - Migration for `IsFinalized` and `OriginalSprintId` fields
+
+### Frontend
+- `Components/board/board.ts` - Added finalization methods, operation guards, sprint lookup helper
+- `Components/board/board.html` - Added finalization UI, operation guards on all interactive elements
+- `Components/board/board.css` - Added disabled state styling with proper contrast for dark mode
+- `Components/story-card/story-card.ts` - Added story indicators (moved/new) with sprint name lookup
+- `Components/story-card/story-card.html` - Added indicator badge with hover label reveal
+- `Components/story-card/story-card.css` - Added indicator styling + dark mode contrast improvements
+- `shared/models/board.dto.ts` - Updated DTOs with finalization fields
+- `angular.json` - Updated CSS budget from 16kB to 18kB
 
 ---
 

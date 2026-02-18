@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Board Finalization & Impact Analysis (Feb 18, 2026)
+
+- **Board Finalization API:**
+  - Backend endpoints: `PATCH /api/boards/{id}/finalize` and `PATCH /api/boards/{id}/restore`
+  - Validation: `GET /api/boards/{id}/finalization-warnings` shows pre-finalization checks
+  - Tracks `OriginalSprintId` on finalization for post-plan analysis
+  - Allows selective operations (refresh, reorder, move) on finalized boards for analysis
+
+- **Finalization UI/UX:**
+  - Visual finalized board banner with restore button
+  - Operation guards disable: add member, add feature, delete operations
+  - Disabled buttons show 50% opacity with `cursor: not-allowed` for clear feedback
+  - Hover tooltips explain why operations are blocked
+  - Dark mode support with improved contrast (#ffd54f, #64b5f6)
+
+- **Story Impact Tracking:**
+  - Story indicators show moved (📍) and new (🆕) stories
+  - Hover labels display sprint names: "Moved from Sprint 2 to Sprint 3"
+  - Original sprint IDs preserved at finalization for analysis
+  - Works correctly in both light and dark modes
+
+- **Feature Analysis:**
+  - Feature reordering enabled on finalized boards for impact simulation
+  - Story movement between sprints allowed for what-if analysis
+  - Feature refresh from Azure: `PATCH /api/boards/{id}/features/{id}/refresh`
+  - Refresh bypasses finalization lock to allow data updates
+
+- **Code Quality:**
+  - Optional `checkFinalized = true` parameter prevents code duplication
+  - Proper interface updates across service layer
+  - CSS optimization: removed opacity overlays, proper disabled state styling
+  - Zero errors in backend and frontend builds
+
+- **Files Modified:**
+  - Backend: BoardService, BoardsController, FeatureService, IFeatureService, Models, Migrations
+  - Frontend: board.ts, board.html, board.css, story-card.ts, story-card.html, story-card.css, angular.json
+
+---
+
 ### Added - Board Search & PAT Validation (Feb 15, 2026)
 
 - **Board Search API:**

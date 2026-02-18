@@ -15,6 +15,27 @@
   </div>
 </div>
 
+<!-- Finalized Board Banner -->
+<div *ngIf="board()?.isFinalized" class="finalized-board-banner">
+  <span class="finalized-icon">✓</span>
+  <span class="finalized-text">This board is finalized and read-only</span>
+  <button 
+    type="button" 
+    class="restore-banner-btn"
+    (click)="restoreBoard()"
+    [disabled]="finalizationLoading()"
+    title="Restore this board to allow further editing">
+    {{ finalizationLoading() ? 'Restoring...' : 'Restore' }}
+  </button>
+</div>
+
+<!-- Operation Blocked Error -->
+<div *ngIf="operationBlockedError()" class="operation-blocked-error">
+  <span class="error-icon">⚠️</span>
+  <span class="error-text">{{ operationBlockedError() }}</span>
+  <button type="button" class="error-close" (click)="operationBlockedError.set(null)">×</button>
+</div>
+
 <!-- PAT Validation Modal -->
 <div class="modal-backdrop" *ngIf="showPatModal()">
   <div class="modal" (click)="$event.stopPropagation()">
@@ -93,12 +114,38 @@
       <button class="member-action" type="button" (click)="openEditMember(member)" title="Edit member">
         <mat-icon>edit</mat-icon>
       </button>
-      <button class="member-action" type="button" (click)="openDeleteMember(member)" title="Delete member">
-        <mat-icon>delete</mat-icon>
+<button class="member-action" type="button" (click)="openDeleteMember(member)" title="Delete member" [disabled]="isOperationBlocked()" [title]="isOperationBlocked() ? getOperationBlockedMessage('delete members') : 'Delete member'">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+  <button class="add-member-button" type="button" (click)="openAddMember()" [disabled]="isOperationBlocked()" [title]="isOperationBlocked() ? getOperationBlockedMessage('add members') : 'Add team member'">+ Add Member</button>
+  <button class="add-feature-button" type="button" (click)="openImportFeatureModal()" [disabled]="isOperationBlocked()" [title]="isOperationBlocked() ? getOperationBlockedMessage('add features') : 'Add feature from Azure'">+ Add Feature</button>
+    
+    <!-- Finalization buttons -->
+    <div class="finalization-buttons">
+      <button 
+        *ngIf="!board()?.isFinalized"
+        class="btn-finalize" 
+        type="button" 
+        (click)="openFinalizeConfirmation()"
+        title="Finalize board - marks it as ready for execution"
+      >
+        ✓ Finalize
       </button>
+      <button 
+        *ngIf="board()?.isFinalized"
+        class="btn-restore" 
+        type="button" 
+        (click)="restoreBoard()"
+        [disabled]="finalizationLoading()"
+        title="Restore board - allows further editing"
+      >
+        {{ finalizationLoading() ? '⟳ Restoring...' : '↺ Restore' }}
+      </button>
+      <span *ngIf="board()?.isFinalized" class="finalized-badge">
+        ✓ Finalized
+      </span>
     </div>
-    <button class="add-member-button" type="button" (click)="openAddMember()">+ Add Member</button>
-    <button class="add-feature-button" type="button" (click)="openImportFeatureModal()">+ Add Feature</button>
   </div>
 </div>
 
@@ -111,7 +158,7 @@
       <div class="team-capacity-cell" *ngFor="let sprint of getDisplayedSprints()">
         <div class="capacity-header">
           <span class="capacity-title">{{ sprint.name }}</span>
-          <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)">
+          <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)" [disabled]="isOperationBlocked()" [title]="isOperationBlocked() ? getOperationBlockedMessage('edit capacity') : 'Edit team capacity'">
             Edit
           </button>
         </div>
@@ -208,6 +255,7 @@
         [style.gridTemplateColumns]="getGridTemplateColumns()"
         cdkDrag
         [cdkDragData]="feature"
+        [title]="board()?.isFinalized ? 'Board is finalized - reordering changes are displayed only' : ''"
       >
       <!-- Feature Name -->
       <div class="feature-name">
@@ -224,7 +272,8 @@
             class="feature-menu-btn"
             mat-icon-button
             [matMenuTriggerFor]="featureMenu"
-            (click)="$event.stopPropagation()">
+            (click)="$event.stopPropagation()"
+            title="Feature actions">
             <mat-icon>more_vert</mat-icon>
           </button>
           
@@ -233,7 +282,7 @@
               <mat-icon>refresh</mat-icon>
               <span>Refresh from Azure</span>
             </button>
-            <button mat-menu-item (click)="openDeleteFeatureModal(feature)">
+            <button mat-menu-item (click)="openDeleteFeatureModal(feature)" [disabled]="isOperationBlocked()">
               <mat-icon>delete</mat-icon>
               <span>Delete Feature</span>
             </button>
@@ -251,6 +300,7 @@
           [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
           class="story-list"
           (cdkDropListDropped)="drop($event)"
+          [title]="board()?.isFinalized ? 'Board is finalized - story movements are displayed only' : ''"
         >
           <app-story-card
             *ngFor="let story of getParkingLotStories(feature)"
@@ -271,6 +321,7 @@
             [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
             class="story-list"
             (cdkDropListDropped)="drop($event)"
+            [title]="board()?.isFinalized ? 'Board is finalized - story movements are displayed only' : ''"
           >
             <app-story-card
               *ngFor="let story of getStoriesInSprint(feature, sprint.id)"
@@ -603,6 +654,52 @@
         </button>
         <button class="btn-danger" type="button" (click)="deleteFeature()" [disabled]="deleteLoading()">
           {{ deleteLoading() ? 'Deleting...' : 'Delete Feature' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Finalization Confirmation Modal -->
+  <div class="modal-backdrop" *ngIf="showFinalizeConfirmation()" (click)="closeFinalizeConfirmation()">
+    <div class="modal modal-finalize" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Finalize Board</h3>
+        <button type="button" class="modal-close" (click)="closeFinalizeConfirmation()" [disabled]="finalizationLoading()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="finalize-info">
+          Finalizing marks the board as <strong>ready for execution</strong>. You will not be able to:
+        </p>
+        <ul class="finalize-restrictions">
+          <li>❌ Add new features</li>
+          <li>❌ Add new team members</li>
+          <li>❌ Add new user stories (except via refresh to Sprint 0)</li>
+        </ul>
+        <p>You will still be able to:</p>
+        <ul class="finalize-allowed">
+          <li>✅ Move user stories between sprints</li>
+          <li>✅ Reorder features</li>
+          <li>✅ Update capacity allocations</li>
+          <li>✅ Refresh features from Azure DevOps</li>
+        </ul>
+
+        <div *ngIf="finalizationWarnings().length > 0" class="warning-section">
+          <h4>⚠️ Warnings:</h4>
+          <ul class="warnings-list">
+            <li *ngFor="let warning of finalizationWarnings()">{{ warning }}</li>
+          </ul>
+        </div>
+
+        <div *ngIf="finalizationError()" class="error-message-inline">
+          {{ finalizationError() }}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeFinalizeConfirmation()" [disabled]="finalizationLoading()">
+          Cancel
+        </button>
+        <button class="btn-finalize-confirm" type="button" (click)="finalizeBoard()" [disabled]="finalizationLoading()">
+          {{ finalizationLoading() ? 'Finalizing...' : 'Yes, Finalize Board' }}
         </button>
       </div>
     </div>

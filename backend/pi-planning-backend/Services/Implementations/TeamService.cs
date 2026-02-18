@@ -40,6 +40,10 @@ namespace PiPlanningBackend.Services.Implementations
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
                 ?? throw new Exception("Board not found");
 
+            // Guard: Prevent adding team members if board is finalized
+            if (board.IsFinalized)
+                throw new InvalidOperationException("Cannot add team members to a finalized board. Restore the board first.");
+
             var member = new TeamMember
             {
                 BoardId = boardId,
@@ -83,6 +87,12 @@ namespace PiPlanningBackend.Services.Implementations
             var member = await _teamRepository.GetTeamMemberAsync(memberId);
             if (member == null || member.BoardId != boardId) return null;
 
+            // Guard: Prevent updating team members if board is finalized
+            Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
+                ?? throw new Exception("Board not found");
+            if (board.IsFinalized)
+                throw new InvalidOperationException("Cannot update team members on a finalized board. Restore the board first.");
+
             // Check if role has changed
             bool roleChanged = member.IsDev != memberDto.IsDev || member.IsTest != memberDto.IsTest;
 
@@ -93,9 +103,6 @@ namespace PiPlanningBackend.Services.Implementations
             // If role changed, recalculate capacities for all sprints
             if (roleChanged)
             {
-                Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                    ?? throw new Exception("Board not found");
-
                 foreach (var tms in member.TeamMemberSprints)
                 {
                     var sprint = board.Sprints.FirstOrDefault(s => s.Id == tms.SprintId);
@@ -117,6 +124,12 @@ namespace PiPlanningBackend.Services.Implementations
         {
             var member = await _teamRepository.GetTeamMemberAsync(memberId);
             if (member == null || member.BoardId != boardId) return false;
+
+            // Guard: Prevent deleting team members if board is finalized
+            Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
+                ?? throw new Exception("Board not found");
+            if (board.IsFinalized)
+                throw new InvalidOperationException("Cannot delete team members from a finalized board. Restore the board first.");
 
             await _teamRepository.DeleteTeamMemberAsync(member);
             await _teamRepository.SaveChangesAsync();

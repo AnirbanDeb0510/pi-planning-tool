@@ -48,6 +48,9 @@ namespace PiPlanningBackend.Migrations
                     b.Property<bool>("DevTestToggle")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsFinalized")
                         .HasColumnType("boolean");
 

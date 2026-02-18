@@ -12,8 +12,8 @@ using PiPlanningBackend.Data;
 namespace PiPlanningBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260215065624_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260218021347_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,6 +50,9 @@ namespace PiPlanningBackend.Migrations
 
                     b.Property<bool>("DevTestToggle")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsFinalized")
                         .HasColumnType("boolean");

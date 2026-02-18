@@ -79,6 +79,13 @@ export class Board implements OnInit {
   protected deleteLoading = signal(false);
   protected deleteError = signal<string | null>(null);
 
+  // Board finalization state
+  protected showFinalizeConfirmation = signal(false);
+  protected finalizationWarnings = signal<string[]>([]);
+  protected finalizationLoading = signal(false);
+  protected finalizationError = signal<string | null>(null);
+  protected operationBlockedError = signal<string | null>(null);
+
   // PAT validation state
   protected showPatModal = signal(false);
   protected patModalInput = signal('');
@@ -365,6 +372,17 @@ export class Board implements OnInit {
     const currentBoard = this.board();
     if (!currentBoard) return [];
     return currentBoard.sprints.filter((s) => this.isParkingLotSprint(s) === false);
+  }
+
+  /**
+   * Public method to get sprint name by ID (used by child components)
+   */
+  getSprintNameById(sprintId: number | undefined): string {
+    if (!sprintId) return 'Parking Lot';
+    const currentBoard = this.board();
+    if (!currentBoard) return `Sprint ${sprintId}`;
+    const sprint = currentBoard.sprints.find(s => s.id === sprintId);
+    return sprint?.name || `Sprint ${sprintId}`;
   }
 
   private isParkingLotSprint(sprint: SprintDto): boolean {
@@ -808,17 +826,102 @@ export class Board implements OnInit {
   }
 
   /**
-   * Submit board result
-   */
-  sendBoardResult(): void {
-    this.boardService.submitBoard();
-  }
-
-  /**
    * Mouse move handler for cursor display
    */
   onMouseMove(event: MouseEvent): void {
     this.cursorX.set(event.clientX + 20);
     this.cursorY.set(event.clientY + 20);
   }
+
+  async openFinalizeConfirmation(): Promise<void> {
+    const currentBoard = this.board();
+    if (!currentBoard || currentBoard.isFinalized) return;
+
+    this.finalizationError.set(null);
+    this.finalizationLoading.set(true);
+
+    try {
+      // Fetch warnings from board service
+      const warnings = await this.boardService.getFinalizationWarnings(currentBoard.id);
+      this.finalizationWarnings.set(warnings);
+      this.showFinalizeConfirmation.set(true);
+    } catch (error: any) {
+      this.finalizationError.set(error.message || 'Failed to fetch finalization warnings');
+    } finally {
+      this.finalizationLoading.set(false);
+    }
+  }
+
+  /**
+   * Close finalize confirmation dialog
+   */
+  closeFinalizeConfirmation(): void {
+    this.showFinalizeConfirmation.set(false);
+    this.finalizationWarnings.set([]);
+    this.finalizationLoading.set(false);
+    this.finalizationError.set(null);
+  }
+
+  /**
+   * Finalize board
+   */
+  async finalizeBoard(): Promise<void> {
+    const currentBoard = this.board();
+    if (!currentBoard) return;
+
+    this.finalizationLoading.set(true);
+    this.finalizationError.set(null);
+    this.operationBlockedError.set(null);
+
+    try {
+      await this.boardService.finalizeBoard(currentBoard.id);
+      this.closeFinalizeConfirmation();
+    } catch (error: any) {
+      this.finalizationError.set(error.message || 'Failed to finalize board');
+    } finally {
+      this.finalizationLoading.set(false);
+    }
+  }
+
+  /**
+   * Restore board (allow further editing)
+   */
+  async restoreBoard(): Promise<void> {
+    const currentBoard = this.board();
+    if (!currentBoard || !currentBoard.isFinalized) return;
+
+    this.finalizationLoading.set(true);
+    this.finalizationError.set(null);
+
+    try {
+      await this.boardService.restoreBoard(currentBoard.id);
+    } catch (error: any) {
+      this.finalizationError.set(error.message || 'Failed to restore board');
+    } finally {
+      this.finalizationLoading.set(false);
+    }
+  }
+
+  /**
+   * Check if operation is blocked by finalization
+   */
+  isOperationBlocked(): boolean {
+    const board = this.board();
+    return board?.isFinalized ?? false;
+  }
+
+  /**
+   * Get operation blocked error message
+   */
+  getOperationBlockedMessage(operation: string): string {
+    return `Cannot ${operation} on a finalized board. Restore the board first.`;
+  }
+
+  /**
+   * Check if board is finalized (for child components)
+   */
+  isBoardFinalized(): boolean {
+    return this.board()?.isFinalized ?? false;
+  }
 }
+

@@ -68,8 +68,16 @@ export class BoardApiService implements IBoardApiService {
     return this.http.patch<void>(BOARD_API.UNLOCK_BOARD(id), {});
   }
 
-  finalizeBoard(id: number): Observable<void> {
-    return this.http.patch<void>(BOARD_API.FINALIZE_BOARD(id), {});
+  validateBoardForFinalization(id: number): Observable<string[]> {
+    return this.http.get<string[]>(BOARD_API.VALIDATE_FINALIZATION(id));
+  }
+
+  finalizeBoard(id: number): Observable<any> {
+    return this.http.patch<any>(BOARD_API.FINALIZE_BOARD(id), {});
+  }
+
+  restoreBoard(id: number): Observable<void> {
+    return this.http.patch<void>(BOARD_API.RESTORE_BOARD(id), {});
   }
 
   deleteBoard(id: number): Observable<void> {

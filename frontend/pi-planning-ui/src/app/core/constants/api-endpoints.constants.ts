@@ -17,7 +17,9 @@ export const BOARD_API = {
   GET_BOARD_PREVIEW: (id: number) => `${API_PREFIX}/boards/${id}/preview`, // Lightweight endpoint for PAT validation check
   LOCK_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/lock`,
   UNLOCK_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/unlock`,
+  VALIDATE_FINALIZATION: (id: number) => `${API_PREFIX}/boards/${id}/validate-finalization`,
   FINALIZE_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/finalize`,
+  RESTORE_BOARD: (id: number) => `${API_PREFIX}/boards/${id}/restore`,
   DELETE_BOARD: (id: number) => `${API_PREFIX}/boards/${id}`,
 } as const;
 
