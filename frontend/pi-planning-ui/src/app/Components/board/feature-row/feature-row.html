@@ -1,0 +1,94 @@
+<!-- Feature Row -->
+<div
+  class="feature-row"
+  [style.gridTemplateColumns]="getGridTemplateColumns()"
+  cdkDrag
+  [cdkDragData]="feature"
+  [title]="board()?.isFinalized ? 'Board is finalized - reordering changes are displayed only' : ''"
+>
+  <!-- Feature Name -->
+  <div class="feature-name">
+    <span class="feature-drag-handle" cdkDragHandle>
+      <mat-icon>drag_indicator</mat-icon>
+    </span>
+    <div class="feature-header">
+      <h3>{{ feature.title }}</h3>
+      <span class="azure-badge" *ngIf="feature.azureId">{{ feature.azureId }}</span>
+      
+      <!-- Feature actions menu (only for Azure features) -->
+      <button 
+        *ngIf="feature.azureId" 
+        class="feature-menu-btn"
+        mat-icon-button
+        [matMenuTriggerFor]="featureMenu"
+        (click)="$event.stopPropagation()"
+        title="Feature actions">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      
+      <mat-menu #featureMenu="matMenu">
+        <button mat-menu-item (click)="openRefreshFeatureModal(feature)">
+          <mat-icon>refresh</mat-icon>
+          <span>Refresh from Azure</span>
+        </button>
+        <button mat-menu-item (click)="openDeleteFeatureModal(feature)" [disabled]="isOperationBlocked()">
+          <mat-icon>delete</mat-icon>
+          <span>Delete Feature</span>
+        </button>
+      </mat-menu>
+    </div>
+    <span class="feature-total">Total: {{ getFeatureTotal(feature) }} pts</span>
+  </div>
+
+  <!-- Parking Lot -->
+  <div class="sprint-column">
+    <div
+      cdkDropList
+      [id]="'feature_' + feature.id + '_parkingLot'"
+      [cdkDropListData]="getParkingLotStories(feature)"
+      [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
+      class="story-list"
+      (cdkDropListDropped)="parent.drop($event)"
+      [title]="board()?.isFinalized ? 'Board is finalized - story movements are displayed only' : ''"
+    >
+      <app-story-card
+        *ngFor="let story of getParkingLotStories(feature)"
+        [story]="story"
+        [parent]="parent"
+        cdkDrag
+      ></app-story-card>
+    </div>
+  </div>
+
+  <!-- Sprints (each sprint column is a direct grid child for aligned columns) -->
+  <ng-container *ngFor="let sprint of getDisplayedSprints()">
+    <div class="sprint-column" [attr.data-sprint-id]="sprint.id">
+      <div
+        cdkDropList
+        [id]="'feature_' + feature.id + '_sprint_' + sprint.id"
+        [cdkDropListData]="getStoriesInSprint(feature, sprint.id)"
+        [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
+        class="story-list"
+        (cdkDropListDropped)="parent.drop($event)"
+        [title]="board()?.isFinalized ? 'Board is finalized - story movements are displayed only' : ''"
+      >
+        <app-story-card
+          *ngFor="let story of getStoriesInSprint(feature, sprint.id)"
+          [story]="story"
+          [parent]="parent"
+          cdkDrag
+        ></app-story-card>
+      </div>
+      <div class="sprint-feature-points">
+        <div class="points-row">
+          <ng-container *ngIf="getFeatureSprintDevTestTotals(feature, sprint.id) as fTotals">
+            <span *ngIf="showDevTest()" class="dev">Dev: {{ fTotals.dev }}</span>
+            <span *ngIf="showDevTest()" class="test">Test: {{ fTotals.test }}</span>
+            <span class="total">Total: {{ fTotals.total }}</span>
+          </ng-container>
+        </div>
+        <div class="sprint-footer-name">{{ sprint.name }}</div>
+      </div>
+    </div>
+  </ng-container>
+</div>

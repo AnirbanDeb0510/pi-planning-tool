@@ -11,15 +11,10 @@
   </div>
 
   <div class="points">
-    <ng-container
-      *ngIf="
-        parent?.showDevTest?.() && (story.devStoryPoints || story.testStoryPoints);
-        else singlePoints
-      "
-    >
-      <span *ngIf="story.devStoryPoints">💻 Dev: {{ story.devStoryPoints }}</span>
-      <span *ngIf="story.testStoryPoints">🧪 Test: {{ story.testStoryPoints }}</span>
-      <span>({{ (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }})</span>
+    <ng-container *ngIf="parent?.showDevTest?.(); else singlePoints">
+      <span>💻 Dev: {{ story.devStoryPoints ?? 0 }}</span>
+      <span>🧪 Test: {{ story.testStoryPoints ?? 0 }}</span>
+      <span>({{ story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }})</span>
     </ng-container>
 
     <ng-template #singlePoints>

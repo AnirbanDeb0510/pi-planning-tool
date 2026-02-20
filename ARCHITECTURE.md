@@ -704,6 +704,64 @@ public async Task<Board?> GetBoardAsync(int boardId)
 
 ---
 
+## 🎨 Frontend UI Component Architecture (Phase 3A - Feb 20, 2026)
+
+### Board Component Refactoring
+
+The board component has been modernized using Angular 15+ standalone component architecture. The monolithic board component is now decomposed into 6 focused subcomponents, each with scoped styling and clear responsibilities.
+
+### Component Hierarchy
+
+```
+Board (Main Container)
+├── BoardHeader (Toggle & Dev/Test Mode)
+├── TeamBar (Team Members Management)
+├── CapacityRow (Sprint Capacity Display & Edit)
+├── SprintHeader (Column Headers & Metrics)
+├── FeatureRow × N (Feature Cards with Stories)
+└── BoardModals (Import, Finalize, Delete Dialogs)
+```
+
+### Subcomponent Details
+
+| Component | Purpose | Key Features | Files |
+|-----------|---------|--------------|-------|
+| **BoardHeader** | Top bar with mode toggles | Dev/Test toggle, finalization banner | board-header.ts/html/css |
+| **TeamBar** | Team member management | Add/edit/delete members, modal dialogs | team-bar.ts/html/css |
+| **CapacityRow** | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode | capacity-row.ts/html/css |
+| **SprintHeader** | Column headers | Sprint names, load/capacity bars, metrics | sprint-header.ts/html/css |
+| **FeatureRow** | Feature & story container | Drag-drop zones, story cards, dev/test split | feature-row.ts/html/css |
+| **BoardModals** | Dialog overlays | Feature import, finalization warnings, delete | board-modals.ts/html/css |
+
+### State Management
+
+- **Signal-based:** Board owns `showDevTest` signal, passes as @Input to children
+- **Reactive:** Changes propagate immediately through component tree
+- **Per-component:** Each component manages its own local state (modals, edits)
+
+### CSS Architecture
+
+**CSS Distribution (Total: 2046 lines):**
+- board.css: 214 lines (global layout, PAT modal, responsive)
+- board-header.css: 106 lines (toggle styles, banner)
+- board-modals.css: 470 lines (modal dialogs, form styling)
+- capacity-row.css: 352 lines (capacity display, edit modal)
+- feature-row.css: 311 lines (drag-drop styles, story cards)
+- sprint-header.css: 193 lines (header, metrics display)
+- team-bar.css: 400 lines (member chips, member modals)
+
+**Dark Mode:** All 80+ UI elements use `:host-context(.dark-theme)` selectors (70+ instances) for app-controlled theming (not OS-detected).
+
+### Development Guidelines
+
+1. **Adding Features:** Create or extend components; don't add to board.ts
+2. **Styling:** Keep CSS scoped to component; use :host-context(.dark-theme) for dark mode
+3. **State:** Use signals for reactive state; pass immutable data via @Input
+4. **Modals:** Place in appropriate subcomponent or board-modals; add dark-mode styles
+5. **Performance:** Each component is standalone (no dependency chains); lazy loading ready
+
+---
+
 ## 🚀 Local Development Quick Start
 
 ```bash

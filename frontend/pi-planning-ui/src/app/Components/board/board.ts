@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, inject, signal, ChangeDetectorRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { StoryCard } from '../story-card/story-card';
 import { UserService } from '../../Services/user.service';
 import { BoardService } from '../../features/board/services/board.service';
 import {
@@ -20,16 +19,35 @@ import {
   UserStoryDto,
   TeamMemberResponseDto,
 } from '../../shared/models/board.dto';
+import { BoardHeader } from './board-header/board-header';
+import { TeamBar } from './team-bar/team-bar';
+import { CapacityRow } from './capacity-row/capacity-row';
+import { SprintHeader } from './sprint-header/sprint-header';
+import { FeatureRow } from './feature-row/feature-row';
+import { BoardModals } from './board-modals/board-modals';
 
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, DragDropModule, StoryCard, FormsModule, MatMenuModule, MatIconModule, MatButtonModule],
+  imports: [
+    CommonModule,
+    DragDropModule,
+    FormsModule,
+    MatMenuModule,
+    MatIconModule,
+    MatButtonModule,
+    BoardHeader,
+    TeamBar,
+    CapacityRow,
+    SprintHeader,
+    FeatureRow,
+    BoardModals,
+  ],
   templateUrl: './board.html',
   styleUrls: ['./board.css'],
 })
 export class Board implements OnInit {
-  protected boardService = inject(BoardService);
+  public boardService = inject(BoardService);
   private userService = inject(UserService);
   private route = inject(ActivatedRoute);
   protected router = inject(Router); // Make public for template
@@ -40,60 +58,29 @@ export class Board implements OnInit {
   protected loading = this.boardService.loading;
   protected error = this.boardService.error;
 
-  // Local UI state
+  // Local UI state - needed by subcomponents
   protected cursorName = signal(this.userService.getName() || 'Guest');
   protected cursorX = signal(0);
   protected cursorY = signal(0);
   public showDevTest = signal(false);
-  protected showAddMemberModal = signal(false);
-  protected editingMember = signal<TeamMemberResponseDto | null>(null);
-  protected showDeleteMemberModal = signal(false);
-  protected memberToDelete = signal<TeamMemberResponseDto | null>(null);
-  protected showCapacityModal = signal(false);
-  protected showImportFeatureModal = signal(false);
-  protected newMemberName = signal('');
-  protected newMemberRole = signal<'dev' | 'test'>('dev');
-  protected memberFormError = signal('');
-  protected selectedSprintId = signal<number | null>(null);
-  protected capacityEdits = signal<Record<number, { dev: number; test: number }>>({});
-  protected capacityFormError = signal('');
-  
-  // Import feature form state
-  protected importFeatureId = signal('');
-  protected importPat = signal('');
-  protected rememberPatForImport = signal(false);
-  protected importLoading = signal(false);
-  protected importError = signal<string | null>(null);
 
-  // Refresh feature form state
-  protected showRefreshFeatureModal = signal(false);
-  protected selectedFeature = signal<FeatureResponseDto | null>(null);
-  protected refreshPat = signal('');
-  protected rememberPatForRefresh = signal(false);
-  protected refreshLoading = signal(false);
-  protected refreshError = signal<string | null>(null);
+  // Board finalization state - managed here, used by board-header and board-modals
+  public showFinalizeConfirmation = signal(false);
+  public finalizationWarnings = signal<string[]>([]);
+  public finalizationLoading = signal(false);
+  public finalizationError = signal<string | null>(null);
 
-  // Delete feature confirmation state
-  protected showDeleteFeatureModal = signal(false);
-  protected featureToDelete = signal<FeatureResponseDto | null>(null);
-  protected deleteLoading = signal(false);
-  protected deleteError = signal<string | null>(null);
+  @ViewChild(BoardModals)
+  private boardModals?: BoardModals;
 
-  // Board finalization state
-  protected showFinalizeConfirmation = signal(false);
-  protected finalizationWarnings = signal<string[]>([]);
-  protected finalizationLoading = signal(false);
-  protected finalizationError = signal<string | null>(null);
-  protected operationBlockedError = signal<string | null>(null);
-
-  // PAT validation state
+  // PAT modal state
   protected showPatModal = signal(false);
   protected patModalInput = signal('');
   protected patValidationError = signal<string | null>(null);
   protected patValidationLoading = signal(false);
   protected currentBoardId = signal<number | null>(null);
   protected patValidated = signal(false);
-  protected boardPreview = signal<any>(null);  // Store board preview for PAT validation
+  protected boardPreview = signal<any>(null);
 
   ngOnInit(): void {
     // Load board from route parameter
@@ -104,10 +91,10 @@ export class Board implements OnInit {
         this.patValidated.set(false);
         this.patModalInput.set('');
         this.patValidationError.set(null);
-        
+
         // First, check if board requires PAT validation using lightweight preview endpoint
         const preview = await this.boardService.getBoardPreview(boardId);
-        
+
         if (preview && preview.featureCount > 0 && preview.sampleFeatureAzureId) {
           // Board has features - store preview data and show PAT modal before loading board data
           this.boardPreview.set(preview);
@@ -152,12 +139,12 @@ export class Board implements OnInit {
         preview.sampleFeatureAzureId,
         pat
       );
-      
+
       if (isValid) {
         this.patValidated.set(true);
         this.showPatModal.set(false);
         this.patModalInput.set(''); // Clear input after successful validation
-        
+
         // Now load the board with validated PAT
         this.boardService.loadBoard(boardId);
       } else {
@@ -182,193 +169,22 @@ export class Board implements OnInit {
     this.router.navigate(['/']);
   }
 
-  /**
-   * Open import feature modal
-   */
-  openImportFeatureModal(): void {
-    this.importFeatureId.set('');
-    const storedPat = this.boardService.getStoredPat();
-    if (storedPat) {
-      this.importPat.set(storedPat);
-      this.rememberPatForImport.set(true);
-    } else {
-      this.importPat.set('');
-      this.rememberPatForImport.set(false);
-    }
-    this.importError.set(null);
-    this.showImportFeatureModal.set(true);
+  public openImportFeatureModal(): void {
+    this.boardModals?.openImportFeatureModal();
   }
 
-  /**
-   * Close import feature modal
-   */
-  closeImportFeatureModal(): void {
-    this.showImportFeatureModal.set(false);
-    this.importLoading.set(false);
-    this.importError.set(null);
+  public openRefreshFeatureModal(feature: FeatureResponseDto): void {
+    this.boardModals?.openRefreshFeatureModal(feature);
   }
 
-  /**
-   * Import feature from Azure DevOps
-   */
-  async importFeatureFromAzure(): Promise<void> {
-    const currentBoard = this.board();
-    if (!currentBoard) return;
-
-    const featureId = this.importFeatureId().trim();
-    const pat = this.importPat().trim();
-
-    if (!featureId || !pat) {
-      this.importError.set('Please provide Feature ID and PAT');
-      return;
-    }
-
-    if (!currentBoard.organization || !currentBoard.project) {
-      this.importError.set('Board is missing organization or project information');
-      return;
-    }
-
-    this.importLoading.set(true);
-    this.importError.set(null);
-
-    try {
-      await this.boardService.importFeature(
-        currentBoard.id,
-        currentBoard.organization,
-        currentBoard.project,
-        featureId,
-        pat
-      );
-      if (this.rememberPatForImport()) {
-        this.boardService.storePat(pat);
-      } else {
-        this.boardService.clearPat();
-      }
-      this.closeImportFeatureModal();
-    } catch (error: any) {
-      this.importError.set(error.message || 'Failed to import feature');
-    } finally {
-      this.importLoading.set(false);
-    }
-  }
-
-  /**
-   * Open refresh feature modal
-   */
-  openRefreshFeatureModal(feature: FeatureResponseDto): void {
-    this.selectedFeature.set(feature);
-    
-    // Prepopulate PAT if stored and valid
-    const storedPat = this.boardService.getStoredPat();
-    if (storedPat) {
-      this.refreshPat.set(storedPat);
-      this.rememberPatForRefresh.set(true);
-    } else {
-      this.refreshPat.set('');
-      this.rememberPatForRefresh.set(false);
-    }
-    
-    this.refreshError.set(null);
-    this.showRefreshFeatureModal.set(true);
-  }
-
-  /**
-   * Close refresh feature modal
-   */
-  closeRefreshFeatureModal(): void {
-    this.showRefreshFeatureModal.set(false);
-    this.selectedFeature.set(null);
-    this.refreshLoading.set(false);
-    this.refreshError.set(null);
-  }
-
-  /**
-   * Refresh feature from Azure DevOps
-   */
-  async refreshFeatureFromAzure(): Promise<void> {
-    const feature = this.selectedFeature();
-    const currentBoard = this.board();
-    const pat = this.refreshPat().trim();
-    
-    if (!feature || !currentBoard || !pat) return;
-
-    if (!currentBoard.organization || !currentBoard.project) {
-      this.refreshError.set('Board is missing organization or project information');
-      return;
-    }
-
-    this.refreshLoading.set(true);
-    this.refreshError.set(null);
-    
-    try {
-      await this.boardService.refreshFeature(
-        currentBoard.id,
-        feature.id,
-        currentBoard.organization,
-        currentBoard.project,
-        pat
-      );
-      
-      // Store PAT if checkbox is checked
-      if (this.rememberPatForRefresh()) {
-        this.boardService.storePat(pat);
-      } else {
-        this.boardService.clearPat();
-      }
-      
-      this.closeRefreshFeatureModal();
-    } catch (error: any) {
-      this.refreshError.set(error.message || 'Failed to refresh feature');
-    } finally {
-      this.refreshLoading.set(false);
-    }
-  }
-
-  /**
-   * Open delete feature confirmation modal
-   */
-  openDeleteFeatureModal(feature: FeatureResponseDto): void {
-    this.featureToDelete.set(feature);
-    this.deleteError.set(null);
-    this.showDeleteFeatureModal.set(true);
-  }
-
-  /**
-   * Close delete feature confirmation modal
-   */
-  closeDeleteFeatureModal(): void {
-    this.showDeleteFeatureModal.set(false);
-    this.featureToDelete.set(null);
-    this.deleteLoading.set(false);
-    this.deleteError.set(null);
-  }
-
-  /**
-   * Delete feature and its user stories
-   */
-  async deleteFeature(): Promise<void> {
-    const feature = this.featureToDelete();
-    const currentBoard = this.board();
-    
-    if (!feature || !currentBoard) return;
-
-    this.deleteLoading.set(true);
-    this.deleteError.set(null);
-    
-    try {
-      await this.boardService.deleteFeature(currentBoard.id, feature.id);
-      this.closeDeleteFeatureModal();
-    } catch (error: any) {
-      this.deleteError.set(error.message || 'Failed to delete feature');
-    } finally {
-      this.deleteLoading.set(false);
-    }
+  public openDeleteFeatureModal(feature: FeatureResponseDto): void {
+    this.boardModals?.openDeleteFeatureModal(feature);
   }
 
   /**
    * Get all sprints from the board (skip Sprint 0 for main display)
    */
-  protected getDisplayedSprints(): SprintDto[] {
+  public getDisplayedSprints(): SprintDto[] {
     const currentBoard = this.board();
     if (!currentBoard) return [];
     return currentBoard.sprints.filter((s) => this.isParkingLotSprint(s) === false);
@@ -399,12 +215,12 @@ export class Board implements OnInit {
     return sprint0?.id ?? 0;
   }
 
-  protected getTeamMembers(): TeamMemberResponseDto[] {
+  public getTeamMembers(): TeamMemberResponseDto[] {
     const currentBoard = this.board();
     return currentBoard ? currentBoard.teamMembers : [];
   }
 
-  protected getMemberRoleLabel(member: TeamMemberResponseDto): string {
+  public getMemberRoleLabel(member: TeamMemberResponseDto): string {
     if (member.isDev && member.isTest) {
       return 'Dev/Test';
     }
@@ -417,7 +233,7 @@ export class Board implements OnInit {
     return 'Member';
   }
 
-  protected getMemberSprintCapacity(
+  public getMemberSprintCapacity(
     member: TeamMemberResponseDto,
     sprintId: number,
   ): { dev: number; test: number } {
@@ -428,7 +244,7 @@ export class Board implements OnInit {
     };
   }
 
-  protected getSprintCapacityTotals(sprintId: number): {
+  public getSprintCapacityTotals(sprintId: number): {
     dev: number;
     test: number;
     total: number;
@@ -445,7 +261,7 @@ export class Board implements OnInit {
     return { dev, test, total: dev + test };
   }
 
-  protected isSprintOverCapacity(sprintId: number, type: 'dev' | 'test' | 'total'): boolean {
+  public isSprintOverCapacity(sprintId: number, type: 'dev' | 'test' | 'total'): boolean {
     const load = this.getSprintTotals(sprintId);
     const cap = this.getSprintCapacityTotals(sprintId);
 
@@ -462,7 +278,7 @@ export class Board implements OnInit {
    * Construct a grid-template-columns string for header and rows so columns align.
    * First column: feature (fixed), second: parking lot (fixed), rest: sprints (flex)
    */
-  protected getGridTemplateColumns(): string {
+  public getGridTemplateColumns(): string {
     const currentBoard = this.board();
     if (!currentBoard) return '';
     const sprints = this.getDisplayedSprints();
@@ -675,156 +491,6 @@ export class Board implements OnInit {
     this.boardService.toggleDevTestToggle();
   }
 
-  protected openAddMember(): void {
-    this.newMemberName.set('');
-    this.newMemberRole.set('dev');
-    this.editingMember.set(null);
-    this.showAddMemberModal.set(true);
-  }
-
-  protected openEditMember(member: TeamMemberResponseDto): void {
-    this.newMemberName.set(member.name);
-    if (member.isDev && !member.isTest) {
-      this.newMemberRole.set('dev');
-    } else if (member.isTest && !member.isDev) {
-      this.newMemberRole.set('test');
-    } else {
-      this.newMemberRole.set('dev');
-    }
-    this.editingMember.set(member);
-    this.showAddMemberModal.set(true);
-  }
-
-  protected closeAddMember(): void {
-    this.editingMember.set(null);
-    this.showAddMemberModal.set(false);
-  }
-
-  protected saveNewMember(): void {
-    this.memberFormError.set('');
-    
-    const name = this.newMemberName().trim();
-    if (!name) {
-      this.memberFormError.set('Team member name cannot be empty');
-      return;
-    }
-
-    if (name.length > 100) {
-      this.memberFormError.set('Team member name must be 100 characters or less');
-      return;
-    }
-
-    const editing = this.editingMember();
-    if (editing) {
-      this.boardService.updateTeamMember(editing.id, name, this.newMemberRole(), this.showDevTest());
-    } else {
-      this.boardService.addTeamMember(name, this.newMemberRole(), this.showDevTest());
-    }
-    this.showAddMemberModal.set(false);
-    this.editingMember.set(null);
-    this.memberFormError.set('');
-  }
-
-  protected openDeleteMember(member: TeamMemberResponseDto): void {
-    this.memberToDelete.set(member);
-    this.showDeleteMemberModal.set(true);
-  }
-
-  protected closeDeleteMember(): void {
-    this.memberToDelete.set(null);
-    this.showDeleteMemberModal.set(false);
-  }
-
-  protected confirmDeleteMember(): void {
-    const member = this.memberToDelete();
-    if (!member) return;
-    this.boardService.removeTeamMember(member.id);
-    this.closeDeleteMember();
-  }
-
-  protected openCapacityEditor(sprintId: number): void {
-    this.selectedSprintId.set(sprintId);
-    const edits: Record<number, { dev: number; test: number }> = {};
-    this.getTeamMembers().forEach((member) => {
-      const current = this.getMemberSprintCapacity(member, sprintId);
-      edits[member.id] = { dev: current.dev, test: current.test };
-    });
-    this.capacityEdits.set(edits);
-    this.showCapacityModal.set(true);
-  }
-
-  protected closeCapacityEditor(): void {
-    this.showCapacityModal.set(false);
-    this.selectedSprintId.set(null);
-    this.capacityEdits.set({});
-  }
-
-  protected updateCapacityEdit(memberId: number, field: 'dev' | 'test', value: number): void {
-    const edits = { ...this.capacityEdits() };
-    const existing = edits[memberId] ?? { dev: 0, test: 0 };
-    
-    // When toggle is OFF, preserve role-based capacity field
-    if (!this.showDevTest()) {
-      const member = this.getTeamMembers().find(m => m.id === memberId);
-      if (member) {
-        // Preserve which role's capacity field we're editing
-        if (member.isDev) {
-          edits[memberId] = { dev: value, test: 0 };
-        } else if (member.isTest) {
-          edits[memberId] = { dev: 0, test: value };
-        }
-      }
-    } else {
-      edits[memberId] = { ...existing, [field]: value };
-    }
-    
-    this.capacityEdits.set(edits);
-  }
-
-  protected saveCapacityEdits(): void {
-    this.capacityFormError.set('');
-    
-    const sprintId = this.selectedSprintId();
-    if (sprintId === null) {
-      return;
-    }
-
-    // Find the sprint to get max capacity
-    const sprint = this.board()?.sprints.find(s => s.id === sprintId);
-    if (!sprint) return;
-
-    // Calculate sprint duration in working days
-    const startDate = new Date(sprint.startDate);
-    const endDate = new Date(sprint.endDate);
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / msPerDay) + 1;
-    const maxCapacity = Math.floor((totalDays / 7) * 5);
-
-    // Validate capacities
-    const edits = this.capacityEdits();
-    for (const [id, values] of Object.entries(edits)) {
-      // Check for integer values
-      if (!Number.isInteger(values.dev) || !Number.isInteger(values.test)) {
-        this.capacityFormError.set('Capacity must be a positive integer');
-        return;
-      }
-      if (values.dev < 0 || values.test < 0) {
-        this.capacityFormError.set('Capacity cannot be negative');
-        return;
-      }
-      if (values.dev > maxCapacity || values.test > maxCapacity) {
-        this.capacityFormError.set(`Capacity cannot exceed sprint duration (${maxCapacity} working days)`);
-        return;
-      }
-    }
-
-    // Save if validation passes
-    Object.entries(edits).forEach(([id, values]) => {
-      this.boardService.updateTeamMemberCapacity(Number(id), sprintId, values.dev, values.test);
-    });
-    this.closeCapacityEditor();
-  }
-
   /**
    * Mouse move handler for cursor display
    */
@@ -871,7 +537,6 @@ export class Board implements OnInit {
 
     this.finalizationLoading.set(true);
     this.finalizationError.set(null);
-    this.operationBlockedError.set(null);
 
     try {
       await this.boardService.finalizeBoard(currentBoard.id);
