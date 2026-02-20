@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { UserStoryDto } from '../../shared/models/board.dto';
-import { Board } from '../../features/board/components/board';
+import { UserStoryDto } from '../../models/board.dto';
+import { Board } from '../../../features/board/components/board';
 
 @Component({
   selector: 'app-story-card',

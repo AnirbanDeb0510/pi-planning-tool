@@ -2,8 +2,8 @@ import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { BoardApiService } from '../../features/board/services/board-api.service';
-import { BoardCreateDto, BoardCreatedDto } from '../../shared/models/board-api.dto';
+import { BoardApiService } from '../../services/board-api.service';
+import { BoardCreateDto, BoardCreatedDto } from '../../../../shared/models/board-api.dto';
 
 /**
  * Create Board Component
