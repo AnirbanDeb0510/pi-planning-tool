@@ -1,0 +1,126 @@
+<!-- Loading State -->
+<div *ngIf="loading()" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <p>Loading board...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error()" class="error-overlay">
+  <div class="error-message">
+    <h2>⚠️ Error</h2>
+    <p>{{ error() }}</p>
+    <button class="btn-primary" (click)="boardService.clearError(); router.navigate(['/boards'])">
+      Go to Boards List
+    </button>
+  </div>
+</div>
+
+<!-- Finalized Board Banner -->
+<div *ngIf="board()?.isFinalized" class="finalized-board-banner">
+  <span class="finalized-icon">✓</span>
+  <span class="finalized-text">This board is finalized and read-only</span>
+  <button 
+    type="button" 
+    class="restore-banner-btn"
+    (click)="restoreBoard()"
+    title="Restore this board to allow further editing">
+    Restore
+  </button>
+</div>
+
+<!-- PAT Validation Modal -->
+<div class="modal-backdrop" *ngIf="showPatModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Azure DevOps PAT Required</h3>
+      <button type="button" class="modal-close" (click)="closePatModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="pat-info">
+        This board contains features from Azure DevOps. Please provide a Personal Access Token (PAT) to verify access.
+      </p>
+      <div class="form-group">
+        <label for="pat-input">Personal Access Token (PAT)</label>
+        <input
+          id="pat-input"
+          type="password"
+          class="modal-input"
+          [value]="patModalInput()"
+          (input)="patModalInput.set($any($event.target).value)"
+          placeholder="Enter your Azure DevOps PAT"
+          [disabled]="patValidationLoading()"
+        />
+        <small class="pat-hint">Your PAT will not be stored. It's used only to verify access.</small>
+      </div>
+      <div *ngIf="patValidationError()" class="form-error">
+        {{ patValidationError() }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="closePatModal()"
+        [disabled]="patValidationLoading()"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn-primary"
+        type="button"
+        (click)="validatePat()"
+        [disabled]="patValidationLoading()"
+      >
+        {{ patValidationLoading() ? 'Validating...' : 'Validate & Open Board' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Board Content -->
+<div *ngIf="!loading() && !error() && board() && patValidated()">
+  <div class="board-container" (mousemove)="onMouseMove($event)">
+    <!-- Board Header (Dev/Test Toggle) -->
+    <app-board-header [board]="board" [parent]="this" [showDevTest]="showDevTest"></app-board-header>
+
+    <!-- Team Bar -->
+    <app-team-bar [board]="board" [parent]="this"></app-team-bar>
+
+    <!-- Board Content Grid -->
+    <div class="board-content">
+      <!-- Capacity Row -->
+      <app-capacity-row [board]="board" [parent]="this" [showDevTest]="showDevTest"></app-capacity-row>
+
+      <!-- Sprint Header -->
+      <app-sprint-header [board]="board" [parent]="this" [showDevTest]="showDevTest"></app-sprint-header>
+
+      <!-- Feature Rows -->
+      <div
+        class="feature-rows"
+        cdkDropList
+        cdkDropListOrientation="vertical"
+        [cdkDropListData]="board()!.features"
+        (cdkDropListDropped)="dropFeature($event)"
+      >
+        <app-feature-row
+          *ngFor="let feature of board()!.features"
+          [feature]="feature"
+          [board]="board"
+          [showDevTest]="showDevTest"
+          [parent]="this"
+          cdkDrag
+          [cdkDragData]="feature"
+          [title]="board()?.isFinalized ? 'Board is finalized - reordering changes are displayed only' : ''"
+        ></app-feature-row>
+      </div>
+    </div>
+
+    <!-- Floating cursor name -->
+    <div class="cursor-label" [ngStyle]="{ top: cursorY() + 'px', left: cursorX() + 'px' }">
+      {{ cursorName() }}
+    </div>
+  </div>
+
+  <!-- Modals Component -->
+  <app-board-modals [board]="board" [parent]="this"></app-board-modals>
+</div>

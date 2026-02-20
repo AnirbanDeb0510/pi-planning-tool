@@ -1,0 +1,139 @@
+<!-- Team Member Bar -->
+<div class="team-bar">
+  <div class="team-bar-title">Team Members</div>
+  <div class="team-member-list">
+    <div class="team-member-chip" *ngFor="let member of getTeamMembers()">
+      <span class="member-name">{{ member.name }}</span>
+      <span
+        *ngIf="parent.showDevTest()"
+        class="member-role"
+        [class.dev]="member.isDev && !member.isTest"
+        [class.test]="member.isTest && !member.isDev"
+        [class.both]="member.isDev && member.isTest"
+      >
+        {{ getMemberRoleLabel(member) }}
+      </span>
+      <button class="member-action" type="button" (click)="openEditMember(member)" title="Edit member">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button class="member-action" type="button" (click)="openDeleteMember(member)" title="Delete member" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('delete members') : 'Delete member'">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+  <div class="team-bar-actions">
+    <button class="add-member-button" type="button" (click)="openAddMember()" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('add members') : 'Add team member'">+ Add Member</button>
+    <button class="add-feature-button" type="button" (click)="parent.openImportFeatureModal()" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('add features') : 'Add feature from Azure'">+ Add Feature</button>
+
+    <!-- Finalization buttons -->
+    <div class="finalization-buttons">
+      <button 
+        *ngIf="!board()?.isFinalized"
+        class="btn-finalize" 
+        type="button" 
+        (click)="parent.openFinalizeConfirmation()"
+        title="Finalize board - marks it as ready for execution"
+      >
+        ✓ Finalize
+      </button>
+      <button 
+        *ngIf="board()?.isFinalized"
+        class="btn-restore" 
+        type="button" 
+        (click)="parent.restoreBoard()"
+        [disabled]="parent.finalizationLoading()"
+        title="Restore board - allows further editing"
+      >
+        {{ parent.finalizationLoading() ? '⟳ Restoring...' : '↺ Restore' }}
+      </button>
+      <span *ngIf="board()?.isFinalized" class="finalized-badge">
+        ✓ Finalized
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Member Modal -->
+<div class="modal-backdrop" *ngIf="showAddMemberModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ editingMember() ? 'Edit Team Member' : 'Add Team Member' }}</h3>
+      <button type="button" class="modal-close" (click)="closeAddMember()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="member-name">Name</label>
+        <input
+          id="member-name"
+          type="text"
+          class="modal-input"
+          [value]="newMemberName()"
+          (input)="newMemberName.set($any($event.target).value)"
+          placeholder="Enter member name"
+          (keyup.enter)="saveNewMember()"
+        />
+      </div>
+      <div class="form-group" *ngIf="parent.showDevTest()">
+        <label for="member-role">Role</label>
+        <select
+          id="member-role"
+          class="modal-select"
+          [value]="newMemberRole()"
+          (change)="onRoleChange($any($event.target).value)"
+        >
+          <option value="dev">Developer</option>
+          <option value="test">Tester</option>
+        </select>
+      </div>
+      <div *ngIf="memberFormError()" class="form-error">
+        {{ memberFormError() }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="closeAddMember()"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn-primary"
+        type="button"
+        (click)="saveNewMember()"
+      >
+        {{ editingMember() ? 'Update Member' : 'Add Member' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Member Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="showDeleteMemberModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Delete Team Member</h3>
+      <button type="button" class="modal-close" (click)="closeDeleteMember()">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>{{ memberToDelete()?.name }}</strong>?</p>
+      <p class="warning">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="closeDeleteMember()"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn-danger"
+        type="button"
+        (click)="confirmDeleteMember()"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</div>

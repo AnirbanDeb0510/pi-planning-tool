@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Phase 3A: Board Component Refactoring & Dark-Mode Implementation (Feb 20, 2026)
+
+- **Component Architecture Modernization:**
+  - Refactored monolithic board component into 6 standalone subcomponents
+  - New components: `BoardHeader`, `TeamBar`, `CapacityRow`, `SprintHeader`, `FeatureRow`, `BoardModals`
+  - All components use Angular 15+ standalone bootstrap pattern
+  - Each component fully isolated with scoped CSS
+
+- **CSS Consolidation & Optimization:**
+  - Reduced main board.css from 1277 lines to 214 lines (83% reduction)
+  - Distributed component-specific CSS: 2046 total lines across 7 files
+  - Each subcomponent owns its styling (no external dependencies)
+  - Maintains responsive design and accessibility
+
+- **Dark-Mode Theme System:**
+  - Migrated from OS-detected `@media (prefers-color-scheme: dark)` to app-controlled `:host-context(.dark-theme)` class selectors
+  - Dark-mode support across all 80+ UI elements
+  - Theme consistency: all text, backgrounds, borders, buttons properly styled
+  - Special cases handled: over-capacity text stays red, form elements readable
+
+- **Dev/Test Toggle Integration:**
+  - Signal-based state management: `showDevTest` signal properly wired through component hierarchy
+  - Board passes toggle to all child components (BoardHeader, SprintHeader, FeatureRow, CapacityRow)
+  - Role selector conditionally hidden when toggle disabled
+  - Dev/Test split consistently displays in story cards and capacity modals
+
+- **UI/UX Enhancements:**
+  - Capacity edit modal: 60% name width, 20% gap, 20% inputs (improved layout proportions)
+  - Always display both Dev/Test inputs in modal (previously conditionally hidden)
+  - Font colors corrected in dark mode for capacity edit rows
+  - Increased visual spacing between label and input field (16px → 24px)
+
+- **Build & Performance:**
+  - Build successful with zero TypeScript errors
+  - Bundle size: 756.10 kB (warning on budget, acceptable for feature-rich SPA)
+  - No breaking changes; full backward compatibility maintained
+
+- **Documentation & Metrics:**
+  - All 6 subcomponents: standalone: true, individual (component.ts, .html, .css)
+  - Dark-theme: 70+ `:host-context(.dark-theme)` selectors across all files
+  - CSS distribution: board (214) + board-header (106) + board-modals (470) + capacity-row (352) + feature-row (311) + sprint-header (193) + team-bar (400)
+  - Removed: 0 instances of prefers-color-scheme (fully migrated)
+
+- **Files Modified:**
+  - Frontend: board.ts (cleaned imports), board.html (refactored template), board.css (consolidated)
+  - New: board-header/, team-bar/, capacity-row/, sprint-header/, feature-row/, board-modals/ (6 subcomponents)
+  - CSS: Updated all 7 component stylesheets with :host-context(.dark-theme) rules
+
+---
+
 ### Added - Board Finalization & Impact Analysis (Feb 18, 2026)
 
 - **Board Finalization API:**

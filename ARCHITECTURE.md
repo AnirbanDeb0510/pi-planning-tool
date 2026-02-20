@@ -704,6 +704,219 @@ public async Task<Board?> GetBoardAsync(int boardId)
 
 ---
 
+## 🎨 Frontend UI Component Architecture (Phase 3A+3B - Feb 20, 2026)
+
+### Phase 3A: Board Component Refactoring
+
+The board component has been modernized using Angular 15+ standalone component architecture. The monolithic board component is now decomposed into 6 focused subcomponents, each with scoped styling and clear responsibilities.
+
+### Component Hierarchy
+
+```
+Board (Main Container)
+├── BoardHeader (Toggle & Dev/Test Mode)
+├── TeamBar (Team Members Management)
+├── CapacityRow (Sprint Capacity Display & Edit)
+├── SprintHeader (Column Headers & Metrics)
+├── FeatureRow × N (Feature Cards with Stories)
+└── BoardModals (Import, Finalize, Delete Dialogs)
+```
+
+### Subcomponent Details
+
+| Component | Purpose | Key Features | Files |
+|-----------|---------|--------------|-------|
+| **BoardHeader** | Top bar with mode toggles | Dev/Test toggle, finalization banner | board-header.ts/html/css |
+| **TeamBar** | Team member management | Add/edit/delete members, modal dialogs | team-bar.ts/html/css |
+| **CapacityRow** | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode | capacity-row.ts/html/css |
+| **SprintHeader** | Column headers | Sprint names, load/capacity bars, metrics | sprint-header.ts/html/css |
+| **FeatureRow** | Feature & story container | Drag-drop zones, story cards, dev/test split | feature-row.ts/html/css |
+| **BoardModals** | Dialog overlays | Feature import, finalization warnings, delete | board-modals.ts/html/css |
+
+### Phase 3B: Application Architecture Restructuring
+
+Migrated from flat folder structure to **domain-driven architecture** for improved scalability and maintainability:
+
+**New Folder Structure:**
+```
+frontend/pi-planning-ui/src/
+├── app/
+│   ├── core/
+│   │   ├── services/
+│   │   │   └── user.service.ts        # PAT & user state (persistent)
+│   │   └── guards/
+│   │
+│   ├── shared/
+│   │   ├── models/                    # DTOs & data types
+│   │   ├── components/               # Reusable: story-card, enter-your-name
+│   │   └── utilities/
+│   │
+│   ├── features/
+│   │   ├── board/
+│   │   │   ├── components/           # Main board + 6 subcomponents
+│   │   │   ├── services/             # 5 split services (see below)
+│   │   │   │   ├── board.service.ts
+│   │   │   │   ├── feature.service.ts
+│   │   │   │   ├── team.service.ts
+│   │   │   │   ├── story.service.ts
+│   │   │   │   └── sprint.service.ts
+│   │   │   ├── models/
+│   │   │   └── index.ts              # Barrel export
+│   │   │
+│   │   └── home/
+│   │       ├── components/
+│   │       └── index.ts              # Barrel export
+│   │
+│   ├── app.component.ts
+│   ├── app.routes.ts
+│   └── app.config.ts
+│
+├── styles/
+└── index.html
+```
+
+**Service Split (from 850-line monolith):**
+
+| Service | Responsibility | LOC | Key Methods |
+|---------|-----------------|-----|------------|
+| **board.service.ts** | Board fetch, PAT handling, state | 200 | `getBoard()`, `validatePAT()`, `setBoardState()` |
+| **feature.service.ts** | Feature import/refresh/reorder | 150 | `importFeatures()`, `refreshFeature()`, `reorderFeatures()` |
+| **team.service.ts** | Team members & capacity | 120 | `addMember()`, `updateCapacity()`, `deleteMember()` |
+| **story.service.ts** | Story movement between sprints | 100 | `moveStory()`, `refreshStory()`, `getStoryPosition()` |
+| **sprint.service.ts** | Sprint utilities & calculations | 80 | `calculateMetrics()`, `getSprintPath()`, `formatSprintName()` |
+
+**Barrel Exports (8 files):**
+- `core/index.ts` - UserService
+- `shared/models/index.ts` - All DTOs
+- `shared/components/index.ts` - Story-card, Enter-your-name
+- `features/board/index.ts` - Board component + services
+- `features/board/components/index.ts` - All subcomponents
+- `features/board/services/index.ts` - All 5 services
+- `features/board/models/index.ts` - Board-specific types
+- `features/home/index.ts` - Home component
+
+**TypeScript Path Aliases (tsconfig.json):**
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@features/*": ["src/app/features/*"]
+    }
+  }
+}
+```
+
+**Import Pattern Before & After:**
+```typescript
+// Before (flat structure)
+import { BoardService } from '../../../services/board.service';
+
+// After (domain-driven with alias)
+import { BoardService } from '@features/board/services';
+```
+
+### State Management & Service Layer
+
+- **Signal-based:** Board owns `showDevTest` signal, passes as @Input to children
+- **Reactive:** Changes propagate immediately through component tree
+- **Per-component:** Each component manages its own local state (modals, edits)
+- **Service Isolation:** Each service handles one domain; no circular dependencies
+
+### CSS Architecture & Dark Mode
+
+**CSS Distribution (Total: 2046 lines):**
+- board.css: 214 lines (global layout, PAT modal, responsive)
+- board-header.css: 106 lines (toggle styles, banner)
+- board-modals.css: 470 lines (modal dialogs, form styling)
+- capacity-row.css: 352 lines (capacity display, edit modal)
+- feature-row.css: 311 lines (drag-drop styles, story cards)
+- sprint-header.css: 193 lines (header, metrics display)
+- team-bar.css: 400 lines (member chips, member modals)
+
+**Dark Mode Coverage (All 5 Routes):**
+- Home (/) - Gradient bg + bright text
+- Board List (/boards) - Cards, filters, search
+- Create Board (/boards/new) - Form inputs, checkboxes
+- Board View (/boards/:id) - Main board + 6 subcomponents
+- Welcome (/name) - Modal + input
+
+**Dark Theme Implementation:**
+- All 80+ UI elements use `:host-context(.dark-theme)` selectors (70+ instances) for app-controlled theming (not OS-detected)
+- Text color: #e8f0ff (light blue) for improved contrast vs #374151 default
+- Input styling: box-sizing border-box to prevent overflow
+
+### Development Guidelines
+
+1. **Adding Features:** Create or extend components; don't add to board.ts
+2. **Styling:** Keep CSS scoped to component; use :host-context(.dark-theme) for dark mode
+3. **State:** Use signals for reactive state; pass immutable data via @Input
+4. **Modals:** Place in appropriate subcomponent or board-modals; add dark-mode styles
+5. **Performance:** Each component is standalone (no dependency chains); lazy loading ready
+6. **Services:** Keep focused on single domain; use barrel exports for clean imports
+7. **Types:** Use shared DTOs from models/ folder; avoid duplication
+
+---
+
+## 🎨 Frontend UI Component Architecture (Phase 3A - Feb 20, 2026)
+
+### Board Component Refactoring
+
+The board component has been modernized using Angular 15+ standalone component architecture. The monolithic board component is now decomposed into 6 focused subcomponents, each with scoped styling and clear responsibilities.
+
+### Component Hierarchy
+
+```
+Board (Main Container)
+├── BoardHeader (Toggle & Dev/Test Mode)
+├── TeamBar (Team Members Management)
+├── CapacityRow (Sprint Capacity Display & Edit)
+├── SprintHeader (Column Headers & Metrics)
+├── FeatureRow × N (Feature Cards with Stories)
+└── BoardModals (Import, Finalize, Delete Dialogs)
+```
+
+### Subcomponent Details
+
+| Component | Purpose | Key Features | Files |
+|-----------|---------|--------------|-------|
+| **BoardHeader** | Top bar with mode toggles | Dev/Test toggle, finalization banner | board-header.ts/html/css |
+| **TeamBar** | Team member management | Add/edit/delete members, modal dialogs | team-bar.ts/html/css |
+| **CapacityRow** | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode | capacity-row.ts/html/css |
+| **SprintHeader** | Column headers | Sprint names, load/capacity bars, metrics | sprint-header.ts/html/css |
+| **FeatureRow** | Feature & story container | Drag-drop zones, story cards, dev/test split | feature-row.ts/html/css |
+| **BoardModals** | Dialog overlays | Feature import, finalization warnings, delete | board-modals.ts/html/css |
+
+### State Management
+
+- **Signal-based:** Board owns `showDevTest` signal, passes as @Input to children
+- **Reactive:** Changes propagate immediately through component tree
+- **Per-component:** Each component manages its own local state (modals, edits)
+
+### CSS Architecture
+
+**CSS Distribution (Total: 2046 lines):**
+- board.css: 214 lines (global layout, PAT modal, responsive)
+- board-header.css: 106 lines (toggle styles, banner)
+- board-modals.css: 470 lines (modal dialogs, form styling)
+- capacity-row.css: 352 lines (capacity display, edit modal)
+- feature-row.css: 311 lines (drag-drop styles, story cards)
+- sprint-header.css: 193 lines (header, metrics display)
+- team-bar.css: 400 lines (member chips, member modals)
+
+**Dark Mode:** All 80+ UI elements use `:host-context(.dark-theme)` selectors (70+ instances) for app-controlled theming (not OS-detected).
+
+### Development Guidelines
+
+1. **Adding Features:** Create or extend components; don't add to board.ts
+2. **Styling:** Keep CSS scoped to component; use :host-context(.dark-theme) for dark mode
+3. **State:** Use signals for reactive state; pass immutable data via @Input
+4. **Modals:** Place in appropriate subcomponent or board-modals; add dark-mode styles
+5. **Performance:** Each component is standalone (no dependency chains); lazy loading ready
+
+---
+
 ## 🚀 Local Development Quick Start
 
 ```bash

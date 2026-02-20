@@ -1,0 +1,112 @@
+<!-- Team Capacity Row (grid aligned with header) -->
+<div class="team-capacity-row" [style.gridTemplateColumns]="parent.getGridTemplateColumns()">
+  <div class="team-capacity-cell team-capacity-label">Team</div>
+  <div class="team-capacity-cell team-capacity-label">Capacity</div>
+  <div class="team-capacity-cell" *ngFor="let sprint of parent.getDisplayedSprints()">
+    <div class="capacity-header">
+      <span class="capacity-title">{{ sprint.name }}</span>
+      <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('edit capacity') : 'Edit team capacity'">
+        Edit
+      </button>
+    </div>
+    <div class="capacity-list">
+      <div class="capacity-chip" *ngFor="let member of getTeamMembers()">
+        <span class="capacity-name">{{ member.name }}</span>
+        <span *ngIf="showDevTest()" class="capacity-role">{{
+          parent.getMemberRoleLabel(member)
+        }}</span>
+        <ng-container *ngIf="showDevTest(); else totalCapacity">
+          <span *ngIf="member.isDev" class="capacity-value"
+            >Dev: {{ parent.getMemberSprintCapacity(member, sprint.id).dev }}</span
+          >
+          <span *ngIf="member.isTest" class="capacity-value"
+            >Test: {{ parent.getMemberSprintCapacity(member, sprint.id).test }}</span
+          >
+        </ng-container>
+        <ng-template #totalCapacity>
+          <span class="capacity-value"
+            >Capacity:
+            {{
+              parent.getMemberSprintCapacity(member, sprint.id).dev +
+                parent.getMemberSprintCapacity(member, sprint.id).test
+            }}</span
+          >
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Capacity Editor Modal -->
+<div class="modal-backdrop" *ngIf="showCapacityModal()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Edit Team Capacity</h3>
+      <button type="button" class="modal-close" (click)="closeCapacityEditor()">×</button>
+    </div>
+    <div class="modal-body">
+      <div *ngFor="let member of getTeamMembers()" class="capacity-edit-row">
+        <div class="capacity-edit-name">
+          {{ member.name }}
+          <span *ngIf="showDevTest()" class="capacity-edit-role"
+            >({{ getMemberRoleLabel(member) }})</span
+          >
+        </div>
+        <div class="capacity-edit-inputs">
+          <ng-container *ngIf="showDevTest(); else simpleCapacity">
+            <input
+              *ngIf="member.isDev"
+              class="modal-input small"
+              type="number"
+              step="1"
+              min="0"
+              [value]="capacityEdits()[member.id]?.dev ?? 0"
+              (input)="updateCapacityEdit(member.id, 'dev', $any($event.target).valueAsNumber)"
+              placeholder="Dev"
+            />
+            <input
+              *ngIf="member.isTest"
+              class="modal-input small"
+              type="number"
+              step="1"
+              min="0"
+              [value]="capacityEdits()[member.id]?.test ?? 0"
+              (input)="updateCapacityEdit(member.id, 'test', $any($event.target).valueAsNumber)"
+              placeholder="Test"
+            />
+          </ng-container>
+          <ng-template #simpleCapacity>
+            <input
+              class="modal-input small"
+              type="number"
+              step="1"
+              min="0"
+              [value]="member.isDev ? (capacityEdits()[member.id]?.dev ?? 0) : (capacityEdits()[member.id]?.test ?? 0)"
+              (input)="updateCapacityEdit(member.id, member.isDev ? 'dev' : 'test', $any($event.target).valueAsNumber)"
+              placeholder="Capacity"
+            />
+          </ng-template>
+        </div>
+      </div>
+      <div *ngIf="capacityFormError()" class="form-error">
+        {{ capacityFormError() }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="closeCapacityEditor()"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn-primary"
+        type="button"
+        (click)="saveCapacityEdits()"
+      >
+        Save Capacity
+      </button>
+    </div>
+  </div>
+</div>

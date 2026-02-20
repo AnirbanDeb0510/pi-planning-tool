@@ -1,6 +1,52 @@
 # PiPlanningUi
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.4.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.4 and uses Angular 15+ with standalone components and signals.
+
+## Component Architecture (Phase 3A)
+
+The application uses a modern Angular architecture with standalone components and clear separation of concerns.
+
+### Board Component Structure
+
+**Main Components (src/app/Components/board/):**
+
+```
+board/
+├── board.ts/html/css              # Main container, state management
+├── board-header/                  # Toggle switch, dev/test mode
+│   ├── board-header.ts
+│   ├── board-header.html
+│   └── board-header.css
+├── team-bar/                      # Team member management
+│   ├── team-bar.ts
+│   ├── team-bar.html
+│   └── team-bar.css
+├── capacity-row/                  # Capacity display & edit
+│   ├── capacity-row.ts
+│   ├── capacity-row.html
+│   └── capacity-row.css
+├── sprint-header/                 # Column headers with metrics
+│   ├── sprint-header.ts
+│   ├── sprint-header.html
+│   └── sprint-header.css
+├── feature-row/                   # Feature cards with drag-drop
+│   ├── feature-row.ts
+│   ├── feature-row.html
+│   └── feature-row.css
+└── board-modals/                  # Import, finalize, delete dialogs
+    ├── board-modals.ts
+    ├── board-modals.html
+    └── board-modals.css
+```
+
+### Key Development Patterns
+
+1. **Standalone Components:** All components use `standalone: true` with explicit imports
+2. **Signals:** Reactive state management using Angular Signals (no RxJS observables needed)
+3. **Scoped CSS:** Each component owns its styles; no global conflicts
+4. **Dark Mode:** `:host-context(.dark-theme)` for app-controlled theming (not OS-detected)
+5. **Props-based Communication:** Child components receive data and callbacks via @Input/@Output
+6. **Local State:** Each component manages its own modals, forms, and ephemeral state
 
 ## Development server
 

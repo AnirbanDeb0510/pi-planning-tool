@@ -1,0 +1,50 @@
+<!-- Header Row (grid) -->
+<div class="sprint-header" [style.gridTemplateColumns]="getGridTemplateColumns()">
+  <div class="sprint-header-cell feature-label">Feature</div>
+  <div class="sprint-header-cell parking-lot-col">Parking Lot</div>
+  <div class="sprint-header-cell" *ngFor="let sprint of getDisplayedSprints()">
+    <div class="sprint-name">{{ sprint.name }}</div>
+    <div class="sprint-metrics">
+      <div class="metric-block">
+        <div class="metric-label">Load</div>
+        <div class="metric-values">
+          <ng-container *ngIf="showDevTest(); else totalLoad">
+            <span class="dev" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'dev')"
+              >Dev: {{ getSprintTotals(sprint.id).dev }}</span
+            >
+            <span class="test" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'test')"
+              >Test: {{ getSprintTotals(sprint.id).test }}</span
+            >
+            <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
+              >Total: {{ getSprintTotals(sprint.id).total }}</span
+            >
+          </ng-container>
+          <ng-template #totalLoad>
+            <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
+              >Total: {{ getSprintTotals(sprint.id).total }}</span
+            >
+          </ng-template>
+        </div>
+      </div>
+      <div class="metric-block">
+        <div class="metric-label">Capacity</div>
+        <div class="metric-values">
+          <ng-container *ngIf="showDevTest(); else totalCapacity">
+            <span class="capacity-dev">Dev: {{ getSprintCapacityTotals(sprint.id).dev }}</span>
+            <span class="capacity-test"
+              >Test: {{ getSprintCapacityTotals(sprint.id).test }}</span
+            >
+            <span class="capacity-total"
+              >Total: {{ getSprintCapacityTotals(sprint.id).total }}</span
+            >
+          </ng-container>
+          <ng-template #totalCapacity>
+            <span class="capacity-total"
+              >Total: {{ getSprintCapacityTotals(sprint.id).total }}</span
+            >
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
