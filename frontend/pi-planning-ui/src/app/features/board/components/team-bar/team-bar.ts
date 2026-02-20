@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { Board } from '../board';
-import { BoardResponseDto, TeamMemberResponseDto } from '../../../shared/models/board.dto';
+import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
 
 @Component({
   selector: 'app-team-bar',

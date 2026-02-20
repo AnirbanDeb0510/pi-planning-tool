@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { Board } from './Components/board/board';
+import { Board } from './features/board/components/board';
 import { HomeComponent } from './Components/home/home.component';
 import { CreateBoardComponent } from './Components/create-board/create-board.component';
 import { BoardListComponent } from './Components/board-list/board-list.component';

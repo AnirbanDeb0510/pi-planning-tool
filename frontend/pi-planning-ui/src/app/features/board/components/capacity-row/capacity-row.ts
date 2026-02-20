@@ -2,7 +2,7 @@ import { Component, Input, signal, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Board } from '../board';
-import { BoardResponseDto, TeamMemberResponseDto } from '../../../shared/models/board.dto';
+import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
 
 @Component({
   selector: 'app-capacity-row',

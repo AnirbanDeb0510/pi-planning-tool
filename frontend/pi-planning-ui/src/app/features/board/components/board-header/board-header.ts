@@ -1,7 +1,7 @@
 import { Component, Input, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Board } from '../board';
-import { BoardResponseDto } from '../../../shared/models/board.dto';
+import { BoardResponseDto } from '../../../../shared/models/board.dto';
 
 @Component({
   selector: 'app-board-header',
