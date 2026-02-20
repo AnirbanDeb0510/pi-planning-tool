@@ -13,6 +13,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { UserService } from '../../../core/services/user.service';
 import { BoardService } from '../services/board.service';
+import { StoryService } from '../services/story.service';
+import { FeatureService } from '../services/feature.service';
+import { TeamService } from '../services/team.service';
 import {
   SprintDto,
   FeatureResponseDto,
@@ -48,6 +51,9 @@ import { BoardModals } from './board-modals/board-modals';
 })
 export class Board implements OnInit {
   public boardService = inject(BoardService);
+  public storyService = inject(StoryService);
+  public featureService = inject(FeatureService);
+  public teamService = inject(TeamService);
   private userService = inject(UserService);
   private route = inject(ActivatedRoute);
   protected router = inject(Router); // Make public for template
@@ -337,7 +343,7 @@ export class Board implements OnInit {
     }
 
     // Update service state
-    this.boardService.moveStory(storyId, previousSprintId, targetSprintId);
+    this.storyService.moveStory(storyId, previousSprintId, targetSprintId);
 
     // Force change detection
     this.cdr.detectChanges();
@@ -365,9 +371,9 @@ export class Board implements OnInit {
 
     if (updates.length === 0) return;
 
-    this.boardService
+    this.featureService
       .reorderFeatures(currentBoard.id, updates)
-      .catch((error) => {
+      .catch((error: any) => {
         console.error('Error reordering features:', error);
         this.boardService.loadBoard(currentBoard.id);
       });

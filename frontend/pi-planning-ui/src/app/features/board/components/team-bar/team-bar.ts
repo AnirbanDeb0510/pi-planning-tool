@@ -1,4 +1,4 @@
-import { Component, Input, signal, Signal } from '@angular/core';
+import { Component, Input, signal, Signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { Board } from '../board';
 import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
+import { TeamService } from '../../services/team.service';
 
 @Component({
   selector: 'app-team-bar',
@@ -17,6 +18,7 @@ import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/mode
 export class TeamBar {
   @Input() board!: Signal<BoardResponseDto | null>;
   @Input() parent!: Board;
+  private teamService = inject(TeamService);
 
   // Team member modal state
   protected showAddMemberModal = signal(false);
@@ -69,9 +71,9 @@ export class TeamBar {
 
     const editing = this.editingMember();
     if (editing) {
-      this.parent.boardService.updateTeamMember(editing.id, name, this.newMemberRole(), this.parent.showDevTest());
+      this.teamService.updateTeamMember(editing.id, name, this.newMemberRole(), this.parent.showDevTest());
     } else {
-      this.parent.boardService.addTeamMember(name, this.newMemberRole(), this.parent.showDevTest());
+      this.teamService.addTeamMember(name, this.newMemberRole(), this.parent.showDevTest());
     }
     this.showAddMemberModal.set(false);
     this.editingMember.set(null);
@@ -91,7 +93,8 @@ export class TeamBar {
   protected confirmDeleteMember(): void {
     const member = this.memberToDelete();
     if (!member) return;
-    this.parent.boardService.removeTeamMember(member.id);
+    this.parent.boardService.clearError();
+    this.teamService.removeTeamMember(member.id);
     this.closeDeleteMember();
   }
 

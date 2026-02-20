@@ -1,8 +1,9 @@
-import { Component, Input, signal, Signal } from '@angular/core';
+import { Component, Input, signal, Signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Board } from '../board';
 import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
+import { TeamService } from '../../services/team.service';
 
 @Component({
   selector: 'app-capacity-row',
@@ -15,6 +16,7 @@ export class CapacityRow {
   @Input() board!: Signal<BoardResponseDto | null>;
   @Input() parent!: Board;
   @Input() showDevTest!: Signal<boolean>;
+  private teamService = inject(TeamService);
 
   protected showCapacityModal = signal(false);
   protected selectedSprintId = signal<number | null>(null);
@@ -99,7 +101,7 @@ export class CapacityRow {
 
     // Save if validation passes
     Object.entries(edits).forEach(([id, values]) => {
-      this.parent.boardService.updateTeamMemberCapacity(Number(id), sprintId, values.dev, values.test);
+      this.teamService.updateTeamMemberCapacity(Number(id), sprintId, values.dev, values.test);
     });
     this.closeCapacityEditor();
   }

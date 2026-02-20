@@ -1,8 +1,9 @@
-import { Component, Input, signal, Signal } from '@angular/core';
+import { Component, Input, signal, Signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Board } from '../board';
 import { BoardResponseDto, FeatureResponseDto } from '../../../../shared/models/board.dto';
+import { FeatureService } from '../../services/feature.service';
 
 @Component({
   selector: 'app-board-modals',
@@ -14,6 +15,7 @@ import { BoardResponseDto, FeatureResponseDto } from '../../../../shared/models/
 export class BoardModals {
   @Input() board!: Signal<BoardResponseDto | null>;
   @Input() parent!: Board;
+  protected featureService = inject(FeatureService);
 
   // Feature modal states (moved from board.ts)
   protected showImportFeatureModal = signal(false);
@@ -72,7 +74,7 @@ export class BoardModals {
     this.importError.set(null);
 
     try {
-      await this.parent.boardService.importFeature(
+      await this.featureService.importFeature(
         currentBoard.id,
         currentBoard.organization,
         currentBoard.project,
@@ -130,7 +132,7 @@ export class BoardModals {
     this.refreshError.set(null);
     
     try {
-      await this.parent.boardService.refreshFeature(
+      await this.featureService.refreshFeature(
         currentBoard.id,
         feature.id,
         currentBoard.organization,
@@ -176,7 +178,7 @@ export class BoardModals {
     this.deleteError.set(null);
     
     try {
-      await this.parent.boardService.deleteFeature(currentBoard.id, feature.id);
+      await this.featureService.deleteFeature(currentBoard.id, feature.id);
       this.closeDeleteFeatureModal();
     } catch (error: any) {
       this.deleteError.set(error.message || 'Failed to delete feature');
