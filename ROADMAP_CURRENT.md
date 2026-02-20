@@ -1,8 +1,8 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
 **Last Updated:** February 20, 2026  
-**Status:** Phase 3A Complete - UI Refactoring with Dark-Mode Support  
-**Branch:** `chore/uiRefactoring`
+**Status:** ✅ Phase 3 COMPLETE - UI Refactoring, Folder Restructuring & Dark-Mode Support  
+**Branch:** `chore/uiRefactoring` (Ready for PR & merge to main)
 
 ---
 
@@ -56,7 +56,12 @@
 - ✅ **Standardized Error Responses** - Consistent JSON format
 ---
 
-## ✅ COMPLETED (Phase 3A: UI Refactoring & Dark-Mode Implementation)
+## ✅ COMPLETED (Phase 3: Full UI & Architecture Refactoring)
+
+### Phase 3 Overview
+- **3A:** Component modularization + scoped CSS (6 subcomponents, dark mode selectors)
+- **3B:** Folder restructuring + service split (core/shared/features, 5 focused services)
+- **Full Dark Mode:** All 5 routes styled with optimized contrast (#e8f0ff text)
 
 #### Board Component Architecture Modernization
 - ✅ **6 Standalone Subcomponents** - BoardHeader, TeamBar, CapacityRow, SprintHeader, FeatureRow, BoardModals
@@ -90,13 +95,34 @@
 
 #### Build & Code Quality
 - ✅ **Compilation Success** - Build passes with zero TypeScript errors
-- ✅ **Bundle Status** - 756.10 kB initial bundle (warning only, acceptable for feature-rich SPA)
+- ✅ **Bundle Status** - 768.05 kB initial bundle (warning only, acceptable for feature-rich SPA)
 - ✅ **No Breaking Changes** - Full backward compatibility; all existing functionality preserved
 - ✅ **Code Organization** - Clear component hierarchy, easy to extend and maintain
 
+#### Phase 3B: Folder Restructuring & Service Split
+- ✅ **Application Architecture** - Migrated to domain-driven structure: `core/` → `shared/` → `features/`
+- ✅ **Service Consolidation** - Split 850-line monolithic service into 5 focused services
+  - `board.service.ts` (200 LOC) - Board state, PAT handling
+  - `feature.service.ts` (150 LOC) - Feature import/refresh/reorder logic
+  - `team.service.ts` (120 LOC) - Team members and capacity management
+  - `story.service.ts` (100 LOC) - User story movement between sprints
+  - `sprint.service.ts` (80 LOC) - Sprint utilities and helpers
+- ✅ **Barrel Exports** - 8 index.ts files for clean module boundaries and simplified imports
+- ✅ **TypeScript Path Aliases** - Using `@core`, `@shared`, `@features` for consistent import structure
+- ✅ **Zero Breaking Changes** - All components still functional, improved maintainability
+
+#### Dark Mode Completeness (All 5 Routes)
+- ✅ **Route: `/`** - Home component with dark gradient (#1a1a2e → #16213e) + bright text
+- ✅ **Route: `/boards`** - Board list with filters, search, cards fully styled + box-sizing fix
+- ✅ **Route: `/boards/new`** - Create board form with all inputs, checkboxes, buttons dark-themed
+- ✅ **Route: `/boards/:id`** - Main board view with 6 subcomponents all dark-mode compliant
+- ✅ **Route: `/name`** - Enter name modal with dark styling
+- ✅ **Text Optimization** - Changed to #e8f0ff (light blue) for improved contrast
+- ✅ **Input Box Sizing** - Fixed overflow issues with `box-sizing: border-box`
+
 ---
 
-## ✅ COMPLETED (Phase 1+: Backend Stabilization)
+## ✅ COMPLETED (Previous Phases: Backend Stabilization)
 
 #### Phase 1: Board Search & Security Hardening
 - ✅ **Board Search API** - `GET /api/boards` with filters

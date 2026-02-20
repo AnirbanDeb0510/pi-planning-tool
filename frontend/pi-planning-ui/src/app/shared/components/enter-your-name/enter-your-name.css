@@ -11,3 +11,12 @@
 .btn-start:hover {
   background: #1e40af;
 }
+
+/* ===== DARK MODE ===== */
+:host-context(.dark-theme) .btn-start {
+  background: #3d5a8c;
+}
+
+:host-context(.dark-theme) .btn-start:hover {
+  background: #4d6aac;
+}

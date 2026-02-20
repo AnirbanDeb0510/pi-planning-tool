@@ -7,12 +7,22 @@
   justify-content: center;
 }
 
+/* ===== DARK MODE ===== */
+:host-context(.dark-theme) .create-board-container {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
 .create-board-card {
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   max-width: 700px;
   width: 100%;
+}
+
+:host-context(.dark-theme) .create-board-card {
+  background: #1f1f35;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
 }
 
 .card-header {
@@ -29,6 +39,14 @@
   color: #1f2937;
 }
 
+:host-context(.dark-theme) .card-header {
+  border-color: #2d2d44;
+}
+
+:host-context(.dark-theme) .card-header h2 {
+  color: #f0f0ff;
+}
+
 .btn-back {
   background: none;
   border: none;
@@ -42,6 +60,14 @@
 
 .btn-back:hover {
   background: #f3f4f6;
+}
+
+:host-context(.dark-theme) .btn-back {
+  color: #e0e0e0;
+}
+
+:host-context(.dark-theme) .btn-back:hover {
+  background: #2d2d44;
 }
 
 .board-form {
@@ -60,6 +86,11 @@
   padding-bottom: 0.5rem;
 }
 
+:host-context(.dark-theme) .form-section h3 {
+  color: #e8f0ff;
+  border-color: #667eea;
+}
+
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -75,6 +106,10 @@
   margin-bottom: 0.5rem;
   font-weight: 500;
   color: #374151;
+}
+
+:host-context(.dark-theme) .form-group label {
+  color: #e8f0ff;
 }
 
 .form-group label.required::after {
@@ -99,11 +134,30 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+:host-context(.dark-theme) .form-input {
+  background: #2d2d44;
+  border-color: #3d3d5c;
+  color: #e8f0ff;
+}
+
+:host-context(.dark-theme) .form-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+:host-context(.dark-theme) .form-input::placeholder {
+  color: #d8e4ff;
+}
+
 .form-group small {
   display: block;
   margin-top: 0.25rem;
   color: #6b7280;
   font-size: 0.875rem;
+}
+
+:host-context(.dark-theme) .form-group small {
+  color: #d8e4ff;
 }
 
 .form-group-checkbox {
@@ -119,10 +173,18 @@
   cursor: pointer;
 }
 
+:host-context(.dark-theme) .form-group-checkbox input[type="checkbox"] {
+  accent-color: #667eea;
+}
+
 .form-group-checkbox label {
   flex: 1;
   cursor: pointer;
   margin: 0;
+}
+
+:host-context(.dark-theme) .form-group-checkbox label {
+  color: #e8f0ff;
 }
 
 .form-group-checkbox label small {
@@ -133,6 +195,10 @@
   font-weight: normal;
 }
 
+:host-context(.dark-theme) .form-group-checkbox label small {
+  color: #d8e4ff;
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -140,6 +206,10 @@
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e5e7eb;
+}
+
+:host-context(.dark-theme) .form-actions {
+  border-color: #2d2d44;
 }
 
 .btn-primary, .btn-secondary {
@@ -173,6 +243,25 @@
 
 .btn-secondary:hover:not(:disabled) {
   background: #e5e7eb;
+}
+
+:host-context(.dark-theme) .btn-secondary {
+  background: #2d2d44;
+  color: #e8f0ff;
+}
+
+:host-context(.dark-theme) .btn-secondary:hover:not(:disabled) {
+  background: #3d3d5c;
+}
+
+:host-context(.dark-theme) .btn-primary:disabled {
+  background: #5a5a7a;
+}
+
+:host-context(.dark-theme) .error-message {
+  background: #5c2c2c;
+  border-color: #8b3a3a;
+  color: #ff8080;
 }
 
 .error-message {

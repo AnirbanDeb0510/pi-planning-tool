@@ -1,3 +1,3 @@
 // Board feature barrel export
-export * from './components';
-export * from './services';
+export * from './components/index';
+export * from './services/index';

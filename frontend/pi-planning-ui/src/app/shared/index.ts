@@ -1,3 +1,3 @@
 // Shared module barrel exports
-export * from './models';
-export * from './components';
+export * from './models/index';
+export * from './components/index';
