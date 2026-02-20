@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { UserService } from '../../Services/user.service';
+import { UserService } from '../../core/services/user.service';
 import { BoardService } from '../../features/board/services/board.service';
 import {
   SprintDto,
