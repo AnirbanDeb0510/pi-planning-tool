@@ -7,10 +7,11 @@ using System.Text;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class BoardService(IBoardRepository boardRepository, ISprintService sprintService) : IBoardService
+    public class BoardService(IBoardRepository boardRepository, ISprintService sprintService, IValidationService validationService) : IBoardService
     {
         private readonly IBoardRepository _boardRepository = boardRepository;
         private readonly ISprintService _sprintService = sprintService;
+        private readonly IValidationService _validationService = validationService;
 
         public async Task<Board> CreateBoardAsync(BoardCreateDto dto)
         {
@@ -52,14 +53,16 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<Board?> GetBoardAsync(int id)
         {
-            return await _boardRepository.GetByIdAsync(id);
+            await _validationService.ValidateBoardExists(id);
+            return await _boardRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Board with ID {id} not found.");
         }
 
         public async Task<BoardResponseDto?> GetBoardWithHierarchyAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return null;
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             return new BoardResponseDto
             {
@@ -146,9 +149,9 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<BoardSummaryDto?> GetBoardPreviewAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFeaturesAsync(boardId);
-            if (board == null)
-                return null;
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFeaturesAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             return new BoardSummaryDto
             {
@@ -167,9 +170,9 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<(bool Success, List<string> Warnings)> ValidateBoardForFinalizationAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return (false, new List<string> { "Board not found" });
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             var warnings = new List<string>();
 
@@ -204,9 +207,9 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<BoardSummaryDto?> FinalizeBoardAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return null;
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             // Set finalization flag and timestamp
             board.IsFinalized = true;
@@ -229,9 +232,9 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<BoardSummaryDto?> RestoreBoardAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return null;
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             // Clear finalization flag (keep FinalizedAt for audit trail)
             board.IsFinalized = false;

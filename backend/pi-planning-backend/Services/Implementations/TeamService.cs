@@ -9,15 +9,18 @@ namespace PiPlanningBackend.Services.Implementations
     {
         private readonly ITeamRepository _teamRepository;
         private readonly IBoardRepository _boardRepository;
+        private readonly IValidationService _validationService;
 
-        public TeamService(ITeamRepository teamRepository, IBoardRepository boardRepository)
+        public TeamService(ITeamRepository teamRepository, IBoardRepository boardRepository, IValidationService validationService)
         {
             _teamRepository = teamRepository;
             _boardRepository = boardRepository;
+            _validationService = validationService;
         }
 
         public async Task<List<TeamMemberDto>> GetTeamAsync(int boardId)
         {
+            await _validationService.ValidateBoardExists(boardId);
             List<TeamMember> members = await _teamRepository.GetTeamAsync(boardId);
             return members.Select(m => new TeamMemberDto
             {
@@ -37,12 +40,12 @@ namespace PiPlanningBackend.Services.Implementations
             if (!memberDto.IsDev && !memberDto.IsTest)
                 throw new ArgumentException("Team member must have at least one role (Dev or Test)");
 
+            await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                ?? throw new Exception("Board not found");
+                ?? throw new KeyNotFoundException("Board not found");
 
             // Guard: Prevent adding team members if board is finalized
-            if (board.IsFinalized)
-                throw new InvalidOperationException("Cannot add team members to a finalized board. Restore the board first.");
+            _validationService.ValidateBoardNotFinalized(board, "add team members");
 
             var member = new TeamMember
             {
@@ -84,14 +87,15 @@ namespace PiPlanningBackend.Services.Implementations
             if (!memberDto.IsDev && !memberDto.IsTest)
                 throw new ArgumentException("Team member must have at least one role (Dev or Test)");
 
-            var member = await _teamRepository.GetTeamMemberAsync(memberId);
-            if (member == null || member.BoardId != boardId) return null;
+            await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
+            var member = await _teamRepository.GetTeamMemberAsync(memberId)
+                ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
             // Guard: Prevent updating team members if board is finalized
+            await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                ?? throw new Exception("Board not found");
-            if (board.IsFinalized)
-                throw new InvalidOperationException("Cannot update team members on a finalized board. Restore the board first.");
+                ?? throw new KeyNotFoundException("Board not found");
+            _validationService.ValidateBoardNotFinalized(board, "update team members");
 
             // Check if role has changed
             bool roleChanged = member.IsDev != memberDto.IsDev || member.IsTest != memberDto.IsTest;
@@ -122,14 +126,15 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<bool> DeleteTeamMemberAsync(int boardId, int memberId)
         {
-            var member = await _teamRepository.GetTeamMemberAsync(memberId);
-            if (member == null || member.BoardId != boardId) return false;
+            await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
+            var member = await _teamRepository.GetTeamMemberAsync(memberId)
+                ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
             // Guard: Prevent deleting team members if board is finalized
+            await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                ?? throw new Exception("Board not found");
-            if (board.IsFinalized)
-                throw new InvalidOperationException("Cannot delete team members from a finalized board. Restore the board first.");
+                ?? throw new KeyNotFoundException("Board not found");
+            _validationService.ValidateBoardNotFinalized(board, "delete team members");
 
             await _teamRepository.DeleteTeamMemberAsync(member);
             await _teamRepository.SaveChangesAsync();
@@ -138,21 +143,22 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<TeamMemberSprint?> UpdateCapacityAsync(int boardId, int sprintId, int teamMemberId, UpdateTeamMemberCapacityDto dto)
         {
-            var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId);
-            if (tms == null) return null;
-            if (tms.Sprint?.BoardId != boardId) return null;
+            await _validationService.ValidateTeamMemberBelongsToBoard(teamMemberId, boardId);
+            await _validationService.ValidateSprintBelongsToBoard(sprintId, boardId);
+            var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId)
+                ?? throw new KeyNotFoundException("Team member sprint mapping not found.");
 
             // Calculate max allowed capacity (working days in sprint)
-            double maxCapacity = 0;
+            int maxCapacity = 0;
             if (tms.Sprint!.StartDate.HasValue && tms.Sprint.EndDate.HasValue)
             {
                 var totalDays = (tms.Sprint.EndDate.Value - tms.Sprint.StartDate.Value).Days + 1;
-                maxCapacity = Math.Floor((totalDays / 7.0) * 5);
+                maxCapacity = (int)Math.Floor((totalDays / 7.0) * 5);
             }
 
             // Validate capacity doesn't exceed sprint duration
-            if (dto.CapacityDev > maxCapacity || dto.CapacityTest > maxCapacity)
-                throw new ArgumentException($"Capacity cannot exceed sprint duration ({maxCapacity} working days)");
+            _validationService.ValidateTeamMemberCapacity(dto.CapacityDev, maxCapacity);
+            _validationService.ValidateTeamMemberCapacity(dto.CapacityTest, maxCapacity);
 
             if (tms.Sprint!.Board!.DevTestToggle)
             {

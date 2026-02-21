@@ -6,16 +6,10 @@ using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class AzureBoardsService : IAzureBoardsService
+    public class AzureBoardsService(HttpClient http, ILogger<AzureBoardsService> log) : IAzureBoardsService
     {
-        private readonly HttpClient _http;
-        private readonly ILogger<AzureBoardsService> _log;
-
-        public AzureBoardsService(HttpClient http, ILogger<AzureBoardsService> log)
-        {
-            _http = http;
-            _log = log;
-        }
+        private readonly HttpClient _http = http;
+        private readonly ILogger<AzureBoardsService> _log = log;
 
         public async Task<FeatureDto> GetFeatureWithChildrenAsync(string organization, string project, int featureId, string pat)
         {

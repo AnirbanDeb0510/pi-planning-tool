@@ -13,31 +13,35 @@ namespace PiPlanningBackend.Services.Implementations
         private readonly IUserStoryRepository _storyRepo;
         private readonly IBoardRepository _boardRepo;
         private readonly IAzureBoardsService _azureService;
+        private readonly IValidationService _validationService;
 
         public FeatureService(IFeatureRepository featureRepo,
                               IUserStoryRepository storyRepo,
                               IBoardRepository boardRepo,
-                              IAzureBoardsService azureService)
+                              IAzureBoardsService azureService,
+                              IValidationService validationService)
         {
             _featureRepo = featureRepo;
             _storyRepo = storyRepo;
             _boardRepo = boardRepo;
             _azureService = azureService;
+            _validationService = validationService;
         }
 
         // import a feature (from the UI after Fetch from Azure)
         public async Task<FeatureDto> ImportFeatureToBoardAsync(int boardId, FeatureDto featureDto, bool checkFinalized = true)
         {
+            await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepo.GetBoardWithSprintsAsync(boardId);
             if (board == null)
             {
-                return new FeatureDto();
+                throw new KeyNotFoundException($"Board with ID {boardId} not found.");
             }
 
             // Guard: Prevent adding features if board is finalized (unless bypass flag is set for refresh)
-            if (checkFinalized && board.IsFinalized)
+            if (checkFinalized)
             {
-                throw new InvalidOperationException("Cannot add features to a finalized board. Restore the board first.");
+                _validationService.ValidateBoardNotFinalized(board, "add features");
             }
 
             Feature? existing = await CreateOrModifyFeature(boardId, featureDto);
@@ -148,8 +152,9 @@ namespace PiPlanningBackend.Services.Implementations
         // refresh a feature by calling Azure + updating DB records
         public async Task<FeatureDto?> RefreshFeatureFromAzureAsync(int boardId, int featureId, string organization, string project, string pat)
         {
-            var feature = await _featureRepo.GetByIdAsync(featureId);
-            if (feature == null || feature.BoardId != boardId) return null;
+            await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
+            var feature = await _featureRepo.GetByIdAsync(featureId)
+                ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
 
             var workItem = await _azureService.GetFeatureWithChildrenAsync(organization, project, int.Parse(feature.AzureId!), pat);
 
@@ -159,16 +164,11 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<UserStoryDto?> RefreshUserStoryFromAzureAsync(int boardId, int storyId, string organization, string project, string pat)
         {
-            var story = await _storyRepo.GetByIdAsync(storyId);
-            if (story == null) return null;
-            if (story.Feature == null)
-            {
-                // ensure feature loaded
-                story = await _featureRepo.GetUserStoriesByFeatureAsync(story.FeatureId).ContinueWith(t => t.Result.FirstOrDefault(u => u.Id == storyId));
-            }
-            if (story == null) return null;
-            var feature = await _featureRepo.GetByIdAsync(story.FeatureId);
-            if (feature == null || feature.BoardId != boardId) return null;
+            await _validationService.ValidateStoryBelongsToBoard(storyId, boardId);
+            var story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
+                ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
+            var feature = story.Feature
+                ?? throw new KeyNotFoundException($"Feature for story {storyId} not found.");
 
             if (string.IsNullOrEmpty(story.AzureId)) throw new Exception("Story has no AzureId");
 
@@ -195,9 +195,10 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task MoveUserStoryAsync(int boardId, int storyId, int targetSprintId)
         {
-            var story = await _storyRepo.GetByIdWithDetailsAsync(storyId);
-
-            if (story == null || story.Feature == null || story.Feature.BoardId != boardId) return;
+            await _validationService.ValidateStoryBelongsToBoard(storyId, boardId);
+            await _validationService.ValidateSprintBelongsToBoard(targetSprintId, boardId);
+            var story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
+                ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
 
             story.SprintId = targetSprintId;
             story.IsMoved = story.OriginalSprintId != story.SprintId;
@@ -211,8 +212,12 @@ namespace PiPlanningBackend.Services.Implementations
 
             foreach (var item in features)
             {
+                await _validationService.ValidateFeatureBelongsToBoard(item.FeatureId, boardId);
                 var feature = await _featureRepo.GetByIdAsync(item.FeatureId);
-                if (feature == null || feature.BoardId != boardId) continue;
+                if (feature == null)
+                {
+                    throw new KeyNotFoundException($"Feature with ID {item.FeatureId} not found.");
+                }
 
                 feature.Priority = item.NewPriority;
                 await _featureRepo.UpdateAsync(feature);
@@ -223,8 +228,9 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<bool> DeleteFeatureAsync(int boardId, int featureId)
         {
-            var feature = await _featureRepo.GetByIdAsync(featureId);
-            if (feature == null || feature.BoardId != boardId) return false;
+            await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
+            var feature = await _featureRepo.GetByIdAsync(featureId)
+                ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
 
             // Delete feature - EF Core will cascade delete user stories
             await _featureRepo.DeleteAsync(feature);

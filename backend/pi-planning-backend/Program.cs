@@ -37,6 +37,7 @@ builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
 builder.Services.AddScoped<IUserStoryRepository, UserStoryRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
+builder.Services.AddScoped<IValidationService, ValidationService>();
 
 
 // CORS (dev convenience)
@@ -57,6 +58,9 @@ using (var scope = app.Services.CreateScope())
 
 // Global exception handling (MUST be early in pipeline)
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
+// Request correlation tracking (for tracing requests across logs)
+app.UseMiddleware<RequestCorrelationMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
