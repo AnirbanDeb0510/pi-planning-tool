@@ -6,10 +6,9 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/boards/{boardId}/stories")]
-    public class UserStoriesController : ControllerBase
+    public class UserStoriesController(IFeatureService featureService) : ControllerBase
     {
-        private readonly IFeatureService _featureService;
-        public UserStoriesController(IFeatureService featureService) => _featureService = featureService;
+        private readonly IFeatureService _featureService = featureService;
 
         // PATCH api/boards/{boardId}/stories/{storyId}/move
         [HttpPatch("{storyId}/move")]

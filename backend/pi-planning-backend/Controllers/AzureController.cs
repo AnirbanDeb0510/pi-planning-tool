@@ -8,14 +8,9 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/v1/azure")]
-    public class AzureController : ControllerBase
+    public class AzureController(IAzureBoardsService azureService) : ControllerBase
     {
-        private readonly IAzureBoardsService _azureService;
-
-        public AzureController(IAzureBoardsService azureService)
-        {
-            _azureService = azureService;
-        }
+        private readonly IAzureBoardsService _azureService = azureService;
 
         // GET api/v1/azure/feature/{organization}/{project}/{featureId}?pat=xxxx
         [HttpGet("feature/{organization}/{project}/{featureId}")]

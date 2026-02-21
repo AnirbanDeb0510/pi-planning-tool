@@ -36,6 +36,7 @@ builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
 builder.Services.AddScoped<IUserStoryRepository, UserStoryRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureService>();
+builder.Services.AddScoped<ISprintService, SprintService>();
 
 
 // CORS (dev convenience)

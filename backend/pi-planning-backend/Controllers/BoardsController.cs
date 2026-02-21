@@ -7,14 +7,9 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class BoardsController : ControllerBase
+    public class BoardsController(IBoardService boardService) : ControllerBase
     {
-        private readonly IBoardService _boardService;
-
-        public BoardsController(IBoardService boardService)
-        {
-            _boardService = boardService;
-        }
+        private readonly IBoardService _boardService = boardService;
 
         [HttpPost]
         public async Task<IActionResult> CreateBoard(BoardCreateDto dto)

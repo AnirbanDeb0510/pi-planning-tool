@@ -7,14 +7,10 @@ using System.Text;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class BoardService : IBoardService
+    public class BoardService(IBoardRepository boardRepository, ISprintService sprintService) : IBoardService
     {
-        private readonly IBoardRepository _boardRepository;
-
-        public BoardService(IBoardRepository boardRepository)
-        {
-            _boardRepository = boardRepository;
-        }
+        private readonly IBoardRepository _boardRepository = boardRepository;
+        private readonly ISprintService _sprintService = sprintService;
 
         public async Task<Board> CreateBoardAsync(BoardCreateDto dto)
         {
@@ -43,29 +39,11 @@ namespace PiPlanningBackend.Services.Implementations
                 board.IsLocked = true;
             }
 
-            // 🧩 Auto-generate sprints
-            // Sprint 0 is a placeholder/parking lot (no real dates)
-            var sprintZero = new Sprint
+            // 🧩 Auto-generate sprints using SprintService
+            var sprints = _sprintService.GenerateSprintsForBoard(board, dto.NumSprints, dto.SprintDuration);
+            foreach (var sprint in sprints)
             {
-                Name = "Sprint 0",
-                StartDate = startDateUtc,
-                EndDate = startDateUtc  // Placeholder sprint has same start/end
-            };
-            board.Sprints.Add(sprintZero);
-
-            // Actual sprints (1 through NumSprints)
-            var currentSprintStart = startDateUtc;
-            for (int i = 1; i <= dto.NumSprints; i++)
-            {
-                var sprint = new Sprint
-                {
-                    Name = $"Sprint {i}",
-                    StartDate = currentSprintStart,
-                    EndDate = currentSprintStart.AddDays(dto.SprintDuration - 1)
-                };
                 board.Sprints.Add(sprint);
-
-                currentSprintStart = currentSprintStart.AddDays(dto.SprintDuration);
             }
 
             await _boardRepository.AddAsync(board);
