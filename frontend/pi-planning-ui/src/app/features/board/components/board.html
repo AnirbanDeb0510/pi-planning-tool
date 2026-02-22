@@ -1,16 +1,16 @@
 <!-- Loading State -->
 <div *ngIf="loading()" class="loading-overlay">
   <div class="loading-spinner"></div>
-  <p>Loading board...</p>
+  <p>{{ MESSAGES.BOARD.LOADING }}</p>
 </div>
 
 <!-- Error State -->
 <div *ngIf="error()" class="error-overlay">
   <div class="error-message">
-    <h2>⚠️ Error</h2>
+    <h2>{{ MESSAGES.ERROR.TITLE }}</h2>
     <p>{{ error() }}</p>
     <button class="btn-primary" (click)="boardService.clearError(); router.navigate(['/boards'])">
-      Go to Boards List
+      {{ LABELS.BUTTONS.GO_TO_BOARDS }}
     </button>
   </div>
 </div>
@@ -18,13 +18,13 @@
 <!-- Finalized Board Banner -->
 <div *ngIf="board()?.isFinalized" class="finalized-board-banner">
   <span class="finalized-icon">✓</span>
-  <span class="finalized-text">This board is finalized and read-only</span>
+  <span class="finalized-text">{{ MESSAGES.BOARD.FINALIZED }}</span>
   <button 
     type="button" 
     class="restore-banner-btn"
     (click)="restoreBoard()"
-    title="Restore this board to allow further editing">
-    Restore
+    title="{{ TOOLTIPS.BOARD.RESTORE }}">
+    {{ LABELS.BUTTONS.RESTORE_PLAIN }}
   </button>
 </div>
 
@@ -32,25 +32,25 @@
 <div class="modal-backdrop" *ngIf="showPatModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Azure DevOps PAT Required</h3>
+      <h3>{{ LABELS.HEADERS.PAT_REQUIRED }}</h3>
       <button type="button" class="modal-close" (click)="closePatModal()">×</button>
     </div>
     <div class="modal-body">
       <p class="pat-info">
-        This board contains features from Azure DevOps. Please provide a Personal Access Token (PAT) to verify access.
+        {{ MESSAGES.PAT.INFO }}
       </p>
       <div class="form-group">
-        <label for="pat-input">Personal Access Token (PAT)</label>
+        <label for="pat-input">{{ LABELS.FIELDS.PAT_INPUT }}</label>
         <input
           id="pat-input"
           type="password"
           class="modal-input"
           [value]="patModalInput()"
           (input)="patModalInput.set($any($event.target).value)"
-          placeholder="Enter your Azure DevOps PAT"
+          placeholder="{{ PLACEHOLDERS.PAT }}"
           [disabled]="patValidationLoading()"
         />
-        <small class="pat-hint">Your PAT will not be stored. It's used only to verify access.</small>
+        <small class="pat-hint">{{ MESSAGES.PAT.HINT }}</small>
       </div>
       <div *ngIf="patValidationError()" class="form-error">
         {{ patValidationError() }}
@@ -63,7 +63,7 @@
         (click)="closePatModal()"
         [disabled]="patValidationLoading()"
       >
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button
         class="btn-primary"
@@ -71,7 +71,7 @@
         (click)="validatePat()"
         [disabled]="patValidationLoading()"
       >
-        {{ patValidationLoading() ? 'Validating...' : 'Validate & Open Board' }}
+        {{ patValidationLoading() ? LABELS.BUTTONS.VALIDATING : LABELS.BUTTONS.VALIDATE_OPEN }}
       </button>
     </div>
   </div>
@@ -110,7 +110,7 @@
           [parent]="this"
           cdkDrag
           [cdkDragData]="feature"
-          [title]="board()?.isFinalized ? 'Board is finalized - reordering changes are displayed only' : ''"
+          [title]="board()?.isFinalized ? TOOLTIPS.BOARD.FINALIZED_REORDER : ''"
         ></app-feature-row>
       </div>
     </div>

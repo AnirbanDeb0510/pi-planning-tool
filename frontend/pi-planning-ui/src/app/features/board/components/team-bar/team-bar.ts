@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Board } from '../board';
 import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
 import { TeamService } from '../../services/team.service';
+import { LABELS, MESSAGES, PLACEHOLDERS, TOOLTIPS, VALIDATIONS } from '../../../../shared/constants';
 
 @Component({
   selector: 'app-team-bar',
@@ -29,6 +30,12 @@ export class TeamBar {
 
   protected showDeleteMemberModal = signal(false);
   protected memberToDelete = signal<TeamMemberResponseDto | null>(null);
+
+  protected readonly LABELS = LABELS;
+  protected readonly MESSAGES = MESSAGES;
+  protected readonly PLACEHOLDERS = PLACEHOLDERS;
+  protected readonly TOOLTIPS = TOOLTIPS;
+  protected readonly VALIDATIONS = VALIDATIONS;
 
   protected openAddMember(): void {
     this.newMemberName.set('');
@@ -60,12 +67,12 @@ export class TeamBar {
     
     const name = this.newMemberName().trim();
     if (!name) {
-      this.memberFormError.set('Team member name cannot be empty');
+      this.memberFormError.set(VALIDATIONS.TEAM_MEMBER.NAME_REQUIRED);
       return;
     }
 
     if (name.length > 100) {
-      this.memberFormError.set('Team member name must be 100 characters or less');
+      this.memberFormError.set(VALIDATIONS.TEAM_MEMBER.NAME_TOO_LONG);
       return;
     }
 

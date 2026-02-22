@@ -1,13 +1,13 @@
 <div class="board-list-container">
   <div class="board-list-content">
     <div class="header">
-      <h1>Your Boards</h1>
+      <h1>{{ LABELS.HEADERS.BOARD_LIST }}</h1>
       <div class="header-actions">
         <button class="btn-primary" (click)="navigateToCreate()">
-          + Create New
+          {{ LABELS.BUTTONS.CREATE_NEW }}
         </button>
         <button class="btn-secondary" (click)="goBack()">
-          ← Back to Home
+          {{ LABELS.BUTTONS.BACK_HOME }}
         </button>
       </div>
     </div>
@@ -15,26 +15,26 @@
     <!-- Mandatory Organization & Project Selection -->
     <div class="mandatory-filters">
       <div class="filter-section">
-        <label for="org-input">Organization Name (Required)</label>
+        <label for="org-input">{{ LABELS.FIELDS.ORGANIZATION_NAME_REQUIRED }}</label>
         <input
           id="org-input"
           type="text"
           class="filter-input"
           [(ngModel)]="organizationInput"
           (ngModelChange)="onOrganizationChange()"
-          placeholder="e.g., MyOrganization"
+          placeholder="{{ PLACEHOLDERS.ORG_REQUIRED }}"
         />
       </div>
 
       <div class="filter-section">
-        <label for="project-input">Project Name (Required)</label>
+        <label for="project-input">{{ LABELS.FIELDS.PROJECT_NAME_REQUIRED }}</label>
         <input
           id="project-input"
           type="text"
           class="filter-input"
           [(ngModel)]="projectInput"
           (ngModelChange)="onProjectChange()"
-          placeholder="e.g., MyProject"
+          placeholder="{{ PLACEHOLDERS.PROJECT_REQUIRED }}"
         />
       </div>
     </div>
@@ -46,7 +46,7 @@
         class="search-input"
         [(ngModel)]="searchTerm"
         (ngModelChange)="loadBoards()"
-        placeholder="Search boards..."
+        placeholder="{{ PLACEHOLDERS.SEARCH_BOARDS }}"
       />
       <div class="filter-chips">
         <label class="filter-chip">
@@ -55,7 +55,7 @@
             [(ngModel)]="showLockedOnly"
             (change)="loadBoards()"
           />
-          Locked Only
+          {{ LABELS.FILTERS.LOCKED_ONLY }}
         </label>
         <label class="filter-chip">
           <input
@@ -63,7 +63,7 @@
             [(ngModel)]="showFinalizedOnly"
             (change)="loadBoards()"
           />
-          Finalized Only
+          {{ LABELS.FILTERS.FINALIZED_ONLY }}
         </label>
       </div>
     </div>
@@ -71,26 +71,26 @@
     <!-- Message when org/project not provided -->
     <div *ngIf="!organizationInput() || !projectInput()" class="selection-required">
       <div class="selection-message">
-        <p>📋 Please enter your organization and project names to find boards.</p>
+        <p>{{ MESSAGES.BOARD_LIST.SELECTION_REQUIRED }}</p>
       </div>
     </div>
 
     <div *ngIf="loading()" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading boards...</p>
+      <p>{{ MESSAGES.BOARD_LIST.LOADING }}</p>
     </div>
 
     <div *ngIf="error()" class="error-state">
       <p>{{ error() }}</p>
-      <button class="btn-primary" (click)="loadBoards()">Retry</button>
+      <button class="btn-primary" (click)="loadBoards()">{{ LABELS.BUTTONS.RETRY }}</button>
     </div>
 
     <div *ngIf="!loading() && !error() && boards().length === 0 && organizationInput() && projectInput()" class="empty-state">
       <div class="empty-icon">📋</div>
-      <h3>No boards found</h3>
-      <p>Create your first board to get started</p>
+      <h3>{{ MESSAGES.BOARD_LIST.EMPTY_TITLE }}</h3>
+      <p>{{ MESSAGES.BOARD_LIST.EMPTY_SUBTITLE }}</p>
       <button class="btn-primary" (click)="navigateToCreate()">
-        Create Board
+        {{ LABELS.BUTTONS.CREATE_BOARD }}
       </button>
     </div>
 
@@ -103,29 +103,29 @@
         <div class="board-card-header">
           <h3>{{ board.name }}</h3>
           <div class="board-badges">
-            <span *ngIf="board.isLocked" class="badge locked">🔒 Locked</span>
-            <span *ngIf="board.isFinalized" class="badge finalized">✅ Finalized</span>
+            <span *ngIf="board.isLocked" class="badge locked">{{ LABELS.BADGES.LOCKED }}</span>
+            <span *ngIf="board.isFinalized" class="badge finalized">{{ LABELS.BADGES.FINALIZED }}</span>
           </div>
         </div>
 
         <div class="board-card-body">
           <div class="board-info">
             <span *ngIf="board.organization" class="info-item">
-              <strong>Org:</strong> {{ board.organization }}
+              <strong>{{ LABELS.INFO.ORG }}</strong> {{ board.organization }}
             </span>
             <span *ngIf="board.project" class="info-item">
-              <strong>Project:</strong> {{ board.project }}
+              <strong>{{ LABELS.INFO.PROJECT }}</strong> {{ board.project }}
             </span>
             <span class="info-item">
-              <strong>Sprints:</strong> {{ board.sprintCount }}
+              <strong>{{ LABELS.INFO.SPRINTS }}</strong> {{ board.sprintCount }}
             </span>
             <span class="info-item">
-              <strong>Features:</strong> {{ board.featureCount }}
+              <strong>{{ LABELS.INFO.FEATURES }}</strong> {{ board.featureCount }}
             </span>
           </div>
 
           <div class="board-date">
-            Created: {{ formatDate(board.createdAt) }}
+            {{ LABELS.INFO.CREATED }} {{ formatDate(board.createdAt) }}
           </div>
         </div>
 
@@ -134,7 +134,7 @@
             class="btn-link"
             (click)="openBoard(board.id); $event.stopPropagation()"
           >
-            Open →
+            {{ LABELS.BUTTONS.OPEN }}
           </button>
         </div>
       </div>

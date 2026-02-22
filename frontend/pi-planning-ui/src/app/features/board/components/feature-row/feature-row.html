@@ -4,7 +4,7 @@
   [style.gridTemplateColumns]="getGridTemplateColumns()"
   cdkDrag
   [cdkDragData]="feature"
-  [title]="board()?.isFinalized ? 'Board is finalized - reordering changes are displayed only' : ''"
+  [title]="board()?.isFinalized ? TOOLTIPS.BOARD.FINALIZED_REORDER : ''"
 >
   <!-- Feature Name -->
   <div class="feature-name">
@@ -22,22 +22,22 @@
         mat-icon-button
         [matMenuTriggerFor]="featureMenu"
         (click)="$event.stopPropagation()"
-        title="Feature actions">
+        title="{{ TOOLTIPS.FEATURE.ACTIONS }}">
         <mat-icon>more_vert</mat-icon>
       </button>
       
       <mat-menu #featureMenu="matMenu">
         <button mat-menu-item (click)="openRefreshFeatureModal(feature)">
           <mat-icon>refresh</mat-icon>
-          <span>Refresh from Azure</span>
+          <span>{{ LABELS.BUTTONS.REFRESH_FROM_AZURE }}</span>
         </button>
         <button mat-menu-item (click)="openDeleteFeatureModal(feature)" [disabled]="isOperationBlocked()">
           <mat-icon>delete</mat-icon>
-          <span>Delete Feature</span>
+          <span>{{ LABELS.BUTTONS.DELETE_FEATURE }}</span>
         </button>
       </mat-menu>
     </div>
-    <span class="feature-total">Total: {{ getFeatureTotal(feature) }} pts</span>
+    <span class="feature-total">{{ LABELS.FIELDS.TOTAL }}: {{ getFeatureTotal(feature) }} {{ LABELS.UNITS.POINTS }}</span>
   </div>
 
   <!-- Parking Lot -->
@@ -49,7 +49,7 @@
       [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
       class="story-list"
       (cdkDropListDropped)="parent.drop($event)"
-      [title]="board()?.isFinalized ? 'Board is finalized - story movements are displayed only' : ''"
+      [title]="board()?.isFinalized ? TOOLTIPS.BOARD.FINALIZED_MOVE : ''"
     >
       <app-story-card
         *ngFor="let story of getParkingLotStories(feature)"
@@ -82,9 +82,9 @@
       <div class="sprint-feature-points">
         <div class="points-row">
           <ng-container *ngIf="getFeatureSprintDevTestTotals(feature, sprint.id) as fTotals">
-            <span *ngIf="showDevTest()" class="dev">Dev: {{ fTotals.dev }}</span>
-            <span *ngIf="showDevTest()" class="test">Test: {{ fTotals.test }}</span>
-            <span class="total">Total: {{ fTotals.total }}</span>
+            <span *ngIf="showDevTest()" class="dev">{{ LABELS.FIELDS.DEV }}: {{ fTotals.dev }}</span>
+            <span *ngIf="showDevTest()" class="test">{{ LABELS.FIELDS.TEST }}: {{ fTotals.test }}</span>
+            <span class="total">{{ LABELS.FIELDS.TOTAL }}: {{ fTotals.total }}</span>
           </ng-container>
         </div>
         <div class="sprint-footer-name">{{ sprint.name }}</div>

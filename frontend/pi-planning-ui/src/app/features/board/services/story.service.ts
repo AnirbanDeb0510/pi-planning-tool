@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { StoryApiService } from './board-api.service';
 import { BoardService } from './board.service';
 import { BoardResponseDto, FeatureResponseDto, UserStoryDto } from '../../../shared/models/board.dto';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Story Service
@@ -57,7 +58,7 @@ export class StoryService {
           console.error('Error moving story:', error);
           // Rollback on error
           this.boardService.updateBoardState(currentBoard);
-          this.boardService.setError('Failed to move story. Please try again.');
+          this.boardService.setError(MESSAGES.STORY.MOVE_FAILED);
         },
       });
     }

@@ -5,6 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from './core/services/theme.service';
 import { BoardService } from './features/board/services/board.service';
+import { LABELS, TOOLTIPS } from './shared/constants';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +14,9 @@ import { BoardService } from './features/board/services/board.service';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('PI Planning Tool');
+  protected readonly LABELS = LABELS;
+  protected readonly TOOLTIPS = TOOLTIPS;
+  protected readonly title = signal(LABELS.APP.TITLE);
   private readonly themeService = inject(ThemeService);
   private readonly boardService = inject(BoardService);
   private readonly router = inject(Router);
@@ -28,10 +31,10 @@ export class App {
       const board = this.boardService.board();
       if (board) {
         this.title.set(board.name);
-        this.titleService.setTitle(`${board.name} - PI Planning Tool`);
+        this.titleService.setTitle(`${board.name} - ${LABELS.APP.TITLE}`);
       } else {
-        this.title.set('PI Planning Tool');
-        this.titleService.setTitle('PI Planning Tool');
+        this.title.set(LABELS.APP.TITLE);
+        this.titleService.setTitle(LABELS.APP.TITLE);
       }
     });
 
@@ -40,8 +43,8 @@ export class App {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         if (!event.url.includes('/board/')) {
-          this.title.set('PI Planning Tool');
-          this.titleService.setTitle('PI Planning Tool');
+          this.title.set(LABELS.APP.TITLE);
+          this.titleService.setTitle(LABELS.APP.TITLE);
         }
       });
   }

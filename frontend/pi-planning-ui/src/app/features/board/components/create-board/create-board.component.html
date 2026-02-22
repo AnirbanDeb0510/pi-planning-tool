@@ -1,60 +1,60 @@
 <div class="create-board-container">
   <div class="create-board-card">
     <div class="card-header">
-      <h2>Create New Board</h2>
-      <button class="btn-back" (click)="goBack()">← Back</button>
+      <h2>{{ LABELS.HEADERS.CREATE_BOARD }}</h2>
+      <button class="btn-back" (click)="goBack()">{{ LABELS.BUTTONS.BACK }}</button>
     </div>
 
     <form class="board-form" (ngSubmit)="onSubmit()">
       <div class="form-section">
-        <h3>Board Information</h3>
+        <h3>{{ MESSAGES.CREATE_BOARD.BOARD_INFO_SECTION }}</h3>
 
         <div class="form-group">
-          <label for="name" class="required">Board Name</label>
+          <label for="name" class="required">{{ LABELS.FIELDS.BOARD_NAME }}</label>
           <input
             id="name"
             type="text"
             class="form-input"
             [(ngModel)]="formData.name"
             name="name"
-            placeholder="e.g., Q1 2026 Planning"
+            placeholder="{{ PLACEHOLDERS.BOARD_NAME }}"
             required
           />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="organization">Organization</label>
+            <label for="organization">{{ LABELS.FIELDS.ORGANIZATION }}</label>
             <input
               id="organization"
               type="text"
               class="form-input"
               [(ngModel)]="formData.organization"
               name="organization"
-              placeholder="e.g., Acme Corp"
+              placeholder="{{ PLACEHOLDERS.ORG_EXAMPLE }}"
             />
           </div>
 
           <div class="form-group">
-            <label for="project">Project</label>
+            <label for="project">{{ LABELS.FIELDS.PROJECT }}</label>
             <input
               id="project"
               type="text"
               class="form-input"
               [(ngModel)]="formData.project"
               name="project"
-              placeholder="e.g., Platform"
+              placeholder="{{ PLACEHOLDERS.PROJECT_EXAMPLE }}"
             />
           </div>
         </div>
       </div>
 
       <div class="form-section">
-        <h3>Sprint Configuration</h3>
+        <h3>{{ MESSAGES.CREATE_BOARD.SPRINT_CONFIG_SECTION }}</h3>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="numSprints" class="required">Number of Sprints</label>
+            <label for="numSprints" class="required">{{ LABELS.FIELDS.NUM_SPRINTS }}</label>
             <input
               id="numSprints"
               type="number"
@@ -65,11 +65,11 @@
               max="12"
               required
             />
-            <small>Typically 5-6 sprints per PI</small>
+            <small>{{ MESSAGES.CREATE_BOARD.SPRINTS_HINT }}</small>
           </div>
 
           <div class="form-group">
-            <label for="sprintDuration" class="required">Sprint Duration (days)</label>
+            <label for="sprintDuration" class="required">{{ LABELS.FIELDS.SPRINT_DURATION }}</label>
             <input
               id="sprintDuration"
               type="number"
@@ -80,12 +80,12 @@
               max="30"
               required
             />
-            <small>Usually 10-14 days</small>
+            <small>{{ MESSAGES.CREATE_BOARD.SPRINT_DURATION_HINT }}</small>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="startDate" class="required">Start Date</label>
+          <label for="startDate" class="required">{{ LABELS.FIELDS.START_DATE }}</label>
           <input
             id="startDate"
             type="date"
@@ -98,7 +98,7 @@
       </div>
 
       <div class="form-section">
-        <h3>Options</h3>
+        <h3>{{ MESSAGES.CREATE_BOARD.OPTIONS_SECTION }}</h3>
 
         <div class="form-group-checkbox">
           <input
@@ -108,60 +108,60 @@
             name="devTestToggle"
           />
           <label for="devTestToggle">
-            Enable Dev/Test split tracking
-            <small>Separate development and testing story points</small>
+            {{ LABELS.FIELDS.DEV_TEST_TOGGLE }}
+            <small>{{ MESSAGES.CREATE_BOARD.DEV_TEST_HELP }}</small>
           </label>
         </div>
 
         <div class="form-group">
-          <label for="azureStoryPointField">Azure Story Point Field</label>
+          <label for="azureStoryPointField">{{ LABELS.FIELDS.AZURE_STORY_POINT_FIELD }}</label>
           <input
             id="azureStoryPointField"
             type="text"
             class="form-input"
             [(ngModel)]="formData.azureStoryPointField"
             name="azureStoryPointField"
-            placeholder="Microsoft.VSTS.Scheduling.StoryPoints"
+            placeholder="{{ PLACEHOLDERS.STORY_POINT_FIELD }}"
           />
-          <small>Default: Microsoft.VSTS.Scheduling.StoryPoints</small>
+          <small>{{ MESSAGES.CREATE_BOARD.STORY_POINT_DEFAULT }}</small>
         </div>
 
         <div *ngIf="formData.devTestToggle" class="form-row">
           <div class="form-group">
-            <label for="azureDevStoryPointField">Azure Dev Story Point Field</label>
+            <label for="azureDevStoryPointField">{{ LABELS.FIELDS.AZURE_DEV_STORY_POINT_FIELD }}</label>
             <input
               id="azureDevStoryPointField"
               type="text"
               class="form-input"
               [(ngModel)]="formData.azureDevStoryPointField"
               name="azureDevStoryPointField"
-              placeholder="Custom.DevStoryPoints"
+              placeholder="{{ PLACEHOLDERS.DEV_POINT_FIELD }}"
             />
-            <small>Default: Custom.DevStoryPoints</small>
+            <small>{{ MESSAGES.CREATE_BOARD.DEV_POINT_DEFAULT }}</small>
           </div>
 
           <div class="form-group">
-            <label for="azureTestStoryPointField">Azure Test Story Point Field</label>
+            <label for="azureTestStoryPointField">{{ LABELS.FIELDS.AZURE_TEST_STORY_POINT_FIELD }}</label>
             <input
               id="azureTestStoryPointField"
               type="text"
               class="form-input"
               [(ngModel)]="formData.azureTestStoryPointField"
               name="azureTestStoryPointField"
-              placeholder="Custom.TestStoryPoints"
+              placeholder="{{ PLACEHOLDERS.TEST_POINT_FIELD }}"
             />
-            <small>Default: Custom.TestStoryPoints</small>
+            <small>{{ MESSAGES.CREATE_BOARD.TEST_POINT_DEFAULT }}</small>
           </div>
         </div>
       </div>
 
       <div class="form-actions">
         <button type="button" class="btn-secondary" (click)="goBack()" [disabled]="loading()">
-          Cancel
+          {{ LABELS.BUTTONS.CANCEL }}
         </button>
         <button type="submit" class="btn-primary" [disabled]="loading()">
-          <span *ngIf="!loading()">Create Board</span>
-          <span *ngIf="loading()">Creating...</span>
+          <span *ngIf="!loading()">{{ LABELS.BUTTONS.CREATE_BOARD }}</span>
+          <span *ngIf="loading()">{{ LABELS.BUTTONS.CREATING }}</span>
         </button>
       </div>
 

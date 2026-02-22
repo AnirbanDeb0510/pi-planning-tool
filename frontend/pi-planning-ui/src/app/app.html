@@ -1,9 +1,9 @@
 <!-- Simple Toolbar with Theme Toggle -->
 <div class="app-toolbar">
-  <h1 class="app-title" (click)="navigateHome()" title="Go to home">{{ title() }}</h1>
-  <button class="theme-toggle" (click)="toggleTheme()" title="Toggle dark/light theme">
-    <span *ngIf="currentTheme() === 'light'">🌙 Dark</span>
-    <span *ngIf="currentTheme() === 'dark'">☀️ Light</span>
+  <h1 class="app-title" (click)="navigateHome()" title="{{ TOOLTIPS.APP.HOME }}">{{ title() }}</h1>
+  <button class="theme-toggle" (click)="toggleTheme()" title="{{ TOOLTIPS.APP.THEME_TOGGLE }}">
+    <span *ngIf="currentTheme() === 'light'">{{ LABELS.APP.THEME_DARK }}</span>
+    <span *ngIf="currentTheme() === 'dark'">{{ LABELS.APP.THEME_LIGHT }}</span>
   </button>
 </div>
 

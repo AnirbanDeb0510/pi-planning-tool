@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserStoryDto } from '../../models/board.dto';
 import { Board } from '../../../features/board/components/board';
+import { LABELS, MESSAGES } from '../../constants';
 
 @Component({
   selector: 'app-story-card',
@@ -14,11 +15,18 @@ export class StoryCard {
   @Input() story!: UserStoryDto;
   @Input() parent!: Board;
 
+  protected readonly LABELS = LABELS;
+  protected readonly MESSAGES = MESSAGES;
+
   /**
    * Get sprint name by ID from parent board
    */
   getSprintName(sprintId: number | undefined): string {
-    return this.parent?.getSprintNameById?.(sprintId) || `Sprint ${sprintId || 'Parking Lot'}`;
+    if (this.parent?.getSprintNameById) {
+      return this.parent.getSprintNameById(sprintId);
+    }
+    const sprintLabel = sprintId ? `${LABELS.FIELDS.SPRINT} ${sprintId}` : LABELS.FIELDS.PARKING_LOT;
+    return sprintLabel;
   }
 
   /**
@@ -34,14 +42,14 @@ export class StoryCard {
 
     // New story: OriginalSprint is "Sprint 0" (parking lot)
     if (originalSprintName.toLowerCase().includes('sprint 0')) {
-      return { type: 'new', label: 'Added post-plan', icon: '🆕' };
+      return { type: 'new', label: MESSAGES.STORY.ADDED_POST_PLAN, icon: '🆕' };
     }
 
     // Moved story: OriginalSprint name != CurrentSprint name
     if (originalSprintName !== currentSprintName) {
       return { 
         type: 'moved', 
-        label: `Moved from ${originalSprintName}`, 
+        label: MESSAGES.STORY.MOVED_FROM(originalSprintName), 
         icon: '📍' 
       };
     }

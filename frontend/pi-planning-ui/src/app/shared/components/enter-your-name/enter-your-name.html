@@ -1,13 +1,13 @@
 <div class="home-container">
-  <h2>Welcome</h2>
-  <p>Please enter your name to start:</p>
+  <h2>{{ MESSAGES.APP.WELCOME }}</h2>
+  <p>{{ MESSAGES.APP.ENTER_NAME_PROMPT }}</p>
 
   <input
     type="text"
     [(ngModel)]="userName"
-    placeholder="Enter your name"
+    placeholder="{{ PLACEHOLDERS.USER_NAME }}"
     class="input-name"
   />
 
-  <button class="btn-start" (click)="startBoard()">Start Board</button>
+  <button class="btn-start" (click)="startBoard()">{{ LABELS.BUTTONS.START_BOARD }}</button>
 </div>

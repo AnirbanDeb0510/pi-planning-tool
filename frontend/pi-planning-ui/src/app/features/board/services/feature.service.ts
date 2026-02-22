@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { FeatureApiService, AzureApiService } from './board-api.service';
 import { BoardService } from './board.service';
 import { firstValueFrom } from 'rxjs';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Feature Service
@@ -26,23 +27,20 @@ export class FeatureService {
   ): Promise<void> {
     try {
       // Step 1: Fetch feature from Azure DevOps
-      console.log('Fetching feature from Azure:', { organization, project, featureId });
       const featureDto = await firstValueFrom(
         this.azureApi.getFeatureWithChildren(organization, project, featureId, pat)
       );
 
       // Step 2: Import the feature to the board
-      console.log('Importing feature to board:', featureDto);
       const importedFeature = await firstValueFrom(
         this.featureApi.importFeature(boardId, featureDto)
       );
 
       // Step 3: Reload the board to ensure UI matches backend state
-      console.log('Feature imported successfully, reloading board...');
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error importing feature:', error);
-      throw new Error(error.message || 'Failed to import feature');
+      throw new Error(error.message || MESSAGES.FEATURE.IMPORT_FAILED);
     }
   }
 
@@ -57,17 +55,15 @@ export class FeatureService {
     pat: string
   ): Promise<void> {
     try {
-      console.log('Refreshing feature from Azure:', { boardId, featureId });
       await firstValueFrom(
         this.featureApi.refreshFeature(boardId, featureId, organization, project, pat)
       );
 
       // Reload board to show updated data
-      console.log('Feature refreshed successfully, reloading board...');
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error refreshing feature:', error);
-      throw new Error(error.message || 'Failed to refresh feature');
+      throw new Error(error.message || MESSAGES.FEATURE.REFRESH_FAILED);
     }
   }
 
@@ -83,7 +79,7 @@ export class FeatureService {
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error reordering features:', error);
-      throw new Error(error.message || 'Failed to reorder features');
+      throw new Error(error.message || MESSAGES.FEATURE.REORDER_FAILED);
     }
   }
 
@@ -92,15 +88,13 @@ export class FeatureService {
    */
   public async deleteFeature(boardId: number, featureId: number): Promise<void> {
     try {
-      console.log('Deleting feature:', { boardId, featureId });
       await firstValueFrom(this.featureApi.deleteFeature(boardId, featureId));
 
       // Reload board to show updated data
-      console.log('Feature deleted successfully, reloading board...');
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error deleting feature:', error);
-      throw new Error(error.message || 'Failed to delete feature');
+      throw new Error(error.message || MESSAGES.FEATURE.DELETE_FAILED);
     }
   }
 }

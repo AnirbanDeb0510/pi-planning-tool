@@ -5,6 +5,8 @@ import {
 import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, AzureApiService } from './board-api.service';
 import { firstValueFrom } from 'rxjs';
+import { RuntimeConfig } from '../../../core/config/runtime-config';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Board Service - State Management Layer
@@ -40,10 +42,9 @@ export class BoardService {
       next: (board: BoardResponseDto) => {
         this.boardSignal.set(board);
         this.loadingSignal.set(false);
-        console.log('Board loaded:', board);
       },
       error: (error) => {
-        this.errorSignal.set(error.message || 'Failed to load board');
+        this.errorSignal.set(error.message || MESSAGES.BOARD.LOAD_FAILED);
         this.loadingSignal.set(false);
         console.error('Error loading board:', error);
       },
@@ -99,8 +100,9 @@ export class BoardService {
     const stored = this.patStorage();
     if (!stored) return null;
 
-    const tenMinutes = 10 * 60 * 1000;
-    if (Date.now() - stored.timestamp > tenMinutes) {
+    const ttlMinutes = RuntimeConfig.patTtlMinutes;
+    const ttlMs = ttlMinutes * 60 * 1000;
+    if (Date.now() - stored.timestamp > ttlMs) {
       this.patStorage.set(null); // Expired
       return null;
     }
@@ -163,7 +165,7 @@ export class BoardService {
       return preview;
     } catch (error) {
       console.error('Error fetching board preview:', error);
-      this.errorSignal.set('Failed to load board information');
+      this.errorSignal.set(MESSAGES.BOARD.PREVIEW_FAILED);
       return null;
     }
   }
@@ -188,7 +190,6 @@ export class BoardService {
   public async getFinalizationWarnings(boardId: number): Promise<string[]> {
     try {
       const warnings = await firstValueFrom(this.boardApi.validateBoardForFinalization(boardId));
-      console.log('Finalization warnings:', warnings);
       return warnings;
     } catch (error: any) {
       console.error('Error fetching finalization warnings:', error);
@@ -212,10 +213,9 @@ export class BoardService {
       this.boardSignal.set(updatedBoard);
       this.loadingSignal.set(false);
 
-      console.log('Board finalized successfully');
       return updatedBoard;
     } catch (error: any) {
-      const errorMsg = error.message || 'Failed to finalize board';
+      const errorMsg = error.message || MESSAGES.BOARD.FINALIZE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error finalizing board:', error);
@@ -238,10 +238,9 @@ export class BoardService {
       this.boardSignal.set(updatedBoard);
       this.loadingSignal.set(false);
 
-      console.log('Board restored successfully');
       return updatedBoard;
     } catch (error: any) {
-      const errorMsg = error.message || 'Failed to restore board';
+      const errorMsg = error.message || MESSAGES.BOARD.RESTORE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error restoring board:', error);

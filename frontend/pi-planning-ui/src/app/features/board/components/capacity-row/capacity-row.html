@@ -1,12 +1,12 @@
 <!-- Team Capacity Row (grid aligned with header) -->
 <div class="team-capacity-row" [style.gridTemplateColumns]="parent.getGridTemplateColumns()">
-  <div class="team-capacity-cell team-capacity-label">Team</div>
-  <div class="team-capacity-cell team-capacity-label">Capacity</div>
+  <div class="team-capacity-cell team-capacity-label">{{ LABELS.FIELDS.TEAM }}</div>
+  <div class="team-capacity-cell team-capacity-label">{{ LABELS.FIELDS.CAPACITY }}</div>
   <div class="team-capacity-cell" *ngFor="let sprint of parent.getDisplayedSprints()">
     <div class="capacity-header">
       <span class="capacity-title">{{ sprint.name }}</span>
-      <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('edit capacity') : 'Edit team capacity'">
-        Edit
+      <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.EDIT_CAPACITY) : TOOLTIPS.TEAM.EDIT_CAPACITY">
+        {{ LABELS.BUTTONS.EDIT }}
       </button>
     </div>
     <div class="capacity-list">
@@ -17,15 +17,15 @@
         }}</span>
         <ng-container *ngIf="showDevTest(); else totalCapacity">
           <span *ngIf="member.isDev" class="capacity-value"
-            >Dev: {{ parent.getMemberSprintCapacity(member, sprint.id).dev }}</span
+            >{{ LABELS.FIELDS.DEV }}: {{ parent.getMemberSprintCapacity(member, sprint.id).dev }}</span
           >
           <span *ngIf="member.isTest" class="capacity-value"
-            >Test: {{ parent.getMemberSprintCapacity(member, sprint.id).test }}</span
+            >{{ LABELS.FIELDS.TEST }}: {{ parent.getMemberSprintCapacity(member, sprint.id).test }}</span
           >
         </ng-container>
         <ng-template #totalCapacity>
           <span class="capacity-value"
-            >Capacity:
+            >{{ LABELS.FIELDS.CAPACITY }}:
             {{
               parent.getMemberSprintCapacity(member, sprint.id).dev +
                 parent.getMemberSprintCapacity(member, sprint.id).test
@@ -41,7 +41,7 @@
 <div class="modal-backdrop" *ngIf="showCapacityModal()">
   <div class="modal modal-wide" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Edit Team Capacity</h3>
+      <h3>{{ LABELS.HEADERS.EDIT_TEAM_CAPACITY }}</h3>
       <button type="button" class="modal-close" (click)="closeCapacityEditor()">×</button>
     </div>
     <div class="modal-body">
@@ -62,7 +62,7 @@
               min="0"
               [value]="capacityEdits()[member.id]?.dev ?? 0"
               (input)="updateCapacityEdit(member.id, 'dev', $any($event.target).valueAsNumber)"
-              placeholder="Dev"
+              placeholder="{{ PLACEHOLDERS.DEV }}"
             />
             <input
               *ngIf="member.isTest"
@@ -72,7 +72,7 @@
               min="0"
               [value]="capacityEdits()[member.id]?.test ?? 0"
               (input)="updateCapacityEdit(member.id, 'test', $any($event.target).valueAsNumber)"
-              placeholder="Test"
+              placeholder="{{ PLACEHOLDERS.TEST }}"
             />
           </ng-container>
           <ng-template #simpleCapacity>
@@ -83,7 +83,7 @@
               min="0"
               [value]="member.isDev ? (capacityEdits()[member.id]?.dev ?? 0) : (capacityEdits()[member.id]?.test ?? 0)"
               (input)="updateCapacityEdit(member.id, member.isDev ? 'dev' : 'test', $any($event.target).valueAsNumber)"
-              placeholder="Capacity"
+              placeholder="{{ PLACEHOLDERS.CAPACITY }}"
             />
           </ng-template>
         </div>
@@ -98,14 +98,14 @@
         type="button"
         (click)="closeCapacityEditor()"
       >
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button
         class="btn-primary"
         type="button"
         (click)="saveCapacityEdits()"
       >
-        Save Capacity
+        {{ LABELS.BUTTONS.SAVE_CAPACITY }}
       </button>
     </div>
   </div>

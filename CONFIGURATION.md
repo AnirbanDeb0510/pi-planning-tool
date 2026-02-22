@@ -18,6 +18,7 @@ For local development, the default API URL is `http://localhost:5000`. This is c
 ```javascript
 window['__env'] = window['__env'] || {};
 window['__env']['apiBaseUrl'] = 'http://localhost:5000';
+window['__env']['patTtlMinutes'] = '10';
 ```
 
 To change the API URL locally, edit this file before running `npm start`.
@@ -29,7 +30,7 @@ To change the API URL locally, edit this file before running `npm start`.
 Set the `API_BASE_URL` environment variable when running the container:
 
 ```bash
-docker run -e API_BASE_URL=http://backend:8080 -p 4200:80 pi-frontend
+docker run -e API_BASE_URL=http://backend:8080 -e PAT_TTL_MINUTES=10 -p 4200:80 pi-frontend
 ```
 
 #### Docker Compose
@@ -41,6 +42,7 @@ frontend:
   build: ./frontend/pi-planning-ui
   environment:
     API_BASE_URL: "http://pi-backend:8080"
+      PAT_TTL_MINUTES: "10"
   ports:
     - "4200:80"
 ```
@@ -55,6 +57,7 @@ services:
   frontend:
     environment:
       API_BASE_URL: "https://api.yourdomain.com"
+         PAT_TTL_MINUTES: "10"
 ```
 
 ### Architecture
@@ -75,6 +78,14 @@ services:
    - `/nginx.conf` - Custom nginx configuration
    - `/docker-entrypoint.sh` - Generates env.js at container startup
    - `/docker-compose.yml` - Sets API_BASE_URL environment variable
+
+### PAT Time-to-Live (TTL)
+
+The Personal Access Token (PAT) is stored in memory for a limited time to avoid repeated prompts.
+You can configure the TTL in minutes using `patTtlMinutes` in env.js or via the Docker environment
+variable `PAT_TTL_MINUTES`.
+
+**Defaults:** 10 minutes (if not configured)
 
 4. **Removed Files**
    - Mock service files (no longer using mock data)

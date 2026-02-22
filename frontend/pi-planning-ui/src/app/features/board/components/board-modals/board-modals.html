@@ -2,50 +2,51 @@
 <div class="modal-backdrop" *ngIf="showImportFeatureModal()" (click)="closeImportFeatureModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Import Feature from Azure DevOps</h3>
+      <h3>{{ LABELS.HEADERS.IMPORT_FEATURE }}</h3>
       <button type="button" class="modal-close" (click)="closeImportFeatureModal()">×</button>
     </div>
     <div class="modal-body">
-      <div class="modal-label">Feature ID (User Story ID) *</div>
+      <div class="modal-label">{{ LABELS.FIELDS.FEATURE_ID }}</div>
       <input
         class="modal-input"
         type="text"
         [(ngModel)]="importFeatureId"
-        placeholder="e.g., 12345"
+        placeholder="{{ PLACEHOLDERS.FEATURE_ID }}"
       />
 
-      <div class="modal-label">Organization *</div>
+      <div class="modal-label">{{ LABELS.FIELDS.ORGANIZATION_REQUIRED }}</div>
       <input
         class="modal-input"
         type="text"
         [value]="board()?.organization || ''"
         disabled
-        placeholder="Auto-populated from board"
+        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
       />
 
-      <div class="modal-label">Project *</div>
+      <div class="modal-label">{{ LABELS.FIELDS.PROJECT_REQUIRED }}</div>
       <input
         class="modal-input"
         type="text"
         [value]="board()?.project || ''"
         disabled
-        placeholder="Auto-populated from board"
+        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
       />
 
-      <div class="modal-label">Personal Access Token (PAT) *</div>
+      <div class="modal-label">{{ LABELS.FIELDS.PAT }}</div>
       <input
         class="modal-input"
         type="password"
         [(ngModel)]="importPat"
-        placeholder="Enter your Azure DevOps PAT"
+        placeholder="{{ PLACEHOLDERS.PAT }}"
       />
 
       <div class="checkbox-group">
         <label>
           <input 
             type="checkbox" 
-            [(ngModel)]="rememberPatForImport" />
-          Remember PAT for 10 minutes
+            [(ngModel)]="rememberPatForImport"
+            (ngModelChange)="onRememberPatForImportChange($event)" />
+          {{ LABELS.PAT.remember(patTtlMinutes) }}
         </label>
       </div>
 
@@ -55,10 +56,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" type="button" (click)="closeImportFeatureModal()" [disabled]="importLoading()">
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button class="btn-primary" type="button" (click)="importFeatureFromAzure()" [disabled]="importLoading()">
-        {{ importLoading() ? 'Importing...' : 'Import Feature' }}
+        {{ importLoading() ? LABELS.BUTTONS.IMPORTING : LABELS.BUTTONS.IMPORT_FEATURE }}
       </button>
     </div>
   </div>
@@ -68,11 +69,11 @@
 <div class="modal-backdrop" *ngIf="showRefreshFeatureModal()" (click)="closeRefreshFeatureModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Refresh Feature from Azure DevOps</h3>
+      <h3>{{ LABELS.HEADERS.REFRESH_FEATURE }}</h3>
       <button type="button" class="modal-close" (click)="closeRefreshFeatureModal()">×</button>
     </div>
     <div class="modal-body">
-      <div class="modal-label">Feature</div>
+      <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
       <input
         class="modal-input"
         type="text"
@@ -80,7 +81,7 @@
         disabled
       />
 
-      <div class="modal-label">Azure ID</div>
+      <div class="modal-label">{{ LABELS.FIELDS.AZURE_ID }}</div>
       <input
         class="modal-input"
         type="text"
@@ -88,38 +89,39 @@
         disabled
       />
 
-      <div class="modal-label">Organization</div>
+      <div class="modal-label">{{ LABELS.FIELDS.ORGANIZATION }}</div>
       <input
         class="modal-input"
         type="text"
         [value]="board()?.organization || ''"
         disabled
-        placeholder="Auto-populated from board"
+        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
       />
 
-      <div class="modal-label">Project</div>
+      <div class="modal-label">{{ LABELS.FIELDS.PROJECT }}</div>
       <input
         class="modal-input"
         type="text"
         [value]="board()?.project || ''"
         disabled
-        placeholder="Auto-populated from board"
+        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
       />
 
-      <div class="modal-label">Personal Access Token (PAT) *</div>
+      <div class="modal-label">{{ LABELS.FIELDS.PAT }}</div>
       <input
         class="modal-input"
         type="password"
         [(ngModel)]="refreshPat"
-        placeholder="Enter your Azure DevOps PAT"
+        placeholder="{{ PLACEHOLDERS.PAT }}"
       />
 
       <div class="checkbox-group">
         <label>
           <input 
             type="checkbox" 
-            [(ngModel)]="rememberPatForRefresh" />
-          Remember PAT for 10 minutes
+            [(ngModel)]="rememberPatForRefresh"
+            (ngModelChange)="onRememberPatForRefreshChange($event)" />
+          {{ LABELS.PAT.remember(patTtlMinutes) }}
         </label>
       </div>
 
@@ -129,10 +131,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" type="button" (click)="closeRefreshFeatureModal()" [disabled]="refreshLoading()">
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button class="btn-primary" type="button" (click)="refreshFeatureFromAzure()" [disabled]="refreshLoading()">
-        {{ refreshLoading() ? 'Refreshing...' : 'Refresh Feature' }}
+        {{ refreshLoading() ? LABELS.BUTTONS.REFRESHING : LABELS.BUTTONS.REFRESH_FEATURE }}
       </button>
     </div>
   </div>
@@ -142,11 +144,11 @@
 <div class="modal-backdrop" *ngIf="showDeleteFeatureModal()" (click)="closeDeleteFeatureModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Delete Feature</h3>
+      <h3>{{ LABELS.HEADERS.DELETE_FEATURE }}</h3>
       <button type="button" class="modal-close" (click)="closeDeleteFeatureModal()">×</button>
     </div>
     <div class="modal-body">
-      <div class="modal-label">Feature</div>
+      <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
       <input
         class="modal-input"
         type="text"
@@ -154,7 +156,7 @@
         disabled
       />
 
-      <div class="modal-label">Azure ID</div>
+      <div class="modal-label">{{ LABELS.FIELDS.AZURE_ID }}</div>
       <input
         class="modal-input"
         type="text"
@@ -163,7 +165,7 @@
       />
 
       <div class="warning-text">
-        This will delete the feature and all associated user stories. This action cannot be undone.
+        {{ MESSAGES.FEATURE.DELETE_WARNING }}
       </div>
 
       <div *ngIf="deleteError()" class="error-message-inline">
@@ -172,10 +174,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" type="button" (click)="closeDeleteFeatureModal()" [disabled]="deleteLoading()">
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button class="btn-danger" type="button" (click)="deleteFeature()" [disabled]="deleteLoading()">
-        {{ deleteLoading() ? 'Deleting...' : 'Delete Feature' }}
+        {{ deleteLoading() ? LABELS.BUTTONS.DELETING : LABELS.BUTTONS.DELETE_FEATURE }}
       </button>
     </div>
   </div>
@@ -185,28 +187,28 @@
 <div class="modal-backdrop" *ngIf="showFinalizeConfirmation()" (click)="closeFinalizeConfirmation()">
   <div class="modal modal-finalize" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Finalize Board</h3>
+      <h3>{{ LABELS.HEADERS.FINALIZE_BOARD }}</h3>
       <button type="button" class="modal-close" (click)="closeFinalizeConfirmation()" [disabled]="finalizationLoading()">×</button>
     </div>
     <div class="modal-body">
       <p class="finalize-info">
-        Finalizing marks the board as <strong>ready for execution</strong>. You will not be able to:
+        {{ MESSAGES.BOARD.FINALIZE_INFO_PREFIX }} <strong>{{ MESSAGES.BOARD.FINALIZE_INFO_HIGHLIGHT }}</strong>. {{ MESSAGES.BOARD.FINALIZE_INFO_SUFFIX }}
       </p>
       <ul class="finalize-restrictions">
-        <li>❌ Add new features</li>
-        <li>❌ Add new team members</li>
-        <li>❌ Add new user stories (except via refresh to Sprint 0)</li>
+        <li>{{ LABELS.FINALIZE.RESTRICTION_FEATURES }}</li>
+        <li>{{ LABELS.FINALIZE.RESTRICTION_MEMBERS }}</li>
+        <li>{{ LABELS.FINALIZE.RESTRICTION_STORIES }}</li>
       </ul>
-      <p>You will still be able to:</p>
+      <p>{{ MESSAGES.BOARD.FINALIZE_ALLOWED_TITLE }}</p>
       <ul class="finalize-allowed">
-        <li>✅ Move user stories between sprints</li>
-        <li>✅ Reorder features</li>
-        <li>✅ Update capacity allocations</li>
-        <li>✅ Refresh features from Azure DevOps</li>
+        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_MOVE }}</li>
+        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_REORDER }}</li>
+        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_CAPACITY }}</li>
+        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_REFRESH }}</li>
       </ul>
 
       <div *ngIf="finalizationWarnings().length > 0" class="warning-section">
-        <h4>⚠️ Warnings:</h4>
+        <h4>{{ MESSAGES.BOARD.WARNINGS_TITLE }}</h4>
         <ul class="warnings-list">
           <li *ngFor="let warning of finalizationWarnings()">{{ warning }}</li>
         </ul>
@@ -218,10 +220,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" type="button" (click)="closeFinalizeConfirmation()" [disabled]="finalizationLoading()">
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button class="btn-finalize-confirm" type="button" (click)="finalizeBoard()" [disabled]="finalizationLoading()">
-        {{ finalizationLoading() ? 'Finalizing...' : 'Yes, Finalize Board' }}
+        {{ finalizationLoading() ? LABELS.BUTTONS.FINALIZING : LABELS.BUTTONS.FINALIZE_CONFIRM }}
       </button>
     </div>
   </div>

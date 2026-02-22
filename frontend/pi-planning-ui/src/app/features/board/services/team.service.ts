@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { TeamApiService } from './board-api.service';
 import { BoardService } from './board.service';
 import { TeamMemberResponseDto } from '../../../shared/models/board.dto';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Team Service
@@ -68,13 +69,12 @@ export class TeamService {
           ),
         };
         this.boardService.updateBoardState(finalBoard);
-        console.log('Team member added:', member);
       },
       error: (error) => {
         console.error('Error adding team member:', error);
         // Rollback on error
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError('Failed to add team member. Please try again.');
+        this.boardService.setError(MESSAGES.TEAM.ADD_FAILED);
       },
     });
   }
@@ -116,7 +116,7 @@ export class TeamService {
       error: (error) => {
         console.error('Error updating team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError('Failed to update team member. Please try again.');
+        this.boardService.setError(MESSAGES.TEAM.UPDATE_FAILED);
       },
     });
   }
@@ -136,12 +136,11 @@ export class TeamService {
 
     this.teamApi.removeTeamMember(currentBoard.id, memberId).subscribe({
       next: () => {
-        console.log(`Team member ${memberId} removed`);
       },
       error: (error) => {
         console.error('Error removing team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError('Failed to remove team member. Please try again.');
+        this.boardService.setError(MESSAGES.TEAM.REMOVE_FAILED);
       },
     });
   }
@@ -178,13 +177,12 @@ export class TeamService {
       .updateCapacity(currentBoard.id, memberId, sprintId, capacityDev, capacityTest)
       .subscribe({
         next: () => {
-          console.log(`Capacity updated for member ${memberId} in sprint ${sprintId}`);
         },
         error: (error) => {
           console.error('Error updating capacity:', error);
           // Rollback on error
           this.boardService.updateBoardState(currentBoard);
-          this.boardService.setError('Failed to update capacity. Please try again.');
+          this.boardService.setError(MESSAGES.TEAM.CAPACITY_FAILED);
         },
       });
   }
