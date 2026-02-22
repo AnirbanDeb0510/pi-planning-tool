@@ -5,6 +5,7 @@ import {
 import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, AzureApiService } from './board-api.service';
 import { firstValueFrom } from 'rxjs';
+import { RuntimeConfig } from '../../../core/config/runtime-config';
 
 /**
  * Board Service - State Management Layer
@@ -99,8 +100,9 @@ export class BoardService {
     const stored = this.patStorage();
     if (!stored) return null;
 
-    const tenMinutes = 10 * 60 * 1000;
-    if (Date.now() - stored.timestamp > tenMinutes) {
+    const ttlMinutes = RuntimeConfig.patTtlMinutes;
+    const ttlMs = ttlMinutes * 60 * 1000;
+    if (Date.now() - stored.timestamp > ttlMs) {
       this.patStorage.set(null); // Expired
       return null;
     }

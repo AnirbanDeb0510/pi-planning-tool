@@ -3,3 +3,4 @@
 // For local development: update the apiBaseUrl to match your backend port (default: 5262 from launchSettings.json)
 window['__env'] = window['__env'] || {};
 window['__env']['apiBaseUrl'] = 'http://localhost:5262';
+window['__env']['patTtlMinutes'] = '10';

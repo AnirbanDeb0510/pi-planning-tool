@@ -44,8 +44,9 @@
         <label>
           <input 
             type="checkbox" 
-            [(ngModel)]="rememberPatForImport" />
-          Remember PAT for 10 minutes
+            [(ngModel)]="rememberPatForImport"
+            (ngModelChange)="onRememberPatForImportChange($event)" />
+          Remember PAT for {{ patTtlMinutes }} minutes
         </label>
       </div>
 
@@ -118,8 +119,9 @@
         <label>
           <input 
             type="checkbox" 
-            [(ngModel)]="rememberPatForRefresh" />
-          Remember PAT for 10 minutes
+            [(ngModel)]="rememberPatForRefresh"
+            (ngModelChange)="onRememberPatForRefreshChange($event)" />
+          Remember PAT for {{ patTtlMinutes }} minutes
         </label>
       </div>
 

@@ -10,8 +10,13 @@ export class RuntimeConfig {
    */
   static load(): void {
     const windowEnv = (window as any)['__env'];
+    const rawPatTtlMinutes = windowEnv?.['patTtlMinutes'];
+    const parsedPatTtlMinutes = Number.parseInt(rawPatTtlMinutes, 10);
     this.config = {
       apiBaseUrl: windowEnv?.['apiBaseUrl'] || 'http://localhost:5000',
+      patTtlMinutes: Number.isFinite(parsedPatTtlMinutes) && parsedPatTtlMinutes > 0
+        ? parsedPatTtlMinutes
+        : 10,
     };
   }
 
@@ -23,5 +28,15 @@ export class RuntimeConfig {
       this.load();
     }
     return this.config.apiBaseUrl;
+  }
+
+  /**
+   * PAT time-to-live in minutes (defaults to 10 if not configured)
+   */
+  static get patTtlMinutes(): number {
+    if (!this.config) {
+      this.load();
+    }
+    return this.config.patTtlMinutes;
   }
 }
