@@ -41,6 +41,8 @@ builder.Services.AddScoped<IUserStoryRepository, UserStoryRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
+// Transaction service (for wrapping multi-step operations)
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 // Correlation ID provider (for request tracking across services)
 builder.Services.AddScoped<ICorrelationIdProvider, CorrelationIdProvider>();
 

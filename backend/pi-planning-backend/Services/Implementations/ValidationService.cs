@@ -20,11 +20,7 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateBoardExists(int boardId)
         {
-            var board = await _boardRepository.GetByIdAsync(boardId);
-            if (board == null)
-            {
-                throw new KeyNotFoundException($"Board with ID {boardId} not found.");
-            }
+            var board = await _boardRepository.GetByIdAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
         }
 
         /// <summary>
@@ -60,20 +56,10 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateSprintBelongsToBoard(int sprintId, int boardId)
         {
-            var board = await _boardRepository.GetBoardWithSprintsAsync(boardId);
+            var board = await _boardRepository.GetBoardWithSprintsAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
-            if (board == null)
-            {
-                throw new KeyNotFoundException($"Board with ID {boardId} not found.");
-            }
-
-            var sprint = board.Sprints.FirstOrDefault(s => s.Id == sprintId);
-
-            if (sprint == null)
-            {
-                throw new KeyNotFoundException(
+            var sprint = board.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new KeyNotFoundException(
                     $"Sprint with ID {sprintId} not found in board {boardId}.");
-            }
         }
 
         /// <summary>

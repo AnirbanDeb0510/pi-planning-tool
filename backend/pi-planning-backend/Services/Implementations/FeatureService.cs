@@ -13,7 +13,8 @@ namespace PiPlanningBackend.Services.Implementations
                           IAzureBoardsService azureService,
                           IValidationService validationService,
                           ILogger<FeatureService> logger,
-                          ICorrelationIdProvider correlationIdProvider) : IFeatureService
+                          ICorrelationIdProvider correlationIdProvider,
+                          ITransactionService transactionService) : IFeatureService
     {
         private readonly IFeatureRepository _featureRepo = featureRepo;
         private readonly IUserStoryRepository _storyRepo = storyRepo;
@@ -22,6 +23,7 @@ namespace PiPlanningBackend.Services.Implementations
         private readonly IValidationService _validationService = validationService;
         private readonly ILogger<FeatureService> _logger = logger;
         private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
+        private readonly ITransactionService _transactionService = transactionService;
 
         // import a feature (from the UI after Fetch from Azure)
         public async Task<FeatureDto> ImportFeatureToBoardAsync(int boardId, FeatureDto featureDto, bool checkFinalized = true)
@@ -31,57 +33,56 @@ namespace PiPlanningBackend.Services.Implementations
                 "Feature import started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | FeatureTitle: {FeatureTitle}",
                 correlationId, boardId, featureDto.Title);
 
-            await _validationService.ValidateBoardExists(boardId);
-            var board = await _boardRepo.GetBoardWithSprintsAsync(boardId);
-            if (board == null)
+            return await _transactionService.ExecuteInTransactionAsync(async () =>
             {
-                throw new KeyNotFoundException($"Board with ID {boardId} not found.");
-            }
+                await _validationService.ValidateBoardExists(boardId);
+                var board = await _boardRepo.GetBoardWithSprintsAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
-            // Guard: Prevent adding features if board is finalized (unless bypass flag is set for refresh)
-            if (checkFinalized)
-            {
-                _validationService.ValidateBoardNotFinalized(board, "add features");
-            }
-
-            // Create/Modify feature in database
-            Feature? existing = await CreateOrModifyFeature(boardId, featureDto);
-
-            // insert/update child user stories
-            var sprints = board.Sprints.OrderBy(s => s.Id).ToList();
-
-            // For each incoming child story DTO
-            var childrenUserStoriesDto = featureDto.Children ?? [];
-            await CreateOrUpdateUserStory(existing, sprints, childrenUserStoriesDto);
-            if (existing == null)
-            {
-                return new FeatureDto();
-            }
-
-            // return the stored feature dto (re-query to include generated ids)
-            var saved = await _featureRepo.GetByIdAsync(existing.Id);
-            var result = new FeatureDto
-            {
-                Id = saved!.Id,
-                AzureId = saved.AzureId,
-                Title = saved.Title,
-                Priority = saved.Priority,
-                ValueArea = saved.ValueArea,
-                Children = [.. saved.UserStories.Select(u => new UserStoryDto
+                // Guard: Prevent adding features if board is finalized (unless bypass flag is set for refresh)
+                if (checkFinalized)
                 {
-                    Id = u.Id,
-                    AzureId = u.AzureId,
-                    Title = u.Title,
-                    StoryPoints = u.StoryPoints,
-                    DevStoryPoints = u.DevStoryPoints,
-                    TestStoryPoints = u.TestStoryPoints
-                })]
-            };
+                    _validationService.ValidateBoardNotFinalized(board, "add features");
+                }
 
-            _logger.LogInformation(
-                "Feature imported successfully | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title} | StoryCount: {StoryCount}",
-                correlationId, saved.Id, saved.Title, saved.UserStories.Count);
-            return result;
+                // Create/Modify feature in database
+                Feature? existing = await CreateOrModifyFeature(boardId, featureDto);
+
+                // insert/update child user stories
+                var sprints = board.Sprints.OrderBy(s => s.Id).ToList();
+
+                // For each incoming child story DTO
+                var childrenUserStoriesDto = featureDto.Children ?? [];
+                await CreateOrUpdateUserStory(existing, sprints, childrenUserStoriesDto);
+                if (existing == null)
+                {
+                    return new FeatureDto();
+                }
+
+                // return the stored feature dto (re-query to include generated ids)
+                var saved = await _featureRepo.GetByIdAsync(existing.Id);
+                var result = new FeatureDto
+                {
+                    Id = saved!.Id,
+                    AzureId = saved.AzureId,
+                    Title = saved.Title,
+                    Priority = saved.Priority,
+                    ValueArea = saved.ValueArea,
+                    Children = [.. saved.UserStories.Select(u => new UserStoryDto
+                    {
+                        Id = u.Id,
+                        AzureId = u.AzureId,
+                        Title = u.Title,
+                        StoryPoints = u.StoryPoints,
+                        DevStoryPoints = u.DevStoryPoints,
+                        TestStoryPoints = u.TestStoryPoints
+                    })]
+                };
+
+                _logger.LogInformation(
+                    "Feature imported successfully | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title} | StoryCount: {StoryCount}",
+                    correlationId, saved.Id, saved.Title, saved.UserStories.Count);
+                return result;
+            });
         }
 
         private async Task CreateOrUpdateUserStory(Feature? existing, List<Sprint> sprints, List<UserStoryDto> childrenUserStoriesDto)
@@ -183,37 +184,40 @@ namespace PiPlanningBackend.Services.Implementations
                 "User story refresh from Azure started | CorrelationId: {CorrelationId} | StoryId: {StoryId} | BoardId: {BoardId}",
                 correlationId, storyId, boardId);
 
-            await _validationService.ValidateStoryBelongsToBoard(storyId, boardId);
-            var story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
-                ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
-            var feature = story.Feature
-                ?? throw new KeyNotFoundException($"Feature for story {storyId} not found.");
-
-            if (string.IsNullOrEmpty(story.AzureId)) throw new Exception("Story has no AzureId");
-
-            var wi = await _azureService.GetUserStoryAsync(organization, project, int.Parse(story.AzureId!), pat);
-
-            story.Title = wi.Title;
-            story.StoryPoints = wi.StoryPoints;
-            story.DevStoryPoints = wi.DevStoryPoints;
-            story.TestStoryPoints = wi.TestStoryPoints;
-
-            await _storyRepo.UpdateAsync(story);
-            await _storyRepo.SaveChangesAsync();
-
-            _logger.LogInformation(
-                "User story refreshed from Azure | CorrelationId: {CorrelationId} | StoryId: {StoryId} | Title: {Title} | Points: {StoryPoints}",
-                correlationId, story.Id, story.Title, story.StoryPoints);
-
-            return new UserStoryDto
+            return await _transactionService.ExecuteInTransactionAsync(async () =>
             {
-                Id = story.Id,
-                AzureId = story.AzureId,
-                Title = story.Title,
-                StoryPoints = story.StoryPoints,
-                DevStoryPoints = story.DevStoryPoints,
-                TestStoryPoints = story.TestStoryPoints
-            };
+                await _validationService.ValidateStoryBelongsToBoard(storyId, boardId);
+                var story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
+                    ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
+                var feature = story.Feature
+                    ?? throw new KeyNotFoundException($"Feature for story {storyId} not found.");
+
+                if (string.IsNullOrEmpty(story.AzureId)) throw new Exception("Story has no AzureId");
+
+                var wi = await _azureService.GetUserStoryAsync(organization, project, int.Parse(story.AzureId!), pat);
+
+                story.Title = wi.Title;
+                story.StoryPoints = wi.StoryPoints;
+                story.DevStoryPoints = wi.DevStoryPoints;
+                story.TestStoryPoints = wi.TestStoryPoints;
+
+                await _storyRepo.UpdateAsync(story);
+                await _storyRepo.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "User story refreshed from Azure | CorrelationId: {CorrelationId} | StoryId: {StoryId} | Title: {Title} | Points: {StoryPoints}",
+                    correlationId, story.Id, story.Title, story.StoryPoints);
+
+                return new UserStoryDto
+                {
+                    Id = story.Id,
+                    AzureId = story.AzureId,
+                    Title = story.Title,
+                    StoryPoints = story.StoryPoints,
+                    DevStoryPoints = story.DevStoryPoints,
+                    TestStoryPoints = story.TestStoryPoints
+                };
+            });
         }
 
         public async Task MoveUserStoryAsync(int boardId, int storyId, int targetSprintId)
@@ -254,12 +258,7 @@ namespace PiPlanningBackend.Services.Implementations
             foreach (var item in features)
             {
                 await _validationService.ValidateFeatureBelongsToBoard(item.FeatureId, boardId);
-                var feature = await _featureRepo.GetByIdAsync(item.FeatureId);
-                if (feature == null)
-                {
-                    throw new KeyNotFoundException($"Feature with ID {item.FeatureId} not found.");
-                }
-
+                var feature = await _featureRepo.GetByIdAsync(item.FeatureId) ?? throw new KeyNotFoundException($"Feature with ID {item.FeatureId} not found.");
                 feature.Priority = item.NewPriority;
                 await _featureRepo.UpdateAsync(feature);
             }
@@ -275,19 +274,22 @@ namespace PiPlanningBackend.Services.Implementations
         {
             var correlationId = _correlationIdProvider.GetCorrelationId();
 
-            await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
-            var feature = await _featureRepo.GetByIdAsync(featureId)
-                ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
+            return await _transactionService.ExecuteInTransactionAsync(async () =>
+            {
+                await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
+                var feature = await _featureRepo.GetByIdAsync(featureId)
+                    ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
 
-            var storyCount = feature.UserStories?.Count ?? 0;
-            // Delete feature - EF Core will cascade delete user stories
-            await _featureRepo.DeleteAsync(feature);
-            await _featureRepo.SaveChangesAsync();
+                var storyCount = feature.UserStories?.Count ?? 0;
+                // Delete feature - EF Core will cascade delete user stories
+                await _featureRepo.DeleteAsync(feature);
+                await _featureRepo.SaveChangesAsync();
 
-            _logger.LogInformation(
-                "Feature deleted | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title} | CascadedStories: {StoryCount}",
-                correlationId, featureId, feature.Title, storyCount);
-            return true;
+                _logger.LogInformation(
+                    "Feature deleted | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title} | CascadedStories: {StoryCount}",
+                    correlationId, featureId, feature.Title, storyCount);
+                return true;
+            });
         }
 
     }
