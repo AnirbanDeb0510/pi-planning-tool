@@ -19,6 +19,9 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// HttpContextAccessor (needed for accessing correlation ID from services)
+builder.Services.AddHttpContextAccessor();
+
 // DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -38,6 +41,8 @@ builder.Services.AddScoped<IUserStoryRepository, UserStoryRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
+// Correlation ID provider (for request tracking across services)
+builder.Services.AddScoped<ICorrelationIdProvider, CorrelationIdProvider>();
 
 
 // CORS (dev convenience)

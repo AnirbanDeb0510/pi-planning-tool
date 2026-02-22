@@ -5,34 +5,44 @@ using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class TeamService : ITeamService
+    public class TeamService(ITeamRepository teamRepository, IBoardRepository boardRepository, IValidationService validationService, ILogger<TeamService> logger, ICorrelationIdProvider correlationIdProvider) : ITeamService
     {
-        private readonly ITeamRepository _teamRepository;
-        private readonly IBoardRepository _boardRepository;
-        private readonly IValidationService _validationService;
-
-        public TeamService(ITeamRepository teamRepository, IBoardRepository boardRepository, IValidationService validationService)
-        {
-            _teamRepository = teamRepository;
-            _boardRepository = boardRepository;
-            _validationService = validationService;
-        }
+        private readonly ITeamRepository _teamRepository = teamRepository;
+        private readonly IBoardRepository _boardRepository = boardRepository;
+        private readonly IValidationService _validationService = validationService;
+        private readonly ILogger<TeamService> _logger = logger;
+        private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
 
         public async Task<List<TeamMemberDto>> GetTeamAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Get team members started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
             await _validationService.ValidateBoardExists(boardId);
             List<TeamMember> members = await _teamRepository.GetTeamAsync(boardId);
-            return members.Select(m => new TeamMemberDto
+
+            _logger.LogInformation(
+                "Team members retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberCount: {MemberCount}",
+                correlationId, boardId, members.Count);
+
+            return [.. members.Select(m => new TeamMemberDto
             {
                 Id = m.Id,
                 Name = m.Name,
                 IsDev = m.IsDev,
                 IsTest = m.IsTest
-            }).ToList();
+            })];
         }
 
         public async Task<TeamMemberResponseDto> AddTeamMemberAsync(int boardId, TeamMemberDto memberDto)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member addition started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberName: {MemberName} | IsDev: {IsDev} | IsTest: {IsTest}",
+                correlationId, boardId, memberDto.Name, memberDto.IsDev, memberDto.IsTest);
+
             // Validate input
             if (string.IsNullOrWhiteSpace(memberDto.Name))
                 throw new ArgumentException("Team member name cannot be empty");
@@ -75,11 +85,20 @@ namespace PiPlanningBackend.Services.Implementations
 
             await _teamRepository.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Team member added successfully | CorrelationId: {CorrelationId} | MemberId: {MemberId} | Name: {Name} | SprintCount: {SprintCount}",
+                correlationId, member.Id, member.Name, member.TeamMemberSprints.Count);
+
             return MapTeamMemberResponse(member);
         }
 
         public async Task<TeamMemberResponseDto?> UpdateTeamMemberAsync(int boardId, int memberId, TeamMemberDto memberDto)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member update started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberId: {MemberId} | NewName: {NewName}",
+                correlationId, boardId, memberId, memberDto.Name);
+
             // Validate input
             if (string.IsNullOrWhiteSpace(memberDto.Name))
                 throw new ArgumentException("Team member name cannot be empty");
@@ -121,11 +140,20 @@ namespace PiPlanningBackend.Services.Implementations
 
             await _teamRepository.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Team member updated successfully | CorrelationId: {CorrelationId} | MemberId: {MemberId} | Name: {Name} | IsDev: {IsDev} | IsTest: {IsTest} | RoleChanged: {RoleChanged}",
+                correlationId, member.Id, member.Name, member.IsDev, member.IsTest, roleChanged);
+
             return MapTeamMemberResponse(member);
         }
 
         public async Task<bool> DeleteTeamMemberAsync(int boardId, int memberId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member deletion started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberId: {MemberId}",
+                correlationId, boardId, memberId);
+
             await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
             var member = await _teamRepository.GetTeamMemberAsync(memberId)
                 ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
@@ -138,11 +166,21 @@ namespace PiPlanningBackend.Services.Implementations
 
             await _teamRepository.DeleteTeamMemberAsync(member);
             await _teamRepository.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Team member deleted successfully | CorrelationId: {CorrelationId} | MemberId: {MemberId} | Name: {Name}",
+                correlationId, memberId, member.Name);
+
             return true;
         }
 
         public async Task<TeamMemberSprint?> UpdateCapacityAsync(int boardId, int sprintId, int teamMemberId, UpdateTeamMemberCapacityDto dto)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member capacity update started | CorrelationId: {CorrelationId} | MemberId: {MemberId} | SprintId: {SprintId} | CapacityDev: {CapacityDev} | CapacityTest: {CapacityTest}",
+                correlationId, teamMemberId, sprintId, dto.CapacityDev, dto.CapacityTest);
+
             await _validationService.ValidateTeamMemberBelongsToBoard(teamMemberId, boardId);
             await _validationService.ValidateSprintBelongsToBoard(sprintId, boardId);
             var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId)
@@ -172,6 +210,11 @@ namespace PiPlanningBackend.Services.Implementations
             }
 
             await _teamRepository.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Team member capacity updated | CorrelationId: {CorrelationId} | MemberId: {MemberId} | SprintId: {SprintId} | FinalCapacityDev: {FinalCapacityDev} | FinalCapacityTest: {FinalCapacityTest}",
+                correlationId, teamMemberId, sprintId, tms.CapacityDev, tms.CapacityTest);
+
             return tms;
         }
 
@@ -204,12 +247,12 @@ namespace PiPlanningBackend.Services.Implementations
                 Name = member.Name,
                 IsDev = member.IsDev,
                 IsTest = member.IsTest,
-                SprintCapacities = member.TeamMemberSprints.Select(tms => new TeamMemberSprintDto
+                SprintCapacities = [.. member.TeamMemberSprints.Select(tms => new TeamMemberSprintDto
                 {
                     SprintId = tms.SprintId,
                     CapacityDev = tms.CapacityDev,
                     CapacityTest = tms.CapacityTest
-                }).ToList()
+                })]
             };
         }
     }

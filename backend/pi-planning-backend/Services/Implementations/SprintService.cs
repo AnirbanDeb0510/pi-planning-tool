@@ -3,8 +3,11 @@ using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class SprintService : ISprintService
+    public class SprintService(ILogger<SprintService> logger, ICorrelationIdProvider correlationIdProvider) : ISprintService
     {
+        private readonly ILogger<SprintService> _logger = logger;
+        private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
+
         /// <summary>
         /// Generates sprints for a board with auto-calculated dates.
         /// Sprint 0 is a placeholder/parking lot (no real dates).
@@ -12,6 +15,11 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public List<Sprint> GenerateSprintsForBoard(Board board, int numSprints, int sprintDurationDays)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Sprint generation started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | NumSprints: {NumSprints} | Duration: {Duration}",
+                correlationId, board.Id, numSprints, sprintDurationDays);
+
             var sprints = new List<Sprint>();
             var startDateUtc = board.StartDate;
 
@@ -38,6 +46,12 @@ namespace PiPlanningBackend.Services.Implementations
 
                 currentSprintStart = currentSprintStart.AddDays(sprintDurationDays);
             }
+
+            _logger.LogInformation(
+                "Sprints generated successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | TotalSprintCount: {SprintCount} | FirstSprintStart: {StartDate} | LastSprintEnd: {EndDate}",
+                correlationId, board.Id, sprints.Count,
+                sprints.FirstOrDefault()?.StartDate,
+                sprints.LastOrDefault()?.EndDate);
 
             return sprints;
         }

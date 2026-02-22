@@ -7,30 +7,30 @@ using PiPlanningBackend.Services; // for Azure service interface
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class FeatureService : IFeatureService
+    public class FeatureService(IFeatureRepository featureRepo,
+                          IUserStoryRepository storyRepo,
+                          IBoardRepository boardRepo,
+                          IAzureBoardsService azureService,
+                          IValidationService validationService,
+                          ILogger<FeatureService> logger,
+                          ICorrelationIdProvider correlationIdProvider) : IFeatureService
     {
-        private readonly IFeatureRepository _featureRepo;
-        private readonly IUserStoryRepository _storyRepo;
-        private readonly IBoardRepository _boardRepo;
-        private readonly IAzureBoardsService _azureService;
-        private readonly IValidationService _validationService;
-
-        public FeatureService(IFeatureRepository featureRepo,
-                              IUserStoryRepository storyRepo,
-                              IBoardRepository boardRepo,
-                              IAzureBoardsService azureService,
-                              IValidationService validationService)
-        {
-            _featureRepo = featureRepo;
-            _storyRepo = storyRepo;
-            _boardRepo = boardRepo;
-            _azureService = azureService;
-            _validationService = validationService;
-        }
+        private readonly IFeatureRepository _featureRepo = featureRepo;
+        private readonly IUserStoryRepository _storyRepo = storyRepo;
+        private readonly IBoardRepository _boardRepo = boardRepo;
+        private readonly IAzureBoardsService _azureService = azureService;
+        private readonly IValidationService _validationService = validationService;
+        private readonly ILogger<FeatureService> _logger = logger;
+        private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
 
         // import a feature (from the UI after Fetch from Azure)
         public async Task<FeatureDto> ImportFeatureToBoardAsync(int boardId, FeatureDto featureDto, bool checkFinalized = true)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Feature import started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | FeatureTitle: {FeatureTitle}",
+                correlationId, boardId, featureDto.Title);
+
             await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepo.GetBoardWithSprintsAsync(boardId);
             if (board == null)
@@ -44,6 +44,7 @@ namespace PiPlanningBackend.Services.Implementations
                 _validationService.ValidateBoardNotFinalized(board, "add features");
             }
 
+            // Create/Modify feature in database
             Feature? existing = await CreateOrModifyFeature(boardId, featureDto);
 
             // insert/update child user stories
@@ -59,7 +60,7 @@ namespace PiPlanningBackend.Services.Implementations
 
             // return the stored feature dto (re-query to include generated ids)
             var saved = await _featureRepo.GetByIdAsync(existing.Id);
-            return new FeatureDto
+            var result = new FeatureDto
             {
                 Id = saved!.Id,
                 AzureId = saved.AzureId,
@@ -76,6 +77,11 @@ namespace PiPlanningBackend.Services.Implementations
                     TestStoryPoints = u.TestStoryPoints
                 })]
             };
+
+            _logger.LogInformation(
+                "Feature imported successfully | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title} | StoryCount: {StoryCount}",
+                correlationId, saved.Id, saved.Title, saved.UserStories.Count);
+            return result;
         }
 
         private async Task CreateOrUpdateUserStory(Feature? existing, List<Sprint> sprints, List<UserStoryDto> childrenUserStoriesDto)
@@ -152,11 +158,19 @@ namespace PiPlanningBackend.Services.Implementations
         // refresh a feature by calling Azure + updating DB records
         public async Task<FeatureDto?> RefreshFeatureFromAzureAsync(int boardId, int featureId, string organization, string project, string pat)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Feature refresh from Azure started | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | BoardId: {BoardId}",
+                correlationId, featureId, boardId);
+
             await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
             var feature = await _featureRepo.GetByIdAsync(featureId)
                 ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
 
             var workItem = await _azureService.GetFeatureWithChildrenAsync(organization, project, int.Parse(feature.AzureId!), pat);
+            _logger.LogInformation(
+                "Feature refreshed from Azure | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title}",
+                correlationId, featureId, workItem.Title);
 
             // For refresh, bypass finalization check to allow updating on finalized boards
             return await ImportFeatureToBoardAsync(boardId, workItem, checkFinalized: false);
@@ -164,6 +178,11 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<UserStoryDto?> RefreshUserStoryFromAzureAsync(int boardId, int storyId, string organization, string project, string pat)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "User story refresh from Azure started | CorrelationId: {CorrelationId} | StoryId: {StoryId} | BoardId: {BoardId}",
+                correlationId, storyId, boardId);
+
             await _validationService.ValidateStoryBelongsToBoard(storyId, boardId);
             var story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
                 ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
@@ -182,6 +201,10 @@ namespace PiPlanningBackend.Services.Implementations
             await _storyRepo.UpdateAsync(story);
             await _storyRepo.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "User story refreshed from Azure | CorrelationId: {CorrelationId} | StoryId: {StoryId} | Title: {Title} | Points: {StoryPoints}",
+                correlationId, story.Id, story.Title, story.StoryPoints);
+
             return new UserStoryDto
             {
                 Id = story.Id,
@@ -195,20 +218,38 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task MoveUserStoryAsync(int boardId, int storyId, int targetSprintId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+
             await _validationService.ValidateStoryBelongsToBoard(storyId, boardId);
             await _validationService.ValidateSprintBelongsToBoard(targetSprintId, boardId);
             var story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
                 ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
 
+            var previousSprintId = story.SprintId;
             story.SprintId = targetSprintId;
             story.IsMoved = story.OriginalSprintId != story.SprintId;
             await _storyRepo.UpdateAsync(story);
             await _storyRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "User story moved | CorrelationId: {CorrelationId} | StoryId: {StoryId} | PreviousSprint: {PreviousSprint} | TargetSprint: {TargetSprint}",
+                correlationId, storyId, previousSprintId, targetSprintId);
         }
 
         public async Task ReorderFeaturesAsync(int boardId, List<ReorderFeatureItemDto> features)
         {
-            if (features.Count == 0) return;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Feature reordering started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | FeatureCount: {FeatureCount}",
+                correlationId, boardId, features.Count);
+
+            if (features.Count == 0)
+            {
+                _logger.LogInformation(
+                    "Feature reordering skipped - empty list | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                    correlationId, boardId);
+                return;
+            }
 
             foreach (var item in features)
             {
@@ -224,18 +265,28 @@ namespace PiPlanningBackend.Services.Implementations
             }
 
             await _featureRepo.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Features reordered successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | ReorderedCount: {ReorderedCount}",
+                correlationId, boardId, features.Count);
         }
 
         public async Task<bool> DeleteFeatureAsync(int boardId, int featureId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+
             await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
             var feature = await _featureRepo.GetByIdAsync(featureId)
                 ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
 
+            var storyCount = feature.UserStories?.Count ?? 0;
             // Delete feature - EF Core will cascade delete user stories
             await _featureRepo.DeleteAsync(feature);
             await _featureRepo.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Feature deleted | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title} | CascadedStories: {StoryCount}",
+                correlationId, featureId, feature.Title, storyCount);
             return true;
         }
 

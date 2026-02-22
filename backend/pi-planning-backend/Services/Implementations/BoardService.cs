@@ -7,14 +7,21 @@ using System.Text;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class BoardService(IBoardRepository boardRepository, ISprintService sprintService, IValidationService validationService) : IBoardService
+    public class BoardService(IBoardRepository boardRepository, ISprintService sprintService, IValidationService validationService, ILogger<BoardService> logger, ICorrelationIdProvider correlationIdProvider) : IBoardService
     {
         private readonly IBoardRepository _boardRepository = boardRepository;
         private readonly ISprintService _sprintService = sprintService;
         private readonly IValidationService _validationService = validationService;
+        private readonly ILogger<BoardService> _logger = logger;
+        private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
 
         public async Task<Board> CreateBoardAsync(BoardCreateDto dto)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board creation started | CorrelationId: {CorrelationId} | Name: {BoardName} | Organization: {Organization} | Project: {Project} | NumSprints: {NumSprints}",
+                correlationId, dto.Name, dto.Organization, dto.Project, dto.NumSprints);
+
             // Ensure StartDate is UTC-aware for PostgreSQL
             var startDateUtc = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc);
 
@@ -48,21 +55,38 @@ namespace PiPlanningBackend.Services.Implementations
             }
 
             await _boardRepository.AddAsync(board);
+            _logger.LogInformation(
+                "Board created successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | SprintCount: {SprintCount}",
+                correlationId, board.Id, board.Sprints.Count);
             return board;
         }
 
         public async Task<Board?> GetBoardAsync(int id)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
             await _validationService.ValidateBoardExists(id);
-            return await _boardRepository.GetByIdAsync(id)
+            var board = await _boardRepository.GetByIdAsync(id)
                 ?? throw new KeyNotFoundException($"Board with ID {id} not found.");
+            _logger.LogInformation(
+                "Board retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName}",
+                correlationId, board.Id, board.Name);
+            return board;
         }
 
         public async Task<BoardResponseDto?> GetBoardWithHierarchyAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Get board with hierarchy started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
             await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
                 ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            _logger.LogInformation(
+                "Board hierarchy retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName} | Features: {FeatureCount} | Teams: {TeamCount} | Sprints: {SprintCount}",
+                correlationId, board.Id, board.Name, board.Features.Count, board.TeamMembers.Count, board.Sprints.Count);
 
             return new BoardResponseDto
             {
@@ -74,7 +98,7 @@ namespace PiPlanningBackend.Services.Implementations
                 IsFinalized = board.IsFinalized,
                 DevTestToggle = board.DevTestToggle,
                 StartDate = board.StartDate,
-                Sprints = board.Sprints
+                Sprints = [.. board.Sprints
                     .OrderBy(s => s.Id)
                     .Select(s => new SprintDto
                     {
@@ -82,9 +106,8 @@ namespace PiPlanningBackend.Services.Implementations
                         Name = s.Name,
                         StartDate = s.StartDate,
                         EndDate = s.EndDate
-                    })
-                    .ToList(),
-                Features = board.Features
+                    })],
+                Features = [.. board.Features
                     .OrderBy(f => f.Priority)
                     .Select(f => new FeatureResponseDto
                     {
@@ -93,7 +116,7 @@ namespace PiPlanningBackend.Services.Implementations
                         AzureId = f.AzureId,
                         Priority = f.Priority,
                         ValueArea = f.ValueArea,
-                        UserStories = f.UserStories
+                        UserStories = [.. f.UserStories
                             .Select(us => new UserStoryDto
                             {
                                 Id = us.Id,
@@ -105,35 +128,40 @@ namespace PiPlanningBackend.Services.Implementations
                                 SprintId = us.SprintId,
                                 OriginalSprintId = us.OriginalSprintId,
                                 IsMoved = us.IsMoved
-                            })
-                            .ToList()
-                    })
-                    .ToList(),
-                TeamMembers = board.TeamMembers
+                            })]
+                    })],
+                TeamMembers = [.. board.TeamMembers
                     .Select(tm => new TeamMemberResponseDto
                     {
                         Id = tm.Id,
                         Name = tm.Name,
                         IsDev = tm.IsDev,
                         IsTest = tm.IsTest,
-                        SprintCapacities = tm.TeamMemberSprints
+                        SprintCapacities = [.. tm.TeamMemberSprints
                             .Select(tms => new TeamMemberSprintDto
                             {
                                 SprintId = tms.SprintId,
                                 CapacityDev = tms.CapacityDev,
                                 CapacityTest = tms.CapacityTest
-                            })
-                            .ToList()
-                    })
-                    .ToList()
+                            })]
+                    })]
             };
         }
 
         public async Task<IEnumerable<BoardSummaryDto>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board search started | CorrelationId: {CorrelationId} | SearchTerm: {SearchTerm} | Organization: {Organization} | Project: {Project} | IsLocked: {IsLocked} | IsFinalized: {IsFinalized}",
+                correlationId, searchTerm ?? "<null>", organization ?? "<null>", project ?? "<null>", isLocked, isFinalized);
+
             var boards = await _boardRepository.SearchBoardsAsync(searchTerm, organization, project, isLocked, isFinalized);
 
-            return boards.Select(b => new BoardSummaryDto
+            _logger.LogInformation(
+                "Boards search completed | CorrelationId: {CorrelationId} | ResultCount: {ResultCount}",
+                correlationId, boards.Count());
+
+            return [.. boards.Select(b => new BoardSummaryDto
             {
                 Id = b.Id,
                 Name = b.Name,
@@ -144,14 +172,23 @@ namespace PiPlanningBackend.Services.Implementations
                 IsFinalized = b.IsFinalized,
                 SprintCount = b.Sprints.Count,
                 FeatureCount = b.Features.Count
-            }).ToList();
+            })];
         }
 
         public async Task<BoardSummaryDto?> GetBoardPreviewAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board preview retrieval started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
             await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepository.GetBoardWithFeaturesAsync(boardId)
                 ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            _logger.LogInformation(
+                "Board preview retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName} | FeatureCount: {FeatureCount}",
+                correlationId, board.Id, board.Name, board.Features.Count);
 
             return new BoardSummaryDto
             {
@@ -170,6 +207,11 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<(bool Success, List<string> Warnings)> ValidateBoardForFinalizationAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board finalization validation started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
             await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
                 ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
@@ -178,7 +220,12 @@ namespace PiPlanningBackend.Services.Implementations
 
             // Check if board is already finalized
             if (board.IsFinalized)
+            {
+                _logger.LogInformation(
+                    "Board finalization validation failed - already finalized | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                    correlationId, boardId);
                 return (false, new List<string> { "Board is already finalized" });
+            }
 
             // Warning checks (non-blocking)
             if (board.TeamMembers.Count == 0)
@@ -192,21 +239,30 @@ namespace PiPlanningBackend.Services.Implementations
 
             // Check if all features have stories
             var featuresWithoutStories = board.Features.Where(f => f.UserStories.Count == 0).ToList();
-            if (featuresWithoutStories.Any())
+            if (featuresWithoutStories.Count != 0)
                 warnings.Add($"⚠️ {featuresWithoutStories.Count} feature(s) have no user stories assigned");
 
             // Check team member capacity distribution (warning only)
             var teamMembersWithNoCapacity = board.TeamMembers
                 .Where(tm => tm.TeamMemberSprints.Count == 0)
                 .ToList();
-            if (teamMembersWithNoCapacity.Any())
+            if (teamMembersWithNoCapacity.Count != 0)
                 warnings.Add($"⚠️ {teamMembersWithNoCapacity.Count} team member(s) have no capacity allocated");
+
+            _logger.LogInformation(
+                "Board finalization validation completed | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Success: true | WarningCount: {WarningCount}",
+                correlationId, boardId, warnings.Count);
 
             return (true, warnings);
         }
 
         public async Task<BoardSummaryDto?> FinalizeBoardAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board finalization started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
             await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
                 ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
@@ -216,15 +272,20 @@ namespace PiPlanningBackend.Services.Implementations
             board.FinalizedAt = DateTime.UtcNow;
 
             // Set OriginalSprintId = CurrentSprintId for all user stories
+            var storyCount = 0;
             foreach (var feature in board.Features)
             {
                 foreach (var userStory in feature.UserStories)
                 {
                     userStory.OriginalSprintId = userStory.SprintId;
+                    storyCount++;
                 }
             }
 
             await _boardRepository.SaveChangesAsync();
+            _logger.LogInformation(
+                "Board finalized successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName} | FeatureCount: {FeatureCount} | StoryCount: {StoryCount}",
+                correlationId, board.Id, board.Name, board.Features.Count, storyCount);
 
             // Return summary board state
             return await GetBoardPreviewAsync(boardId);
@@ -232,6 +293,11 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<BoardSummaryDto?> RestoreBoardAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board restoration started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
             await _validationService.ValidateBoardExists(boardId);
             var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
                 ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
@@ -240,6 +306,9 @@ namespace PiPlanningBackend.Services.Implementations
             board.IsFinalized = false;
 
             await _boardRepository.SaveChangesAsync();
+            _logger.LogInformation(
+                "Board restored successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName}",
+                correlationId, board.Id, board.Name);
 
             // Return summary board state
             return await GetBoardPreviewAsync(boardId);
