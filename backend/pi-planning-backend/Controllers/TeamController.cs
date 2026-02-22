@@ -6,14 +6,9 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/boards/{boardId}/team")]
-    public class TeamController : ControllerBase
+    public class TeamController(ITeamService service) : ControllerBase
     {
-        private readonly ITeamService _service;
-
-        public TeamController(ITeamService service)
-        {
-            _service = service;
-        }
+        private readonly ITeamService _service = service;
 
         [HttpGet]
         public async Task<IActionResult> GetTeam(int boardId)

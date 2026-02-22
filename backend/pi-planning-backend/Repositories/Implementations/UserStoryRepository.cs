@@ -5,10 +5,9 @@ using PiPlanningBackend.Repositories.Interfaces;
 
 namespace PiPlanningBackend.Repositories.Implementations
 {
-    public class UserStoryRepository : IUserStoryRepository
+    public class UserStoryRepository(AppDbContext db) : IUserStoryRepository
     {
-        private readonly AppDbContext _db;
-        public UserStoryRepository(AppDbContext db) => _db = db;
+        private readonly AppDbContext _db = db;
 
         public async Task<UserStory?> GetByAzureIdAsync(string azureId, int featureId)
             => await _db.UserStories.FirstOrDefaultAsync(u => u.AzureId == azureId && u.FeatureId == featureId);

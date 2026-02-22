@@ -1,17 +1,9 @@
-using System.Text.Json;
-
 namespace PiPlanningBackend.Middleware
 {
-    public class GlobalExceptionHandlingMiddleware
+    public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<GlobalExceptionHandlingMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<GlobalExceptionHandlingMiddleware> _logger;
-
-        public GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<GlobalExceptionHandlingMiddleware> logger)
-        {
-            _next = next;
-            _logger = logger;
-        }
+        private readonly RequestDelegate _next = next;
+        private readonly ILogger<GlobalExceptionHandlingMiddleware> _logger = logger;
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -21,8 +13,14 @@ namespace PiPlanningBackend.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception: {ExceptionType} - {Message}",
-                    ex.GetType().Name, ex.Message);
+                // Extract correlation ID from context (set by RequestCorrelationMiddleware)
+                var correlationId = context.Items.TryGetValue("CorrelationId", out var correlationIdObj)
+                    ? correlationIdObj?.ToString() ?? "NO_CORRELATION_ID"
+                    : "NO_CORRELATION_ID";
+
+                _logger.LogError(ex,
+                    "Unhandled exception | CorrelationId: {CorrelationId} | ExceptionType: {ExceptionType} | Message: {Message}",
+                    correlationId, ex.GetType().Name, ex.Message);
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -65,7 +63,7 @@ namespace PiPlanningBackend.Middleware
             {
                 error = new
                 {
-                    message = message,
+                    message,
                     details = string.IsNullOrEmpty(details) ? null : details,
                     timestamp = DateTime.UtcNow
                 }

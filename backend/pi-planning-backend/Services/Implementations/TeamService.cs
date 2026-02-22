@@ -5,78 +5,104 @@ using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class TeamService : ITeamService
+    public class TeamService(ITeamRepository teamRepository, IBoardRepository boardRepository, IValidationService validationService, ILogger<TeamService> logger, ICorrelationIdProvider correlationIdProvider, ITransactionService transactionService) : ITeamService
     {
-        private readonly ITeamRepository _teamRepository;
-        private readonly IBoardRepository _boardRepository;
-
-        public TeamService(ITeamRepository teamRepository, IBoardRepository boardRepository)
-        {
-            _teamRepository = teamRepository;
-            _boardRepository = boardRepository;
-        }
+        private readonly ITeamRepository _teamRepository = teamRepository;
+        private readonly IBoardRepository _boardRepository = boardRepository;
+        private readonly IValidationService _validationService = validationService;
+        private readonly ILogger<TeamService> _logger = logger;
+        private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
+        private readonly ITransactionService _transactionService = transactionService;
 
         public async Task<List<TeamMemberDto>> GetTeamAsync(int boardId)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Get team members started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
             List<TeamMember> members = await _teamRepository.GetTeamAsync(boardId);
-            return members.Select(m => new TeamMemberDto
+
+            _logger.LogInformation(
+                "Team members retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberCount: {MemberCount}",
+                correlationId, boardId, members.Count);
+
+            return [.. members.Select(m => new TeamMemberDto
             {
                 Id = m.Id,
                 Name = m.Name,
                 IsDev = m.IsDev,
                 IsTest = m.IsTest
-            }).ToList();
+            })];
         }
 
         public async Task<TeamMemberResponseDto> AddTeamMemberAsync(int boardId, TeamMemberDto memberDto)
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(memberDto.Name))
-                throw new ArgumentException("Team member name cannot be empty");
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member addition started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberName: {MemberName} | IsDev: {IsDev} | IsTest: {IsTest}",
+                correlationId, boardId, memberDto.Name, memberDto.IsDev, memberDto.IsTest);
 
-            if (!memberDto.IsDev && !memberDto.IsTest)
-                throw new ArgumentException("Team member must have at least one role (Dev or Test)");
-
-            Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                ?? throw new Exception("Board not found");
-
-            // Guard: Prevent adding team members if board is finalized
-            if (board.IsFinalized)
-                throw new InvalidOperationException("Cannot add team members to a finalized board. Restore the board first.");
-
-            var member = new TeamMember
+            return await _transactionService.ExecuteInTransactionAsync(async () =>
             {
-                BoardId = boardId,
-                Name = memberDto.Name,
-                IsDev = memberDto.IsDev,
-                IsTest = memberDto.IsTest
-            };
+                // Validate input
+                if (string.IsNullOrWhiteSpace(memberDto.Name))
+                    throw new ArgumentException("Team member name cannot be empty");
 
-            await _teamRepository.AddTeamMemberAsync(member);
+                if (!memberDto.IsDev && !memberDto.IsTest)
+                    throw new ArgumentException("Team member must have at least one role (Dev or Test)");
 
-            foreach (Sprint sprint in board.Sprints)
-            {
-                var (capacityDev, capacityTest) = GetDefaultCapacities(board, sprint, member);
+                await _validationService.ValidateBoardExists(boardId);
+                Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
+                    ?? throw new KeyNotFoundException("Board not found");
 
-                TeamMemberSprint tms = new()
+                // Guard: Prevent adding team members if board is finalized
+                _validationService.ValidateBoardNotFinalized(board, "add team members");
+
+                var member = new TeamMember
                 {
-                    SprintId = sprint.Id,
-                    TeamMember = member,
-                    CapacityDev = capacityDev,
-                    CapacityTest = capacityTest
+                    BoardId = boardId,
+                    Name = memberDto.Name,
+                    IsDev = memberDto.IsDev,
+                    IsTest = memberDto.IsTest
                 };
 
-                member.TeamMemberSprints.Add(tms);
-                await _teamRepository.AddTeamMemberSprintAsync(tms);
-            }
+                await _teamRepository.AddTeamMemberAsync(member);
 
-            await _teamRepository.SaveChangesAsync();
+                foreach (Sprint sprint in board.Sprints)
+                {
+                    var (capacityDev, capacityTest) = GetDefaultCapacities(board, sprint, member);
 
-            return MapTeamMemberResponse(member);
+                    TeamMemberSprint tms = new()
+                    {
+                        SprintId = sprint.Id,
+                        TeamMember = member,
+                        CapacityDev = capacityDev,
+                        CapacityTest = capacityTest
+                    };
+
+                    member.TeamMemberSprints.Add(tms);
+                    await _teamRepository.AddTeamMemberSprintAsync(tms);
+                }
+
+                await _teamRepository.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Team member added successfully | CorrelationId: {CorrelationId} | MemberId: {MemberId} | Name: {Name} | SprintCount: {SprintCount}",
+                    correlationId, member.Id, member.Name, member.TeamMemberSprints.Count);
+
+                return MapTeamMemberResponse(member);
+            });
         }
 
         public async Task<TeamMemberResponseDto?> UpdateTeamMemberAsync(int boardId, int memberId, TeamMemberDto memberDto)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member update started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberId: {MemberId} | NewName: {NewName}",
+                correlationId, boardId, memberId, memberDto.Name);
+
             // Validate input
             if (string.IsNullOrWhiteSpace(memberDto.Name))
                 throw new ArgumentException("Team member name cannot be empty");
@@ -84,14 +110,15 @@ namespace PiPlanningBackend.Services.Implementations
             if (!memberDto.IsDev && !memberDto.IsTest)
                 throw new ArgumentException("Team member must have at least one role (Dev or Test)");
 
-            var member = await _teamRepository.GetTeamMemberAsync(memberId);
-            if (member == null || member.BoardId != boardId) return null;
+            await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
+            var member = await _teamRepository.GetTeamMemberAsync(memberId)
+                ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
             // Guard: Prevent updating team members if board is finalized
+            await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                ?? throw new Exception("Board not found");
-            if (board.IsFinalized)
-                throw new InvalidOperationException("Cannot update team members on a finalized board. Restore the board first.");
+                ?? throw new KeyNotFoundException("Board not found");
+            _validationService.ValidateBoardNotFinalized(board, "update team members");
 
             // Check if role has changed
             bool roleChanged = member.IsDev != memberDto.IsDev || member.IsTest != memberDto.IsTest;
@@ -117,42 +144,63 @@ namespace PiPlanningBackend.Services.Implementations
 
             await _teamRepository.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Team member updated successfully | CorrelationId: {CorrelationId} | MemberId: {MemberId} | Name: {Name} | IsDev: {IsDev} | IsTest: {IsTest} | RoleChanged: {RoleChanged}",
+                correlationId, member.Id, member.Name, member.IsDev, member.IsTest, roleChanged);
+
             return MapTeamMemberResponse(member);
         }
 
         public async Task<bool> DeleteTeamMemberAsync(int boardId, int memberId)
         {
-            var member = await _teamRepository.GetTeamMemberAsync(memberId);
-            if (member == null || member.BoardId != boardId) return false;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member deletion started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberId: {MemberId}",
+                correlationId, boardId, memberId);
+
+            await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
+            var member = await _teamRepository.GetTeamMemberAsync(memberId)
+                ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
             // Guard: Prevent deleting team members if board is finalized
+            await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
-                ?? throw new Exception("Board not found");
-            if (board.IsFinalized)
-                throw new InvalidOperationException("Cannot delete team members from a finalized board. Restore the board first.");
+                ?? throw new KeyNotFoundException("Board not found");
+            _validationService.ValidateBoardNotFinalized(board, "delete team members");
 
             await _teamRepository.DeleteTeamMemberAsync(member);
             await _teamRepository.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Team member deleted successfully | CorrelationId: {CorrelationId} | MemberId: {MemberId} | Name: {Name}",
+                correlationId, memberId, member.Name);
+
             return true;
         }
 
         public async Task<TeamMemberSprint?> UpdateCapacityAsync(int boardId, int sprintId, int teamMemberId, UpdateTeamMemberCapacityDto dto)
         {
-            var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId);
-            if (tms == null) return null;
-            if (tms.Sprint?.BoardId != boardId) return null;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Team member capacity update started | CorrelationId: {CorrelationId} | MemberId: {MemberId} | SprintId: {SprintId} | CapacityDev: {CapacityDev} | CapacityTest: {CapacityTest}",
+                correlationId, teamMemberId, sprintId, dto.CapacityDev, dto.CapacityTest);
+
+            await _validationService.ValidateTeamMemberBelongsToBoard(teamMemberId, boardId);
+            await _validationService.ValidateSprintBelongsToBoard(sprintId, boardId);
+            var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId)
+                ?? throw new KeyNotFoundException("Team member sprint mapping not found.");
 
             // Calculate max allowed capacity (working days in sprint)
-            double maxCapacity = 0;
+            int maxCapacity = 0;
             if (tms.Sprint!.StartDate.HasValue && tms.Sprint.EndDate.HasValue)
             {
                 var totalDays = (tms.Sprint.EndDate.Value - tms.Sprint.StartDate.Value).Days + 1;
-                maxCapacity = Math.Floor((totalDays / 7.0) * 5);
+                maxCapacity = (int)Math.Floor((totalDays / 7.0) * 5);
             }
 
             // Validate capacity doesn't exceed sprint duration
-            if (dto.CapacityDev > maxCapacity || dto.CapacityTest > maxCapacity)
-                throw new ArgumentException($"Capacity cannot exceed sprint duration ({maxCapacity} working days)");
+            _validationService.ValidateTeamMemberCapacity(dto.CapacityDev, maxCapacity);
+            _validationService.ValidateTeamMemberCapacity(dto.CapacityTest, maxCapacity);
 
             if (tms.Sprint!.Board!.DevTestToggle)
             {
@@ -166,6 +214,11 @@ namespace PiPlanningBackend.Services.Implementations
             }
 
             await _teamRepository.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Team member capacity updated | CorrelationId: {CorrelationId} | MemberId: {MemberId} | SprintId: {SprintId} | FinalCapacityDev: {FinalCapacityDev} | FinalCapacityTest: {FinalCapacityTest}",
+                correlationId, teamMemberId, sprintId, tms.CapacityDev, tms.CapacityTest);
+
             return tms;
         }
 
@@ -198,12 +251,12 @@ namespace PiPlanningBackend.Services.Implementations
                 Name = member.Name,
                 IsDev = member.IsDev,
                 IsTest = member.IsTest,
-                SprintCapacities = member.TeamMemberSprints.Select(tms => new TeamMemberSprintDto
+                SprintCapacities = [.. member.TeamMemberSprints.Select(tms => new TeamMemberSprintDto
                 {
                     SprintId = tms.SprintId,
                     CapacityDev = tms.CapacityDev,
                     CapacityTest = tms.CapacityTest
-                }).ToList()
+                })]
             };
         }
     }

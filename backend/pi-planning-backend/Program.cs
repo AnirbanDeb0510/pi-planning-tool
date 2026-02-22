@@ -19,6 +19,9 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// HttpContextAccessor (needed for accessing correlation ID from services)
+builder.Services.AddHttpContextAccessor();
+
 // DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -36,6 +39,12 @@ builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
 builder.Services.AddScoped<IUserStoryRepository, UserStoryRepository>();
 builder.Services.AddScoped<IFeatureService, FeatureService>();
+builder.Services.AddScoped<ISprintService, SprintService>();
+builder.Services.AddScoped<IValidationService, ValidationService>();
+// Transaction service (for wrapping multi-step operations)
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+// Correlation ID provider (for request tracking across services)
+builder.Services.AddScoped<ICorrelationIdProvider, CorrelationIdProvider>();
 
 
 // CORS (dev convenience)
@@ -56,6 +65,9 @@ using (var scope = app.Services.CreateScope())
 
 // Global exception handling (MUST be early in pipeline)
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
+// Request correlation tracking (for tracing requests across logs)
+app.UseMiddleware<RequestCorrelationMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

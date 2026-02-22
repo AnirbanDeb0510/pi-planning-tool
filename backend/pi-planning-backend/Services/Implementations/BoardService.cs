@@ -2,86 +2,94 @@ using PiPlanningBackend.Models;
 using PiPlanningBackend.Repositories.Interfaces;
 using PiPlanningBackend.Services.Interfaces;
 using PiPlanningBackend.DTOs;
-using System.Security.Cryptography;
-using System.Text;
+using PiPlanningBackend.Services.Utilities;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class BoardService : IBoardService
+    public class BoardService(IBoardRepository boardRepository, ISprintService sprintService, IValidationService validationService, ILogger<BoardService> logger, ICorrelationIdProvider correlationIdProvider, ITransactionService transactionService) : IBoardService
     {
-        private readonly IBoardRepository _boardRepository;
-
-        public BoardService(IBoardRepository boardRepository)
-        {
-            _boardRepository = boardRepository;
-        }
+        private readonly IBoardRepository _boardRepository = boardRepository;
+        private readonly ISprintService _sprintService = sprintService;
+        private readonly IValidationService _validationService = validationService;
+        private readonly ILogger<BoardService> _logger = logger;
+        private readonly ICorrelationIdProvider _correlationIdProvider = correlationIdProvider;
+        private readonly ITransactionService _transactionService = transactionService;
 
         public async Task<Board> CreateBoardAsync(BoardCreateDto dto)
         {
-            // Ensure StartDate is UTC-aware for PostgreSQL
-            var startDateUtc = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc);
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board creation started | CorrelationId: {CorrelationId} | Name: {BoardName} | Organization: {Organization} | Project: {Project} | NumSprints: {NumSprints}",
+                correlationId, dto.Name, dto.Organization, dto.Project, dto.NumSprints);
 
-            var board = new Board
+            return await _transactionService.ExecuteInTransactionAsync(async () =>
             {
-                Name = dto.Name,
-                Organization = dto.Organization,
-                Project = dto.Project,
-                AzureStoryPointField = dto.AzureStoryPointField,
-                AzureDevStoryPointField = dto.AzureDevStoryPointField,
-                AzureTestStoryPointField = dto.AzureTestStoryPointField,
-                NumSprints = dto.NumSprints,
-                SprintDuration = dto.SprintDuration,
-                DevTestToggle = dto.DevTestToggle,
-                CreatedAt = DateTime.UtcNow,
-                StartDate = startDateUtc
-            };
+                // Ensure StartDate is UTC-aware for PostgreSQL
+                var startDateUtc = DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc);
 
-            // 🧩 Optional password handling
-            if (!string.IsNullOrEmpty(dto.Password))
-            {
-                board.PasswordHash = PasswordHelper.HashPassword(dto.Password);
-                board.IsLocked = true;
-            }
-
-            // 🧩 Auto-generate sprints
-            // Sprint 0 is a placeholder/parking lot (no real dates)
-            var sprintZero = new Sprint
-            {
-                Name = "Sprint 0",
-                StartDate = startDateUtc,
-                EndDate = startDateUtc  // Placeholder sprint has same start/end
-            };
-            board.Sprints.Add(sprintZero);
-
-            // Actual sprints (1 through NumSprints)
-            var currentSprintStart = startDateUtc;
-            for (int i = 1; i <= dto.NumSprints; i++)
-            {
-                var sprint = new Sprint
+                var board = new Board
                 {
-                    Name = $"Sprint {i}",
-                    StartDate = currentSprintStart,
-                    EndDate = currentSprintStart.AddDays(dto.SprintDuration - 1)
+                    Name = dto.Name,
+                    Organization = dto.Organization,
+                    Project = dto.Project,
+                    AzureStoryPointField = dto.AzureStoryPointField,
+                    AzureDevStoryPointField = dto.AzureDevStoryPointField,
+                    AzureTestStoryPointField = dto.AzureTestStoryPointField,
+                    NumSprints = dto.NumSprints,
+                    SprintDuration = dto.SprintDuration,
+                    DevTestToggle = dto.DevTestToggle,
+                    CreatedAt = DateTime.UtcNow,
+                    StartDate = startDateUtc
                 };
-                board.Sprints.Add(sprint);
 
-                currentSprintStart = currentSprintStart.AddDays(dto.SprintDuration);
-            }
+                // 🧩 Optional password handling
+                if (!string.IsNullOrEmpty(dto.Password))
+                {
+                    board.PasswordHash = PasswordHelper.HashPassword(dto.Password);
+                    board.IsLocked = true;
+                }
 
-            await _boardRepository.AddAsync(board);
-            return board;
+                // 🧩 Auto-generate sprints using SprintService
+                var sprints = _sprintService.GenerateSprintsForBoard(board, dto.NumSprints, dto.SprintDuration);
+                foreach (var sprint in sprints)
+                {
+                    board.Sprints.Add(sprint);
+                }
+
+                await _boardRepository.AddAsync(board);
+                _logger.LogInformation(
+                    "Board created successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | SprintCount: {SprintCount}",
+                    correlationId, board.Id, board.Sprints.Count);
+                return board;
+            });
         }
 
         public async Task<Board?> GetBoardAsync(int id)
         {
-            return await _boardRepository.GetByIdAsync(id);
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            await _validationService.ValidateBoardExists(id);
+            var board = await _boardRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Board with ID {id} not found.");
+            _logger.LogInformation(
+                "Board retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName}",
+                correlationId, board.Id, board.Name);
+            return board;
         }
 
         public async Task<BoardResponseDto?> GetBoardWithHierarchyAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return null;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Get board with hierarchy started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            _logger.LogInformation(
+                "Board hierarchy retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName} | Features: {FeatureCount} | Teams: {TeamCount} | Sprints: {SprintCount}",
+                correlationId, board.Id, board.Name, board.Features.Count, board.TeamMembers.Count, board.Sprints.Count);
 
             return new BoardResponseDto
             {
@@ -93,7 +101,7 @@ namespace PiPlanningBackend.Services.Implementations
                 IsFinalized = board.IsFinalized,
                 DevTestToggle = board.DevTestToggle,
                 StartDate = board.StartDate,
-                Sprints = board.Sprints
+                Sprints = [.. board.Sprints
                     .OrderBy(s => s.Id)
                     .Select(s => new SprintDto
                     {
@@ -101,9 +109,8 @@ namespace PiPlanningBackend.Services.Implementations
                         Name = s.Name,
                         StartDate = s.StartDate,
                         EndDate = s.EndDate
-                    })
-                    .ToList(),
-                Features = board.Features
+                    })],
+                Features = [.. board.Features
                     .OrderBy(f => f.Priority)
                     .Select(f => new FeatureResponseDto
                     {
@@ -112,7 +119,7 @@ namespace PiPlanningBackend.Services.Implementations
                         AzureId = f.AzureId,
                         Priority = f.Priority,
                         ValueArea = f.ValueArea,
-                        UserStories = f.UserStories
+                        UserStories = [.. f.UserStories
                             .Select(us => new UserStoryDto
                             {
                                 Id = us.Id,
@@ -124,35 +131,40 @@ namespace PiPlanningBackend.Services.Implementations
                                 SprintId = us.SprintId,
                                 OriginalSprintId = us.OriginalSprintId,
                                 IsMoved = us.IsMoved
-                            })
-                            .ToList()
-                    })
-                    .ToList(),
-                TeamMembers = board.TeamMembers
+                            })]
+                    })],
+                TeamMembers = [.. board.TeamMembers
                     .Select(tm => new TeamMemberResponseDto
                     {
                         Id = tm.Id,
                         Name = tm.Name,
                         IsDev = tm.IsDev,
                         IsTest = tm.IsTest,
-                        SprintCapacities = tm.TeamMemberSprints
+                        SprintCapacities = [.. tm.TeamMemberSprints
                             .Select(tms => new TeamMemberSprintDto
                             {
                                 SprintId = tms.SprintId,
                                 CapacityDev = tms.CapacityDev,
                                 CapacityTest = tms.CapacityTest
-                            })
-                            .ToList()
-                    })
-                    .ToList()
+                            })]
+                    })]
             };
         }
 
         public async Task<IEnumerable<BoardSummaryDto>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null)
         {
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board search started | CorrelationId: {CorrelationId} | SearchTerm: {SearchTerm} | Organization: {Organization} | Project: {Project} | IsLocked: {IsLocked} | IsFinalized: {IsFinalized}",
+                correlationId, searchTerm ?? "<null>", organization ?? "<null>", project ?? "<null>", isLocked, isFinalized);
+
             var boards = await _boardRepository.SearchBoardsAsync(searchTerm, organization, project, isLocked, isFinalized);
 
-            return boards.Select(b => new BoardSummaryDto
+            _logger.LogInformation(
+                "Boards search completed | CorrelationId: {CorrelationId} | ResultCount: {ResultCount}",
+                correlationId, boards.Count());
+
+            return [.. boards.Select(b => new BoardSummaryDto
             {
                 Id = b.Id,
                 Name = b.Name,
@@ -163,14 +175,23 @@ namespace PiPlanningBackend.Services.Implementations
                 IsFinalized = b.IsFinalized,
                 SprintCount = b.Sprints.Count,
                 FeatureCount = b.Features.Count
-            }).ToList();
+            })];
         }
 
         public async Task<BoardSummaryDto?> GetBoardPreviewAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFeaturesAsync(boardId);
-            if (board == null)
-                return null;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board preview retrieval started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFeaturesAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            _logger.LogInformation(
+                "Board preview retrieved | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName} | FeatureCount: {FeatureCount}",
+                correlationId, board.Id, board.Name, board.Features.Count);
 
             return new BoardSummaryDto
             {
@@ -189,15 +210,25 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<(bool Success, List<string> Warnings)> ValidateBoardForFinalizationAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return (false, new List<string> { "Board not found" });
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board finalization validation started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             var warnings = new List<string>();
 
             // Check if board is already finalized
             if (board.IsFinalized)
+            {
+                _logger.LogInformation(
+                    "Board finalization validation failed - already finalized | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                    correlationId, boardId);
                 return (false, new List<string> { "Board is already finalized" });
+            }
 
             // Warning checks (non-blocking)
             if (board.TeamMembers.Count == 0)
@@ -211,78 +242,83 @@ namespace PiPlanningBackend.Services.Implementations
 
             // Check if all features have stories
             var featuresWithoutStories = board.Features.Where(f => f.UserStories.Count == 0).ToList();
-            if (featuresWithoutStories.Any())
+            if (featuresWithoutStories.Count != 0)
                 warnings.Add($"⚠️ {featuresWithoutStories.Count} feature(s) have no user stories assigned");
 
             // Check team member capacity distribution (warning only)
             var teamMembersWithNoCapacity = board.TeamMembers
                 .Where(tm => tm.TeamMemberSprints.Count == 0)
                 .ToList();
-            if (teamMembersWithNoCapacity.Any())
+            if (teamMembersWithNoCapacity.Count != 0)
                 warnings.Add($"⚠️ {teamMembersWithNoCapacity.Count} team member(s) have no capacity allocated");
+
+            _logger.LogInformation(
+                "Board finalization validation completed | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Success: true | WarningCount: {WarningCount}",
+                correlationId, boardId, warnings.Count);
 
             return (true, warnings);
         }
 
         public async Task<BoardSummaryDto?> FinalizeBoardAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return null;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board finalization started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
 
-            // Set finalization flag and timestamp
-            board.IsFinalized = true;
-            board.FinalizedAt = DateTime.UtcNow;
-
-            // Set OriginalSprintId = CurrentSprintId for all user stories
-            foreach (var feature in board.Features)
+            return await _transactionService.ExecuteInTransactionAsync(async () =>
             {
-                foreach (var userStory in feature.UserStories)
+                await _validationService.ValidateBoardExists(boardId);
+                var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                    ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+                // Set finalization flag and timestamp
+                board.IsFinalized = true;
+                board.FinalizedAt = DateTime.UtcNow;
+
+                // Set OriginalSprintId = CurrentSprintId for all user stories
+                var storyCount = 0;
+                foreach (var feature in board.Features)
                 {
-                    userStory.OriginalSprintId = userStory.SprintId;
+                    foreach (var userStory in feature.UserStories)
+                    {
+                        userStory.OriginalSprintId = userStory.SprintId;
+                        storyCount++;
+                    }
                 }
-            }
 
-            await _boardRepository.SaveChangesAsync();
+                await _boardRepository.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Board finalized successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName} | FeatureCount: {FeatureCount} | StoryCount: {StoryCount}",
+                    correlationId, board.Id, board.Name, board.Features.Count, storyCount);
 
-            // Return summary board state
-            return await GetBoardPreviewAsync(boardId);
+                // Return summary board state
+                return await GetBoardPreviewAsync(boardId);
+            });
         }
 
         public async Task<BoardSummaryDto?> RestoreBoardAsync(int boardId)
         {
-            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId);
-            if (board == null)
-                return null;
+            var correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board restoration started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
+            var board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
             // Clear finalization flag (keep FinalizedAt for audit trail)
             board.IsFinalized = false;
 
             await _boardRepository.SaveChangesAsync();
+            _logger.LogInformation(
+                "Board restored successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId} | Name: {BoardName}",
+                correlationId, board.Id, board.Name);
 
             // Return summary board state
             return await GetBoardPreviewAsync(boardId);
         }
 
-    }
-
-    public static class PasswordHelper
-    {
-        public static string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
-        }
-
-        public static bool VerifyPassword(string password, string storedHash)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            var computedHash = Convert.ToBase64String(hash);
-            return storedHash == computedHash;
-        }
     }
 }
