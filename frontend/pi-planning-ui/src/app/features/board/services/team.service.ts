@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { TeamApiService } from './board-api.service';
 import { BoardService } from './board.service';
 import { TeamMemberResponseDto } from '../../../shared/models/board.dto';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Team Service
@@ -74,7 +75,7 @@ export class TeamService {
         console.error('Error adding team member:', error);
         // Rollback on error
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError('Failed to add team member. Please try again.');
+        this.boardService.setError(MESSAGES.TEAM.ADD_FAILED);
       },
     });
   }
@@ -116,7 +117,7 @@ export class TeamService {
       error: (error) => {
         console.error('Error updating team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError('Failed to update team member. Please try again.');
+        this.boardService.setError(MESSAGES.TEAM.UPDATE_FAILED);
       },
     });
   }
@@ -141,7 +142,7 @@ export class TeamService {
       error: (error) => {
         console.error('Error removing team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError('Failed to remove team member. Please try again.');
+        this.boardService.setError(MESSAGES.TEAM.REMOVE_FAILED);
       },
     });
   }
@@ -184,7 +185,7 @@ export class TeamService {
           console.error('Error updating capacity:', error);
           // Rollback on error
           this.boardService.updateBoardState(currentBoard);
-          this.boardService.setError('Failed to update capacity. Please try again.');
+          this.boardService.setError(MESSAGES.TEAM.CAPACITY_FAILED);
         },
       });
   }

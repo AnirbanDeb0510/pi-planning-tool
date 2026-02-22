@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { FeatureApiService, AzureApiService } from './board-api.service';
 import { BoardService } from './board.service';
 import { firstValueFrom } from 'rxjs';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Feature Service
@@ -42,7 +43,7 @@ export class FeatureService {
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error importing feature:', error);
-      throw new Error(error.message || 'Failed to import feature');
+      throw new Error(error.message || MESSAGES.FEATURE.IMPORT_FAILED);
     }
   }
 
@@ -67,7 +68,7 @@ export class FeatureService {
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error refreshing feature:', error);
-      throw new Error(error.message || 'Failed to refresh feature');
+      throw new Error(error.message || MESSAGES.FEATURE.REFRESH_FAILED);
     }
   }
 
@@ -83,7 +84,7 @@ export class FeatureService {
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error reordering features:', error);
-      throw new Error(error.message || 'Failed to reorder features');
+      throw new Error(error.message || MESSAGES.FEATURE.REORDER_FAILED);
     }
   }
 
@@ -100,7 +101,7 @@ export class FeatureService {
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error deleting feature:', error);
-      throw new Error(error.message || 'Failed to delete feature');
+      throw new Error(error.message || MESSAGES.FEATURE.DELETE_FAILED);
     }
   }
 }

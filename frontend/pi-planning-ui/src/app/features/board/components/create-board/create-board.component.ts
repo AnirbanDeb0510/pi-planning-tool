@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BoardApiService } from '../../services/board-api.service';
 import { BoardCreateDto, BoardCreatedDto } from '../../../../shared/models/board-api.dto';
+import { LABELS, MESSAGES, PLACEHOLDERS, VALIDATIONS } from '../../../../shared/constants';
 
 /**
  * Create Board Component
@@ -22,6 +23,11 @@ export class CreateBoardComponent {
 
   protected loading = signal(false);
   protected error = signal<string | null>(null);
+
+  protected readonly LABELS = LABELS;
+  protected readonly MESSAGES = MESSAGES;
+  protected readonly PLACEHOLDERS = PLACEHOLDERS;
+  protected readonly VALIDATIONS = VALIDATIONS;
 
   protected formData = {
     name: '',
@@ -47,7 +53,7 @@ export class CreateBoardComponent {
 
   onSubmit(): void {
     if (!this.formData.name || !this.formData.startDate) {
-      this.error.set('Please fill in all required fields');
+      this.error.set(VALIDATIONS.CREATE_BOARD.REQUIRED_FIELDS);
       return;
     }
 
@@ -78,7 +84,7 @@ export class CreateBoardComponent {
       },
       error: (error: any) => {
         this.loading.set(false);
-        this.error.set(error.message || 'Failed to create board');
+        this.error.set(error.message || MESSAGES.CREATE_BOARD.CREATE_FAILED);
         console.error('Error creating board:', error);
       },
     });

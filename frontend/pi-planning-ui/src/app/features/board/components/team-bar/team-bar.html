@@ -1,6 +1,6 @@
 <!-- Team Member Bar -->
 <div class="team-bar">
-  <div class="team-bar-title">Team Members</div>
+  <div class="team-bar-title">{{ LABELS.HEADERS.TEAM_MEMBERS }}</div>
   <div class="team-member-list">
     <div class="team-member-chip" *ngFor="let member of getTeamMembers()">
       <span class="member-name">{{ member.name }}</span>
@@ -13,17 +13,17 @@
       >
         {{ getMemberRoleLabel(member) }}
       </span>
-      <button class="member-action" type="button" (click)="openEditMember(member)" title="Edit member">
+      <button class="member-action" type="button" (click)="openEditMember(member)" title="{{ TOOLTIPS.TEAM.EDIT_MEMBER }}">
         <mat-icon>edit</mat-icon>
       </button>
-      <button class="member-action" type="button" (click)="openDeleteMember(member)" title="Delete member" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('delete members') : 'Delete member'">
+      <button class="member-action" type="button" (click)="openDeleteMember(member)" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.DELETE_MEMBERS) : TOOLTIPS.TEAM.DELETE_MEMBER">
         <mat-icon>delete</mat-icon>
       </button>
     </div>
   </div>
   <div class="team-bar-actions">
-    <button class="add-member-button" type="button" (click)="openAddMember()" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('add members') : 'Add team member'">+ Add Member</button>
-    <button class="add-feature-button" type="button" (click)="parent.openImportFeatureModal()" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage('add features') : 'Add feature from Azure'">+ Add Feature</button>
+    <button class="add-member-button" type="button" (click)="openAddMember()" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_MEMBERS) : TOOLTIPS.TEAM.ADD_MEMBER">{{ LABELS.BUTTONS.ADD_MEMBER }}</button>
+    <button class="add-feature-button" type="button" (click)="parent.openImportFeatureModal()" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_FEATURES) : TOOLTIPS.TEAM.ADD_FEATURE">{{ LABELS.BUTTONS.ADD_FEATURE }}</button>
 
     <!-- Finalization buttons -->
     <div class="finalization-buttons">
@@ -32,9 +32,9 @@
         class="btn-finalize" 
         type="button" 
         (click)="parent.openFinalizeConfirmation()"
-        title="Finalize board - marks it as ready for execution"
+        title="{{ TOOLTIPS.BOARD.FINALIZE }}"
       >
-        ✓ Finalize
+        {{ LABELS.BUTTONS.FINALIZE }}
       </button>
       <button 
         *ngIf="board()?.isFinalized"
@@ -42,12 +42,12 @@
         type="button" 
         (click)="parent.restoreBoard()"
         [disabled]="parent.finalizationLoading()"
-        title="Restore board - allows further editing"
+        title="{{ TOOLTIPS.BOARD.RESTORE_BUTTON }}"
       >
-        {{ parent.finalizationLoading() ? '⟳ Restoring...' : '↺ Restore' }}
+        {{ parent.finalizationLoading() ? LABELS.BUTTONS.RESTORING : LABELS.BUTTONS.RESTORE }}
       </button>
       <span *ngIf="board()?.isFinalized" class="finalized-badge">
-        ✓ Finalized
+        {{ LABELS.BADGES.FINALIZED_PLAIN }}
       </span>
     </div>
   </div>
@@ -57,32 +57,32 @@
 <div class="modal-backdrop" *ngIf="showAddMemberModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>{{ editingMember() ? 'Edit Team Member' : 'Add Team Member' }}</h3>
+      <h3>{{ editingMember() ? LABELS.HEADERS.EDIT_TEAM_MEMBER : LABELS.HEADERS.ADD_TEAM_MEMBER }}</h3>
       <button type="button" class="modal-close" (click)="closeAddMember()">×</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label for="member-name">Name</label>
+        <label for="member-name">{{ LABELS.FIELDS.MEMBER_NAME }}</label>
         <input
           id="member-name"
           type="text"
           class="modal-input"
           [value]="newMemberName()"
           (input)="newMemberName.set($any($event.target).value)"
-          placeholder="Enter member name"
+          placeholder="{{ PLACEHOLDERS.MEMBER_NAME }}"
           (keyup.enter)="saveNewMember()"
         />
       </div>
       <div class="form-group" *ngIf="parent.showDevTest()">
-        <label for="member-role">Role</label>
+        <label for="member-role">{{ LABELS.FIELDS.ROLE }}</label>
         <select
           id="member-role"
           class="modal-select"
           [value]="newMemberRole()"
           (change)="onRoleChange($any($event.target).value)"
         >
-          <option value="dev">Developer</option>
-          <option value="test">Tester</option>
+          <option value="dev">{{ LABELS.OPTIONS.DEV }}</option>
+          <option value="test">{{ LABELS.OPTIONS.TEST }}</option>
         </select>
       </div>
       <div *ngIf="memberFormError()" class="form-error">
@@ -95,14 +95,14 @@
         type="button"
         (click)="closeAddMember()"
       >
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button
         class="btn-primary"
         type="button"
         (click)="saveNewMember()"
       >
-        {{ editingMember() ? 'Update Member' : 'Add Member' }}
+        {{ editingMember() ? LABELS.BUTTONS.UPDATE_MEMBER : LABELS.BUTTONS.ADD_MEMBER_PLAIN }}
       </button>
     </div>
   </div>
@@ -112,12 +112,12 @@
 <div class="modal-backdrop" *ngIf="showDeleteMemberModal()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Delete Team Member</h3>
+      <h3>{{ LABELS.HEADERS.DELETE_TEAM_MEMBER }}</h3>
       <button type="button" class="modal-close" (click)="closeDeleteMember()">×</button>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to delete <strong>{{ memberToDelete()?.name }}</strong>?</p>
-      <p class="warning">This action cannot be undone.</p>
+      <p>{{ MESSAGES.TEAM.DELETE_CONFIRM }} <strong>{{ memberToDelete()?.name }}</strong>?</p>
+      <p class="warning">{{ MESSAGES.TEAM.DELETE_WARNING }}</p>
     </div>
     <div class="modal-footer">
       <button
@@ -125,14 +125,14 @@
         type="button"
         (click)="closeDeleteMember()"
       >
-        Cancel
+        {{ LABELS.BUTTONS.CANCEL }}
       </button>
       <button
         class="btn-danger"
         type="button"
         (click)="confirmDeleteMember()"
       >
-        Delete
+        {{ LABELS.BUTTONS.DELETE }}
       </button>
     </div>
   </div>

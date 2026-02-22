@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Board } from '../board';
 import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
 import { TeamService } from '../../services/team.service';
+import { LABELS, PLACEHOLDERS, TOOLTIPS, VALIDATIONS } from '../../../../shared/constants';
 
 @Component({
   selector: 'app-capacity-row',
@@ -22,6 +23,11 @@ export class CapacityRow {
   protected selectedSprintId = signal<number | null>(null);
   protected capacityEdits = signal<Record<number, { dev: number; test: number }>>({});
   protected capacityFormError = signal('');
+
+  protected readonly LABELS = LABELS;
+  protected readonly PLACEHOLDERS = PLACEHOLDERS;
+  protected readonly TOOLTIPS = TOOLTIPS;
+  protected readonly VALIDATIONS = VALIDATIONS;
 
   protected openCapacityEditor(sprintId: number): void {
     this.selectedSprintId.set(sprintId);
@@ -86,15 +92,15 @@ export class CapacityRow {
     for (const [id, values] of Object.entries(edits)) {
       // Check for integer values
       if (!Number.isInteger(values.dev) || !Number.isInteger(values.test)) {
-        this.capacityFormError.set('Capacity must be a positive integer');
+        this.capacityFormError.set(VALIDATIONS.CAPACITY.NOT_INTEGER);
         return;
       }
       if (values.dev < 0 || values.test < 0) {
-        this.capacityFormError.set('Capacity cannot be negative');
+        this.capacityFormError.set(VALIDATIONS.CAPACITY.NEGATIVE);
         return;
       }
       if (values.dev > maxCapacity || values.test > maxCapacity) {
-        this.capacityFormError.set(`Capacity cannot exceed sprint duration (${maxCapacity} working days)`);
+        this.capacityFormError.set(VALIDATIONS.CAPACITY.EXCEEDS(maxCapacity));
         return;
       }
     }
@@ -112,11 +118,11 @@ export class CapacityRow {
 
   protected getMemberRoleLabel(member: TeamMemberResponseDto): string {
     if (member.isDev && member.isTest) {
-      return 'Dev/Test';
+      return LABELS.ROLES.DEV_TEST;
     } else if (member.isDev) {
-      return 'Dev';
+      return LABELS.ROLES.DEV;
     } else if (member.isTest) {
-      return 'Test';
+      return LABELS.ROLES.TEST;
     }
     return '';
   }

@@ -12,8 +12,8 @@
 
   <div class="points">
     <ng-container *ngIf="parent?.showDevTest?.(); else singlePoints">
-      <span>💻 Dev: {{ story.devStoryPoints ?? 0 }}</span>
-      <span>🧪 Test: {{ story.testStoryPoints ?? 0 }}</span>
+      <span>💻 {{ LABELS.FIELDS.DEV }}: {{ story.devStoryPoints ?? 0 }}</span>
+      <span>🧪 {{ LABELS.FIELDS.TEST }}: {{ story.testStoryPoints ?? 0 }}</span>
       <span>({{ story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }})</span>
     </ng-container>
 
@@ -23,7 +23,7 @@
         {{
           story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0)
         }}
-        pts</span
+        {{ LABELS.UNITS.POINTS }}</span
       >
     </ng-template>
   </div>

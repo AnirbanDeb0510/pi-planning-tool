@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BoardApiService } from '../../services/board-api.service';
 import { BoardSummaryDto, BoardFilters } from '../../../../shared/models/board-api.dto';
+import { LABELS, MESSAGES, PLACEHOLDERS } from '../../../../shared/constants';
 
 /**
  * Board List Component
@@ -32,6 +33,10 @@ export class BoardListComponent implements OnInit {
   protected searchTerm = '';
   protected showLockedOnly = false;
   protected showFinalizedOnly = false;
+
+  protected readonly LABELS = LABELS;
+  protected readonly MESSAGES = MESSAGES;
+  protected readonly PLACEHOLDERS = PLACEHOLDERS;
 
   ngOnInit(): void {
     // No need to load anything on init - user must provide org/project
@@ -82,7 +87,7 @@ export class BoardListComponent implements OnInit {
         this.loading.set(false);
       },
       error: (error: any) => {
-        this.error.set(error.message || 'Failed to load boards');
+        this.error.set(error.message || MESSAGES.BOARD_LIST.ERROR);
         this.loading.set(false);
         console.error('Error loading boards:', error);
       },

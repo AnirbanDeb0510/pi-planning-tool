@@ -22,6 +22,7 @@ import {
   UserStoryDto,
   TeamMemberResponseDto,
 } from '../../../shared/models/board.dto';
+import { LABELS, MESSAGES, VALIDATIONS, TOOLTIPS, PLACEHOLDERS } from '../../../shared/constants';
 import { BoardHeader } from './board-header/board-header';
 import { TeamBar } from './team-bar/team-bar';
 import { CapacityRow } from './capacity-row/capacity-row';
@@ -64,8 +65,14 @@ export class Board implements OnInit {
   protected loading = this.boardService.loading;
   protected error = this.boardService.error;
 
-  // Local UI state - needed by subcomponents
-  protected cursorName = signal(this.userService.getName() || 'Guest');
+  protected readonly LABELS = LABELS;
+  protected readonly MESSAGES = MESSAGES;
+  protected readonly VALIDATIONS = VALIDATIONS;
+  protected readonly TOOLTIPS = TOOLTIPS;
+  protected readonly PLACEHOLDERS = PLACEHOLDERS;
+
+  // Local UI state - needed by sub components
+  protected cursorName = signal(this.userService.getName() || LABELS.APP.GUEST);
   protected cursorX = signal(0);
   protected cursorY = signal(0);
   public showDevTest = signal(false);
@@ -126,12 +133,12 @@ export class Board implements OnInit {
     const preview = this.boardPreview();
 
     if (!boardId || !pat) {
-      this.patValidationError.set('Please enter a PAT');
+      this.patValidationError.set(VALIDATIONS.PAT.REQUIRED);
       return;
     }
 
     if (!preview || !preview.organization || !preview.project || !preview.sampleFeatureAzureId) {
-      this.patValidationError.set('Missing organization, project, or feature information');
+      this.patValidationError.set(VALIDATIONS.BOARD.MISSING_PREVIEW);
       return;
     }
 
@@ -154,10 +161,10 @@ export class Board implements OnInit {
         // Now load the board with validated PAT
         this.boardService.loadBoard(boardId);
       } else {
-        this.patValidationError.set('Invalid PAT or no permission to access this board');
+        this.patValidationError.set(VALIDATIONS.PAT.INVALID);
       }
     } catch (error) {
-      this.patValidationError.set('Error validating PAT. Please check your credentials.');
+      this.patValidationError.set(VALIDATIONS.PAT.ERROR);
       console.error('PAT validation error:', error);
     } finally {
       this.patValidationLoading.set(false);
@@ -200,11 +207,11 @@ export class Board implements OnInit {
    * Public method to get sprint name by ID (used by child components)
    */
   getSprintNameById(sprintId: number | undefined): string {
-    if (!sprintId) return 'Parking Lot';
+    if (!sprintId) return LABELS.FIELDS.PARKING_LOT;
     const currentBoard = this.board();
-    if (!currentBoard) return `Sprint ${sprintId}`;
+    if (!currentBoard) return `${LABELS.FIELDS.SPRINT} ${sprintId}`;
     const sprint = currentBoard.sprints.find(s => s.id === sprintId);
-    return sprint?.name || `Sprint ${sprintId}`;
+    return sprint?.name || `${LABELS.FIELDS.SPRINT} ${sprintId}`;
   }
 
   private isParkingLotSprint(sprint: SprintDto): boolean {
@@ -228,15 +235,15 @@ export class Board implements OnInit {
 
   public getMemberRoleLabel(member: TeamMemberResponseDto): string {
     if (member.isDev && member.isTest) {
-      return 'Dev/Test';
+      return LABELS.ROLES.DEV_TEST;
     }
     if (member.isDev) {
-      return 'Dev';
+      return LABELS.ROLES.DEV;
     }
     if (member.isTest) {
-      return 'Test';
+      return LABELS.ROLES.TEST;
     }
-    return 'Member';
+    return LABELS.ROLES.MEMBER;
   }
 
   public getMemberSprintCapacity(
@@ -518,7 +525,7 @@ export class Board implements OnInit {
       this.finalizationWarnings.set(warnings);
       this.showFinalizeConfirmation.set(true);
     } catch (error: any) {
-      this.finalizationError.set(error.message || 'Failed to fetch finalization warnings');
+      this.finalizationError.set(error.message || MESSAGES.BOARD.FINALIZE_WARNINGS_FAILED);
     } finally {
       this.finalizationLoading.set(false);
     }
@@ -548,7 +555,7 @@ export class Board implements OnInit {
       await this.boardService.finalizeBoard(currentBoard.id);
       this.closeFinalizeConfirmation();
     } catch (error: any) {
-      this.finalizationError.set(error.message || 'Failed to finalize board');
+      this.finalizationError.set(error.message || MESSAGES.BOARD.FINALIZE_FAILED);
     } finally {
       this.finalizationLoading.set(false);
     }
@@ -567,7 +574,7 @@ export class Board implements OnInit {
     try {
       await this.boardService.restoreBoard(currentBoard.id);
     } catch (error: any) {
-      this.finalizationError.set(error.message || 'Failed to restore board');
+      this.finalizationError.set(error.message || MESSAGES.BOARD.RESTORE_FAILED);
     } finally {
       this.finalizationLoading.set(false);
     }
@@ -585,7 +592,7 @@ export class Board implements OnInit {
    * Get operation blocked error message
    */
   getOperationBlockedMessage(operation: string): string {
-    return `Cannot ${operation} on a finalized board. Restore the board first.`;
+    return MESSAGES.BOARD.OPERATION_BLOCKED(operation);
   }
 
   /**

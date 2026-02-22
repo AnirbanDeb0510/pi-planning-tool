@@ -5,6 +5,7 @@ import { Board } from '../board';
 import { BoardResponseDto, FeatureResponseDto } from '../../../../shared/models/board.dto';
 import { FeatureService } from '../../services/feature.service';
 import { RuntimeConfig } from '../../../../core/config/runtime-config';
+import { LABELS, MESSAGES, PLACEHOLDERS, VALIDATIONS } from '../../../../shared/constants';
 
 @Component({
   selector: 'app-board-modals',
@@ -40,6 +41,11 @@ export class BoardModals {
 
   protected operationBlockedError = signal<string | null>(null);
   protected patTtlMinutes = RuntimeConfig.patTtlMinutes;
+
+  protected readonly LABELS = LABELS;
+  protected readonly MESSAGES = MESSAGES;
+  protected readonly PLACEHOLDERS = PLACEHOLDERS;
+  protected readonly VALIDATIONS = VALIDATIONS;
 
   // Import Feature methods
   public openImportFeatureModal(): void {
@@ -85,12 +91,12 @@ export class BoardModals {
     const pat = this.importPat().trim();
 
     if (!featureId || !pat) {
-      this.importError.set('Please provide Feature ID and PAT');
+      this.importError.set(VALIDATIONS.FEATURE.REQUIRED_ID_AND_PAT);
       return;
     }
 
     if (!currentBoard.organization || !currentBoard.project) {
-      this.importError.set('Board is missing organization or project information');
+      this.importError.set(VALIDATIONS.BOARD.MISSING_INFO);
       return;
     }
 
@@ -112,7 +118,7 @@ export class BoardModals {
       }
       this.closeImportFeatureModal();
     } catch (error: any) {
-      this.importError.set(error.message || 'Failed to import feature');
+      this.importError.set(error.message || MESSAGES.FEATURE.IMPORT_FAILED);
     } finally {
       this.importLoading.set(false);
     }
@@ -163,7 +169,7 @@ export class BoardModals {
     if (!feature || !currentBoard || !pat) return;
 
     if (!currentBoard.organization || !currentBoard.project) {
-      this.refreshError.set('Board is missing organization or project information');
+      this.refreshError.set(VALIDATIONS.BOARD.MISSING_INFO);
       return;
     }
 
@@ -187,7 +193,7 @@ export class BoardModals {
       
       this.closeRefreshFeatureModal();
     } catch (error: any) {
-      this.refreshError.set(error.message || 'Failed to refresh feature');
+      this.refreshError.set(error.message || MESSAGES.FEATURE.REFRESH_FAILED);
     } finally {
       this.refreshLoading.set(false);
     }
@@ -220,7 +226,7 @@ export class BoardModals {
       await this.featureService.deleteFeature(currentBoard.id, feature.id);
       this.closeDeleteFeatureModal();
     } catch (error: any) {
-      this.deleteError.set(error.message || 'Failed to delete feature');
+      this.deleteError.set(error.message || MESSAGES.FEATURE.DELETE_FAILED);
     } finally {
       this.deleteLoading.set(false);
     }

@@ -2,6 +2,7 @@ import { Component, Input, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Board } from '../board';
 import { BoardResponseDto } from '../../../../shared/models/board.dto';
+import { LABELS } from '../../../../shared/constants';
 
 @Component({
   selector: 'app-sprint-header',
@@ -14,6 +15,8 @@ export class SprintHeader {
   @Input() board!: Signal<BoardResponseDto | null>;
   @Input() parent!: Board;
   @Input() showDevTest!: Signal<boolean>;
+
+  protected readonly LABELS = LABELS;
 
   protected getDisplayedSprints() {
     return this.parent.getDisplayedSprints();

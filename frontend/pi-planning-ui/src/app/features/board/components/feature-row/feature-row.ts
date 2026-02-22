@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { StoryCard } from '../../../../shared/components/story-card/story-card';
 import { Board } from '../board';
 import { BoardResponseDto, FeatureResponseDto } from '../../../../shared/models/board.dto';
+import { LABELS, TOOLTIPS } from '../../../../shared/constants';
 
 @Component({
   selector: 'app-feature-row',
@@ -20,6 +21,9 @@ export class FeatureRow {
   @Input() parent!: Board;
   @Input() feature!: FeatureResponseDto;
   @Input() showDevTest!: Signal<boolean>;
+
+  protected readonly LABELS = LABELS;
+  protected readonly TOOLTIPS = TOOLTIPS;
 
   protected getDisplayedSprints() {
     return this.parent.getDisplayedSprints();

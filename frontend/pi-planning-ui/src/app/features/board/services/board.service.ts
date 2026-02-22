@@ -6,6 +6,7 @@ import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, AzureApiService } from './board-api.service';
 import { firstValueFrom } from 'rxjs';
 import { RuntimeConfig } from '../../../core/config/runtime-config';
+import { MESSAGES } from '../../../shared/constants';
 
 /**
  * Board Service - State Management Layer
@@ -44,7 +45,7 @@ export class BoardService {
         console.log('Board loaded:', board);
       },
       error: (error) => {
-        this.errorSignal.set(error.message || 'Failed to load board');
+        this.errorSignal.set(error.message || MESSAGES.BOARD.LOAD_FAILED);
         this.loadingSignal.set(false);
         console.error('Error loading board:', error);
       },
@@ -165,7 +166,7 @@ export class BoardService {
       return preview;
     } catch (error) {
       console.error('Error fetching board preview:', error);
-      this.errorSignal.set('Failed to load board information');
+      this.errorSignal.set(MESSAGES.BOARD.PREVIEW_FAILED);
       return null;
     }
   }
@@ -217,7 +218,7 @@ export class BoardService {
       console.log('Board finalized successfully');
       return updatedBoard;
     } catch (error: any) {
-      const errorMsg = error.message || 'Failed to finalize board';
+      const errorMsg = error.message || MESSAGES.BOARD.FINALIZE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error finalizing board:', error);
@@ -243,7 +244,7 @@ export class BoardService {
       console.log('Board restored successfully');
       return updatedBoard;
     } catch (error: any) {
-      const errorMsg = error.message || 'Failed to restore board';
+      const errorMsg = error.message || MESSAGES.BOARD.RESTORE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error restoring board:', error);
