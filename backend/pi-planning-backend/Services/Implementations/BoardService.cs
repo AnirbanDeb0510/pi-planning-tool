@@ -2,8 +2,7 @@ using PiPlanningBackend.Models;
 using PiPlanningBackend.Repositories.Interfaces;
 using PiPlanningBackend.Services.Interfaces;
 using PiPlanningBackend.DTOs;
-using System.Security.Cryptography;
-using System.Text;
+using PiPlanningBackend.Services.Utilities;
 
 namespace PiPlanningBackend.Services.Implementations
 {
@@ -321,25 +320,5 @@ namespace PiPlanningBackend.Services.Implementations
             return await GetBoardPreviewAsync(boardId);
         }
 
-    }
-
-    public static class PasswordHelper
-    {
-        public static string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
-        }
-
-        public static bool VerifyPassword(string password, string storedHash)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            var computedHash = Convert.ToBase64String(hash);
-            return storedHash == computedHash;
-        }
     }
 }
