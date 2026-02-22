@@ -27,19 +27,16 @@ export class FeatureService {
   ): Promise<void> {
     try {
       // Step 1: Fetch feature from Azure DevOps
-      console.log('Fetching feature from Azure:', { organization, project, featureId });
       const featureDto = await firstValueFrom(
         this.azureApi.getFeatureWithChildren(organization, project, featureId, pat)
       );
 
       // Step 2: Import the feature to the board
-      console.log('Importing feature to board:', featureDto);
       const importedFeature = await firstValueFrom(
         this.featureApi.importFeature(boardId, featureDto)
       );
 
       // Step 3: Reload the board to ensure UI matches backend state
-      console.log('Feature imported successfully, reloading board...');
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error importing feature:', error);
@@ -58,13 +55,11 @@ export class FeatureService {
     pat: string
   ): Promise<void> {
     try {
-      console.log('Refreshing feature from Azure:', { boardId, featureId });
       await firstValueFrom(
         this.featureApi.refreshFeature(boardId, featureId, organization, project, pat)
       );
 
       // Reload board to show updated data
-      console.log('Feature refreshed successfully, reloading board...');
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error refreshing feature:', error);
@@ -93,11 +88,9 @@ export class FeatureService {
    */
   public async deleteFeature(boardId: number, featureId: number): Promise<void> {
     try {
-      console.log('Deleting feature:', { boardId, featureId });
       await firstValueFrom(this.featureApi.deleteFeature(boardId, featureId));
 
       // Reload board to show updated data
-      console.log('Feature deleted successfully, reloading board...');
       this.boardService.loadBoard(boardId);
     } catch (error: any) {
       console.error('Error deleting feature:', error);

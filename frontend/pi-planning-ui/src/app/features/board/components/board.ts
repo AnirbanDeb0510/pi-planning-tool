@@ -316,24 +316,13 @@ export class Board implements OnInit {
     const previousId = event.previousContainer.id;
     const targetId = event.container.id;
 
-    console.log('Drop handler called', {
-      previousContainerId: previousId,
-      targetContainerId: targetId,
-      storyId,
-      previousIndex: event.previousIndex,
-      currentIndex: event.currentIndex,
-    });
-
     // If same container and same index, no-op
     if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) {
-      console.log('Same container, same index, no move needed');
       return;
     }
 
     const previousSprintId = this.parseSprintIdFromDropListId(previousId);
     const targetSprintId = this.parseSprintIdFromDropListId(targetId);
-
-    console.log('Moving story', { storyId, previousSprintId, targetSprintId });
 
     // Use CDK utilities to immediately move the item in the arrays
     if (event.previousContainer !== event.container) {

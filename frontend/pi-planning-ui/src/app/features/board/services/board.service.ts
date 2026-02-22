@@ -42,7 +42,6 @@ export class BoardService {
       next: (board: BoardResponseDto) => {
         this.boardSignal.set(board);
         this.loadingSignal.set(false);
-        console.log('Board loaded:', board);
       },
       error: (error) => {
         this.errorSignal.set(error.message || MESSAGES.BOARD.LOAD_FAILED);
@@ -191,7 +190,6 @@ export class BoardService {
   public async getFinalizationWarnings(boardId: number): Promise<string[]> {
     try {
       const warnings = await firstValueFrom(this.boardApi.validateBoardForFinalization(boardId));
-      console.log('Finalization warnings:', warnings);
       return warnings;
     } catch (error: any) {
       console.error('Error fetching finalization warnings:', error);
@@ -215,7 +213,6 @@ export class BoardService {
       this.boardSignal.set(updatedBoard);
       this.loadingSignal.set(false);
 
-      console.log('Board finalized successfully');
       return updatedBoard;
     } catch (error: any) {
       const errorMsg = error.message || MESSAGES.BOARD.FINALIZE_FAILED;
@@ -241,7 +238,6 @@ export class BoardService {
       this.boardSignal.set(updatedBoard);
       this.loadingSignal.set(false);
 
-      console.log('Board restored successfully');
       return updatedBoard;
     } catch (error: any) {
       const errorMsg = error.message || MESSAGES.BOARD.RESTORE_FAILED;

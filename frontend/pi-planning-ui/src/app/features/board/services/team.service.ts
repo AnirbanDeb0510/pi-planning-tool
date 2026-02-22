@@ -69,7 +69,6 @@ export class TeamService {
           ),
         };
         this.boardService.updateBoardState(finalBoard);
-        console.log('Team member added:', member);
       },
       error: (error) => {
         console.error('Error adding team member:', error);
@@ -137,7 +136,6 @@ export class TeamService {
 
     this.teamApi.removeTeamMember(currentBoard.id, memberId).subscribe({
       next: () => {
-        console.log(`Team member ${memberId} removed`);
       },
       error: (error) => {
         console.error('Error removing team member:', error);
@@ -179,7 +177,6 @@ export class TeamService {
       .updateCapacity(currentBoard.id, memberId, sprintId, capacityDev, capacityTest)
       .subscribe({
         next: () => {
-          console.log(`Capacity updated for member ${memberId} in sprint ${sprintId}`);
         },
         error: (error) => {
           console.error('Error updating capacity:', error);
