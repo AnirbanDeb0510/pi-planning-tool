@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "exclude": [
+    "**/Migrations/**",
+    "**/*.Designer.cs",
+    "**/AppDbContextModelSnapshot.cs",
+    "**/bin/**",
+    "**/obj/**",
+    "**/.git/**",
+    "**/.vscode/**",
+    "**/.idea/**"
+  ]
+}
