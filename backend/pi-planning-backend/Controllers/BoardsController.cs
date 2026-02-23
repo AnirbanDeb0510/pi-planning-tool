@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using PiPlanningBackend.DTOs;
+using PiPlanningBackend.Models;
 using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Controllers
@@ -15,9 +16,9 @@ namespace PiPlanningBackend.Controllers
         public async Task<IActionResult> CreateBoard(BoardCreateDto dto)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
-            var board = await _boardService.CreateBoardAsync(dto);
+            Board board = await _boardService.CreateBoardAsync(dto);
 
-            var response = new BoardCreatedDto
+            BoardCreatedDto response = new()
             {
                 Id = board.Id,
                 Name = board.Name,
@@ -38,11 +39,8 @@ namespace PiPlanningBackend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetBoard(int id)
         {
-            var board = await _boardService.GetBoardWithHierarchyAsync(id);
-            if (board == null)
-                return NotFound();
-
-            return Ok(board);
+            BoardResponseDto? board = await _boardService.GetBoardWithHierarchyAsync(id);
+            return board == null ? NotFound() : Ok(board);
         }
 
         [HttpGet]
@@ -53,24 +51,21 @@ namespace PiPlanningBackend.Controllers
             [FromQuery] bool? isLocked,
             [FromQuery] bool? isFinalized)
         {
-            var boards = await _boardService.SearchBoardsAsync(search, organization.Trim(), project.Trim(), isLocked, isFinalized);
+            IEnumerable<BoardSummaryDto> boards = await _boardService.SearchBoardsAsync(search, organization.Trim(), project.Trim(), isLocked, isFinalized);
             return Ok(boards);
         }
 
         [HttpGet("{id}/preview")]
         public async Task<IActionResult> GetBoardPreview(int id)
         {
-            var preview = await _boardService.GetBoardPreviewAsync(id);
-            if (preview == null)
-                return NotFound();
-
-            return Ok(preview);
+            BoardSummaryDto? preview = await _boardService.GetBoardPreviewAsync(id);
+            return preview == null ? NotFound() : Ok(preview);
         }
 
         [HttpGet("{id}/validate-finalization")]
         public async Task<IActionResult> ValidateBoardForFinalization(int id)
         {
-            var (canFinalize, warnings) = await _boardService.ValidateBoardForFinalizationAsync(id);
+            (_, List<string> warnings) = await _boardService.ValidateBoardForFinalizationAsync(id);
             return Ok(warnings);
         }
 
@@ -78,7 +73,7 @@ namespace PiPlanningBackend.Controllers
         public async Task<IActionResult> FinalizeBoard(int id)
         {
             // Validate board can be finalized
-            var (canFinalize, warnings) = await _boardService.ValidateBoardForFinalizationAsync(id);
+            (bool canFinalize, List<string> warnings) = await _boardService.ValidateBoardForFinalizationAsync(id);
 
             if (!canFinalize)
             {
@@ -87,42 +82,40 @@ namespace PiPlanningBackend.Controllers
                     error = new
                     {
                         message = "Board cannot be finalized",
-                        warnings = warnings,
+                        warnings,
                         timestamp = DateTime.UtcNow
                     }
                 });
             }
 
             // Attempt to finalize
-            var board = await _boardService.FinalizeBoardAsync(id);
-            if (board == null)
-                return NotFound();
-
-            return Ok(new
-            {
-                success = true,
-                message = warnings.Count != 0 ? $"Board finalized with {warnings.Count} warning(s)" : "Board finalized successfully",
-                board,
-                warnings,
-                finalizedAt = DateTime.UtcNow,
-                timestamp = DateTime.UtcNow
-            });
+            BoardSummaryDto? board = await _boardService.FinalizeBoardAsync(id);
+            return board == null
+                ? NotFound()
+                : Ok(new
+                {
+                    success = true,
+                    message = warnings.Count != 0 ? $"Board finalized with {warnings.Count} warning(s)" : "Board finalized successfully",
+                    board,
+                    warnings,
+                    finalizedAt = DateTime.UtcNow,
+                    timestamp = DateTime.UtcNow
+                });
         }
 
         [HttpPatch("{id}/restore")]
         public async Task<IActionResult> RestoreBoard(int id)
         {
-            var board = await _boardService.RestoreBoardAsync(id);
-            if (board == null)
-                return NotFound();
-
-            return Ok(new
-            {
-                success = true,
-                message = "Board restored - editing is now allowed",
-                board,
-                timestamp = DateTime.UtcNow
-            });
+            BoardSummaryDto? board = await _boardService.RestoreBoardAsync(id);
+            return board == null
+                ? NotFound()
+                : Ok(new
+                {
+                    success = true,
+                    message = "Board restored - editing is now allowed",
+                    board,
+                    timestamp = DateTime.UtcNow
+                });
         }
     }
 }

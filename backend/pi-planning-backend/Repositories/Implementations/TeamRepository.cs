@@ -5,14 +5,9 @@ using PiPlanningBackend.Repositories.Interfaces;
 
 namespace PiPlanningBackend.Repositories.Implementations
 {
-    public class TeamRepository : ITeamRepository
+    public class TeamRepository(AppDbContext db) : ITeamRepository
     {
-        private readonly AppDbContext _db;
-
-        public TeamRepository(AppDbContext db)
-        {
-            _db = db;
-        }
+        private readonly AppDbContext _db = db;
 
         public async Task<List<TeamMember>> GetTeamAsync(int boardId)
         {
@@ -24,20 +19,20 @@ namespace PiPlanningBackend.Repositories.Implementations
 
         public async Task AddTeamMemberAsync(TeamMember member)
         {
-            await _db.TeamMembers.AddAsync(member);
+            _ = await _db.TeamMembers.AddAsync(member);
         }
 
         public async Task AddAsync(int boardId, TeamMember member)
         {
             // Assign boardId if you store that in TeamMember
             member.BoardId = boardId;
-            await _db.TeamMembers.AddAsync(member);
-            await _db.SaveChangesAsync();
+            _ = await _db.TeamMembers.AddAsync(member);
+            _ = await _db.SaveChangesAsync();
         }
 
         public async Task AddTeamMemberSprintAsync(TeamMemberSprint tms)
         {
-            await _db.TeamMemberSprints.AddAsync(tms);
+            _ = await _db.TeamMemberSprints.AddAsync(tms);
         }
 
         public async Task<TeamMember?> GetTeamMemberAsync(int memberId)
@@ -58,13 +53,13 @@ namespace PiPlanningBackend.Repositories.Implementations
 
         public Task DeleteTeamMemberAsync(TeamMember member)
         {
-            _db.TeamMembers.Remove(member);
+            _ = _db.TeamMembers.Remove(member);
             return Task.CompletedTask;
         }
 
         public async Task SaveChangesAsync()
         {
-            await _db.SaveChangesAsync();
+            _ = await _db.SaveChangesAsync();
         }
     }
 }

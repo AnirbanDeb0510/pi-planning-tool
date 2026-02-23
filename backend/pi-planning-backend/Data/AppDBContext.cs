@@ -20,19 +20,19 @@ namespace PiPlanningBackend.Data
             // ---------------------
             // Board relationships
             // ---------------------
-            modelBuilder.Entity<Board>()
+            _ = modelBuilder.Entity<Board>()
                 .HasMany(b => b.Sprints)
                 .WithOne(s => s.Board!)
                 .HasForeignKey(s => s.BoardId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Board>()
+            _ = modelBuilder.Entity<Board>()
                 .HasMany(b => b.Features)
                 .WithOne(f => f.Board!)
                 .HasForeignKey(f => f.BoardId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Board>()
+            _ = modelBuilder.Entity<Board>()
                 .HasMany(b => b.TeamMembers)
                 .WithOne(t => t.Board!)
                 .HasForeignKey(t => t.BoardId)
@@ -41,7 +41,7 @@ namespace PiPlanningBackend.Data
             // ---------------------
             // Feature → UserStory
             // ---------------------
-            modelBuilder.Entity<Feature>()
+            _ = modelBuilder.Entity<Feature>()
                 .HasMany(f => f.UserStories)
                 .WithOne(us => us.Feature!)
                 .HasForeignKey(us => us.FeatureId)
@@ -50,19 +50,19 @@ namespace PiPlanningBackend.Data
             // ---------------------
             // Sprint → TeamMemberSprint & UserStory
             // ---------------------
-            modelBuilder.Entity<Sprint>()
+            _ = modelBuilder.Entity<Sprint>()
                 .HasMany(s => s.TeamMemberSprints)
                 .WithOne(tms => tms.Sprint!)
                 .HasForeignKey(tms => tms.SprintId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Sprint>()
+            _ = modelBuilder.Entity<Sprint>()
                 .HasMany<UserStory>()
                 .WithOne()
                 .HasForeignKey(us => us.SprintId)
                 .OnDelete(DeleteBehavior.NoAction); // we don’t want stories deleted if sprint is deleted
 
-            modelBuilder.Entity<UserStory>()
+            _ = modelBuilder.Entity<UserStory>()
                 .HasOne(us => us.Sprint)
                 .WithMany(s => s.UserStories)
                 .HasForeignKey(us => us.SprintId)
@@ -71,7 +71,7 @@ namespace PiPlanningBackend.Data
             // ---------------------
             // TeamMember → TeamMemberSprint
             // ---------------------
-            modelBuilder.Entity<TeamMember>()
+            _ = modelBuilder.Entity<TeamMember>()
                 .HasMany(t => t.TeamMemberSprints)
                 .WithOne(tms => tms.TeamMember!)
                 .HasForeignKey(tms => tms.TeamMemberId)
@@ -80,16 +80,16 @@ namespace PiPlanningBackend.Data
             // ---------------------
             // Indexes
             // ---------------------
-            modelBuilder.Entity<Feature>().HasIndex(f => f.AzureId);
-            modelBuilder.Entity<UserStory>().HasIndex(u => u.AzureId);
-            modelBuilder.Entity<UserStory>().HasIndex(u => u.SprintId);
-            modelBuilder.Entity<TeamMemberSprint>().HasIndex(t => new { t.TeamMemberId, t.SprintId });
-            modelBuilder.Entity<Sprint>().HasIndex(s => s.BoardId);
-            modelBuilder.Entity<Feature>().HasIndex(f => f.BoardId);
-            modelBuilder.Entity<TeamMember>().HasIndex(t => t.BoardId);
+            _ = modelBuilder.Entity<Feature>().HasIndex(f => f.AzureId);
+            _ = modelBuilder.Entity<UserStory>().HasIndex(u => u.AzureId);
+            _ = modelBuilder.Entity<UserStory>().HasIndex(u => u.SprintId);
+            _ = modelBuilder.Entity<TeamMemberSprint>().HasIndex(t => new { t.TeamMemberId, t.SprintId });
+            _ = modelBuilder.Entity<Sprint>().HasIndex(s => s.BoardId);
+            _ = modelBuilder.Entity<Feature>().HasIndex(f => f.BoardId);
+            _ = modelBuilder.Entity<TeamMember>().HasIndex(t => t.BoardId);
 
             // Ignore transient SignalR presence
-            modelBuilder.Ignore<CursorPresence>();
+            _ = modelBuilder.Ignore<CursorPresence>();
         }
 
     }

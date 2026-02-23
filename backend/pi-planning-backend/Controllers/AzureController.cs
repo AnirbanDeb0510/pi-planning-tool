@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using PiPlanningBackend.Services;
 using PiPlanningBackend.DTOs;
 using PiPlanningBackend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
@@ -12,7 +11,7 @@ namespace PiPlanningBackend.Controllers
     {
         private readonly IAzureBoardsService _azureService = azureService;
 
-        // GET api/v1/azure/feature/{organization}/{project}/{featureId}?pat=xxxx
+        // GET api/v1/azure/feature/{organization}/{project}/{featureId}?pat=your-pat
         [HttpGet("feature/{organization}/{project}/{featureId}")]
         public async Task<IActionResult> GetFeatureWithChildren(string organization, string project, int featureId, [FromQuery][Required] string pat)
         {
@@ -21,7 +20,5 @@ namespace PiPlanningBackend.Controllers
 
             return Ok(featureDto);
         }
-
-
     }
 }

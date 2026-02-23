@@ -1,5 +1,6 @@
 using PiPlanningBackend.Data;
 using PiPlanningBackend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace PiPlanningBackend.Services.Implementations
 {
@@ -16,7 +17,7 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ExecuteInTransactionAsync(Func<Task> operation)
         {
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            using IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
                 await operation();
@@ -35,10 +36,10 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> operation)
         {
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            using IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
-                var result = await operation();
+                T? result = await operation();
                 await transaction.CommitAsync();
                 return result;
             }

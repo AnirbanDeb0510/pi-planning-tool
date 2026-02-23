@@ -15,7 +15,7 @@ namespace PiPlanningBackend.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             // Extract correlation ID from header or generate new one
-            var correlationId = context.Request.Headers.TryGetValue(CorrelationIdHeaderName, out var headerValue)
+            string correlationId = context.Request.Headers.TryGetValue(CorrelationIdHeaderName, out Microsoft.Extensions.Primitives.StringValues headerValue)
                 ? headerValue.ToString()
                 : Guid.NewGuid().ToString();
 
@@ -59,7 +59,7 @@ namespace PiPlanningBackend.Middleware
         /// </summary>
         public static string? GetCorrelationId(HttpContext context)
         {
-            return context.Items.TryGetValue(CorrelationIdHttpContextItemName, out var correlationId)
+            return context.Items.TryGetValue(CorrelationIdHttpContextItemName, out object? correlationId)
                 ? correlationId?.ToString()
                 : null;
         }

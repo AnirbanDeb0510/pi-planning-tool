@@ -17,11 +17,8 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public string? GetCorrelationId()
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext == null)
-                return null;
-
-            return RequestCorrelationMiddleware.GetCorrelationId(httpContext);
+            HttpContext? httpContext = _httpContextAccessor.HttpContext;
+            return httpContext == null ? null : RequestCorrelationMiddleware.GetCorrelationId(httpContext);
         }
     }
 }

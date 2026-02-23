@@ -6,7 +6,7 @@ namespace PiPlanningBackend.DTOs
     {
         [Required(ErrorMessage = "Feature list is required")]
         [MinLength(1, ErrorMessage = "At least one feature must be provided")]
-        public List<ReorderFeatureItemDto> Features { get; set; } = new();
+        public List<ReorderFeatureItemDto> Features { get; set; } = [];
     }
 
     public class ReorderFeatureItemDto

@@ -1,5 +1,4 @@
 using PiPlanningBackend.DTOs;
-using System.Text.Json;
 
 namespace PiPlanningBackend.Services.Interfaces
 {
@@ -13,7 +12,7 @@ namespace PiPlanningBackend.Services.Interfaces
         /// <param name="featureId"></param>
         /// <param name="pat"></param>
         /// <returns></returns>
-        public Task<FeatureDto> GetFeatureWithChildrenAsync(string organization, string project, int featureId, string pat);
+        Task<FeatureDto> GetFeatureWithChildrenAsync(string organization, string project, int featureId, string pat);
 
         /// <summary>
         /// Get a User Story work item from Azure Boards.
@@ -23,6 +22,6 @@ namespace PiPlanningBackend.Services.Interfaces
         /// <param name="userStoryId"></param>
         /// <param name="pat"></param>
         /// <returns></returns>
-        public Task<UserStoryDto> GetUserStoryAsync(string organization, string project, int userStoryId, string pat);
+        Task<UserStoryDto> GetUserStoryAsync(string organization, string project, int userStoryId, string pat);
     }
 }

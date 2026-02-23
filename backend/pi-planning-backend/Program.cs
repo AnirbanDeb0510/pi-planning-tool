@@ -8,13 +8,13 @@ using PiPlanningBackend.Services.Implementations;
 using PiPlanningBackend.Repositories.Interfaces;
 using PiPlanningBackend.Repositories.Implementations;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllers(options =>
 {
     // Register ValidateModelStateFilter globally - applies to all controller actions
-    options.Filters.Add<ValidateModelStateFilter>();
+    _ = options.Filters.Add<ValidateModelStateFilter>();
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -23,7 +23,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
 // DbContext
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -54,12 +54,12 @@ builder.Services.AddCors(options =>
         policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Apply migrations at startup (optional for Dev & safe if you control migrations)
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
 
@@ -71,8 +71,8 @@ app.UseMiddleware<RequestCorrelationMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    _ = app.UseSwagger();
+    _ = app.UseSwaggerUI();
 }
 
 app.UseCors("AllowAll");

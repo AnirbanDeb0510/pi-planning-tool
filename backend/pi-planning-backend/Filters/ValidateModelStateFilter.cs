@@ -18,7 +18,7 @@ namespace PiPlanningBackend.Filters
             if (!context.ModelState.IsValid)
             {
                 // Create standardized validation error response
-                var errors = context.ModelState
+                Dictionary<string, string[]> errors = context.ModelState
                     .Where(x => x.Value?.Errors.Count > 0)
                     .ToDictionary(
                         kvp => kvp.Key,
@@ -31,7 +31,7 @@ namespace PiPlanningBackend.Filters
                     {
                         message = "Validation failed",
                         details = "One or more validation errors occurred",
-                        errors = errors,
+                        errors,
                         timestamp = DateTime.UtcNow
                     }
                 };
