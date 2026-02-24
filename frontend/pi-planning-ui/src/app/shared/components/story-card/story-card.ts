@@ -47,10 +47,10 @@ export class StoryCard {
 
     // Moved story: OriginalSprint name != CurrentSprint name
     if (originalSprintName !== currentSprintName) {
-      return { 
-        type: 'moved', 
-        label: MESSAGES.STORY.MOVED_FROM(originalSprintName), 
-        icon: '📍' 
+      return {
+        type: 'moved',
+        label: MESSAGES.STORY.MOVED_FROM(originalSprintName),
+        icon: '📍'
       };
     }
 

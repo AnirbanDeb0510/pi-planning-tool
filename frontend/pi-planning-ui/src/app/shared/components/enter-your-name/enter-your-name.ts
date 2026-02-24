@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -19,7 +19,8 @@ export class EnterYourName {
   protected readonly MESSAGES = MESSAGES;
   protected readonly PLACEHOLDERS = PLACEHOLDERS;
 
-  constructor(private router: Router, private userService: UserService) {}
+  private readonly router = inject(Router);
+  private readonly userService = inject(UserService);
 
   startBoard() {
     this.userService.setName(this.userName);

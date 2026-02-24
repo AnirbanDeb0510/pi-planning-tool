@@ -133,7 +133,7 @@ export class BoardService {
       );
 
       if (result) {
-        // Valid PAT - store it temporarily  
+        // Valid PAT - store it temporarily
         this.patStorage.set({ pat, timestamp: Date.now() });
         return true;
       }
@@ -191,7 +191,7 @@ export class BoardService {
     try {
       const warnings = await firstValueFrom(this.boardApi.validateBoardForFinalization(boardId));
       return warnings;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching finalization warnings:', error);
       return [];
     }
@@ -214,8 +214,8 @@ export class BoardService {
       this.loadingSignal.set(false);
 
       return updatedBoard;
-    } catch (error: any) {
-      const errorMsg = error.message || MESSAGES.BOARD.FINALIZE_FAILED;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : MESSAGES.BOARD.FINALIZE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error finalizing board:', error);
@@ -239,8 +239,8 @@ export class BoardService {
       this.loadingSignal.set(false);
 
       return updatedBoard;
-    } catch (error: any) {
-      const errorMsg = error.message || MESSAGES.BOARD.RESTORE_FAILED;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : MESSAGES.BOARD.RESTORE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error restoring board:', error);

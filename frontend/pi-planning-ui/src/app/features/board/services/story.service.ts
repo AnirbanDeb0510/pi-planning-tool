@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { StoryApiService } from './board-api.service';
 import { BoardService } from './board.service';
-import { BoardResponseDto, FeatureResponseDto, UserStoryDto } from '../../../shared/models/board.dto';
+import { FeatureResponseDto, UserStoryDto } from '../../../shared/models/board.dto';
 import { MESSAGES } from '../../../shared/constants';
 
 /**
@@ -51,9 +51,6 @@ export class StoryService {
 
       // Sync with backend (if using real API)
       this.storyApi.moveStory(currentBoard.id, storyId, toSprintId).subscribe({
-        next: () => {
-          console.log(`Story ${storyId} moved from Sprint ${fromSprintId} to Sprint ${toSprintId}`);
-        },
         error: (error) => {
           console.error('Error moving story:', error);
           // Rollback on error

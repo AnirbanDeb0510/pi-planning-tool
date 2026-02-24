@@ -65,7 +65,8 @@
       "extends": ["plugin:@angular-eslint/template/recommended"],
       "rules": {
         "@angular-eslint/template/no-negated-async": "error",
-        "@angular-eslint/template/use-track-by-function": "warn"
+        "@angular-eslint/template/use-track-by-function": "warn",
+        "@angular-eslint/template/prefer-control-flow": "warn"
       }
     }
   ]

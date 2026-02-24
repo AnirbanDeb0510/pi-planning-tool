@@ -23,24 +23,23 @@ export class FeatureService {
     organization: string,
     project: string,
     featureId: string,
-    pat: string
+    pat: string,
   ): Promise<void> {
     try {
       // Step 1: Fetch feature from Azure DevOps
       const featureDto = await firstValueFrom(
-        this.azureApi.getFeatureWithChildren(organization, project, featureId, pat)
+        this.azureApi.getFeatureWithChildren(organization, project, featureId, pat),
       );
 
       // Step 2: Import the feature to the board
-      const importedFeature = await firstValueFrom(
-        this.featureApi.importFeature(boardId, featureDto)
-      );
+      await firstValueFrom(this.featureApi.importFeature(boardId, featureDto));
 
       // Step 3: Reload the board to ensure UI matches backend state
       this.boardService.loadBoard(boardId);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error('Error importing feature:', error);
-      throw new Error(error.message || MESSAGES.FEATURE.IMPORT_FAILED);
+      throw new Error(message || MESSAGES.FEATURE.IMPORT_FAILED);
     }
   }
 
@@ -52,18 +51,19 @@ export class FeatureService {
     featureId: number,
     organization: string,
     project: string,
-    pat: string
+    pat: string,
   ): Promise<void> {
     try {
       await firstValueFrom(
-        this.featureApi.refreshFeature(boardId, featureId, organization, project, pat)
+        this.featureApi.refreshFeature(boardId, featureId, organization, project, pat),
       );
 
       // Reload board to show updated data
       this.boardService.loadBoard(boardId);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error('Error refreshing feature:', error);
-      throw new Error(error.message || MESSAGES.FEATURE.REFRESH_FAILED);
+      throw new Error(message || MESSAGES.FEATURE.REFRESH_FAILED);
     }
   }
 
@@ -72,14 +72,15 @@ export class FeatureService {
    */
   public async reorderFeatures(
     boardId: number,
-    features: Array<{ featureId: number; newPriority: number }>
+    features: Array<{ featureId: number; newPriority: number }>,
   ): Promise<void> {
     try {
       await firstValueFrom(this.featureApi.reorderFeatures(boardId, features));
       this.boardService.loadBoard(boardId);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error('Error reordering features:', error);
-      throw new Error(error.message || MESSAGES.FEATURE.REORDER_FAILED);
+      throw new Error(message || MESSAGES.FEATURE.REORDER_FAILED);
     }
   }
 
@@ -92,9 +93,10 @@ export class FeatureService {
 
       // Reload board to show updated data
       this.boardService.loadBoard(boardId);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error('Error deleting feature:', error);
-      throw new Error(error.message || MESSAGES.FEATURE.DELETE_FAILED);
+      throw new Error(message || MESSAGES.FEATURE.DELETE_FAILED);
     }
   }
 }
