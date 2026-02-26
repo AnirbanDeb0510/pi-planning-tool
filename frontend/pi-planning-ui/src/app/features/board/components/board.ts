@@ -29,6 +29,7 @@ import { CapacityRow } from './capacity-row/capacity-row';
 import { SprintHeader } from './sprint-header/sprint-header';
 import { FeatureRow } from './feature-row/feature-row';
 import { BoardModals } from './board-modals/board-modals';
+import { BoardSummaryDto } from '../../../shared';
 
 @Component({
   selector: 'app-board',
@@ -93,7 +94,7 @@ export class Board implements OnInit {
   protected patValidationLoading = signal(false);
   protected currentBoardId = signal<number | null>(null);
   protected patValidated = signal(false);
-  protected boardPreview = signal<any>(null);
+  protected boardPreview = signal<BoardSummaryDto | null>(null);
 
   ngOnInit(): void {
     // Load board from route parameter
@@ -150,7 +151,7 @@ export class Board implements OnInit {
         preview.organization,
         preview.project,
         preview.sampleFeatureAzureId,
-        pat
+        pat,
       );
 
       if (isValid) {
@@ -210,7 +211,7 @@ export class Board implements OnInit {
     if (!sprintId) return LABELS.FIELDS.PARKING_LOT;
     const currentBoard = this.board();
     if (!currentBoard) return `${LABELS.FIELDS.SPRINT} ${sprintId}`;
-    const sprint = currentBoard.sprints.find(s => s.id === sprintId);
+    const sprint = currentBoard.sprints.find((s) => s.id === sprintId);
     return sprint?.name || `${LABELS.FIELDS.SPRINT} ${sprintId}`;
   }
 
@@ -367,12 +368,10 @@ export class Board implements OnInit {
 
     if (updates.length === 0) return;
 
-    this.featureService
-      .reorderFeatures(currentBoard.id, updates)
-      .catch((error: any) => {
-        console.error('Error reordering features:', error);
-        this.boardService.loadBoard(currentBoard.id);
-      });
+    this.featureService.reorderFeatures(currentBoard.id, updates).catch((error: unknown) => {
+      console.error('Error reordering features:', error);
+      this.boardService.loadBoard(currentBoard.id);
+    });
 
     this.cdr.detectChanges();
   }
@@ -446,7 +445,7 @@ export class Board implements OnInit {
   getSprintTotals(sprintId: number): { dev: number; test: number; total: number } {
     const currentBoard = this.board();
     if (!currentBoard) return { dev: 0, test: 0, total: 0 };
-    
+
     let dev = 0,
       test = 0,
       total = 0;
@@ -513,8 +512,9 @@ export class Board implements OnInit {
       const warnings = await this.boardService.getFinalizationWarnings(currentBoard.id);
       this.finalizationWarnings.set(warnings);
       this.showFinalizeConfirmation.set(true);
-    } catch (error: any) {
-      this.finalizationError.set(error.message || MESSAGES.BOARD.FINALIZE_WARNINGS_FAILED);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.finalizationError.set(message || MESSAGES.BOARD.FINALIZE_WARNINGS_FAILED);
     } finally {
       this.finalizationLoading.set(false);
     }
@@ -543,8 +543,9 @@ export class Board implements OnInit {
     try {
       await this.boardService.finalizeBoard(currentBoard.id);
       this.closeFinalizeConfirmation();
-    } catch (error: any) {
-      this.finalizationError.set(error.message || MESSAGES.BOARD.FINALIZE_FAILED);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.finalizationError.set(message || MESSAGES.BOARD.FINALIZE_FAILED);
     } finally {
       this.finalizationLoading.set(false);
     }
@@ -562,8 +563,9 @@ export class Board implements OnInit {
 
     try {
       await this.boardService.restoreBoard(currentBoard.id);
-    } catch (error: any) {
-      this.finalizationError.set(error.message || MESSAGES.BOARD.RESTORE_FAILED);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.finalizationError.set(message || MESSAGES.BOARD.RESTORE_FAILED);
     } finally {
       this.finalizationLoading.set(false);
     }
@@ -591,4 +593,3 @@ export class Board implements OnInit {
     return this.board()?.isFinalized ?? false;
   }
 }
-

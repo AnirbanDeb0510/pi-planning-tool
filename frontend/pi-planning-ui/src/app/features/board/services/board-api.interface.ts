@@ -60,14 +60,14 @@ export interface IFeatureApiService {
   /**
    * Import feature from Azure DevOps
    */
-  importFeature(boardId: number, azureFeatureId: string): Observable<FeatureResponseDto>;
+  importFeature(boardId: number, featureDto: FeatureResponseDto): Observable<FeatureResponseDto>;
 
   /**
    * Reorder feature priority
    */
   reorderFeatures(
     boardId: number,
-    features: Array<{ featureId: number; newPriority: number }>
+    features: Array<{ featureId: number; newPriority: number }>,
   ): Observable<void>;
 
   /**
@@ -78,7 +78,7 @@ export interface IFeatureApiService {
     featureId: number,
     organization: string,
     project: string,
-    pat: string
+    pat: string,
   ): Observable<FeatureResponseDto>;
 
   /**
@@ -114,7 +114,12 @@ export interface ITeamApiService {
   /**
    * Add team member to board
    */
-  addTeamMember(boardId: number, name: string, isDev: boolean, isTest: boolean): Observable<TeamMemberResponseDto>;
+  addTeamMember(
+    boardId: number,
+    name: string,
+    isDev: boolean,
+    isTest: boolean,
+  ): Observable<TeamMemberResponseDto>;
 
   /**
    * Update team member details
@@ -124,7 +129,7 @@ export interface ITeamApiService {
     memberId: number,
     name: string,
     isDev: boolean,
-    isTest: boolean
+    isTest: boolean,
   ): Observable<TeamMemberResponseDto>;
 
   /**
@@ -135,7 +140,7 @@ export interface ITeamApiService {
     memberId: number,
     sprintId: number,
     capacityDev: number,
-    capacityTest: number
+    capacityTest: number,
   ): Observable<void>;
 
   /**

@@ -1,237 +1,302 @@
 <!-- Import Feature Modal -->
-<div class="modal-backdrop" *ngIf="showImportFeatureModal()" (click)="closeImportFeatureModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ LABELS.HEADERS.IMPORT_FEATURE }}</h3>
-      <button type="button" class="modal-close" (click)="closeImportFeatureModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-label">{{ LABELS.FIELDS.FEATURE_ID }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [(ngModel)]="importFeatureId"
-        placeholder="{{ PLACEHOLDERS.FEATURE_ID }}"
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.ORGANIZATION_REQUIRED }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="board()?.organization || ''"
-        disabled
-        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.PROJECT_REQUIRED }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="board()?.project || ''"
-        disabled
-        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.PAT }}</div>
-      <input
-        class="modal-input"
-        type="password"
-        [(ngModel)]="importPat"
-        placeholder="{{ PLACEHOLDERS.PAT }}"
-      />
-
-      <div class="checkbox-group">
-        <label>
-          <input 
-            type="checkbox" 
-            [(ngModel)]="rememberPatForImport"
-            (ngModelChange)="onRememberPatForImportChange($event)" />
-          {{ LABELS.PAT.remember(patTtlMinutes) }}
-        </label>
+@if (showImportFeatureModal()) {
+  <div class="modal-backdrop" (click)="closeImportFeatureModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.IMPORT_FEATURE }}</h3>
+        <button type="button" class="modal-close" (click)="closeImportFeatureModal()">×</button>
       </div>
+      <div class="modal-body">
+        <div class="modal-label">{{ LABELS.FIELDS.FEATURE_ID }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [(ngModel)]="importFeatureId"
+          placeholder="{{ PLACEHOLDERS.FEATURE_ID }}"
+        />
 
-      <div *ngIf="importError()" class="error-message-inline">
-        {{ importError() }}
+        <div class="modal-label">{{ LABELS.FIELDS.ORGANIZATION_REQUIRED }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.organization || ''"
+          disabled
+          placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
+        />
+
+        <div class="modal-label">{{ LABELS.FIELDS.PROJECT_REQUIRED }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.project || ''"
+          disabled
+          placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
+        />
+
+        <div class="modal-label">{{ LABELS.FIELDS.PAT }}</div>
+        <input
+          class="modal-input"
+          type="password"
+          [(ngModel)]="importPat"
+          placeholder="{{ PLACEHOLDERS.PAT }}"
+        />
+
+        <div class="checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="rememberPatForImport"
+              (ngModelChange)="onRememberPatForImportChange($event)"
+            />
+            {{ LABELS.PAT.remember(patTtlMinutes) }}
+          </label>
+        </div>
+
+        @if (importError()) {
+        <div class="error-message-inline">
+          {{ importError() }}
+        </div>}
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" type="button" (click)="closeImportFeatureModal()" [disabled]="importLoading()">
-        {{ LABELS.BUTTONS.CANCEL }}
-      </button>
-      <button class="btn-primary" type="button" (click)="importFeatureFromAzure()" [disabled]="importLoading()">
-        {{ importLoading() ? LABELS.BUTTONS.IMPORTING : LABELS.BUTTONS.IMPORT_FEATURE }}
-      </button>
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeImportFeatureModal()"
+          [disabled]="importLoading()"
+        >
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button
+          class="btn-primary"
+          type="button"
+          (click)="importFeatureFromAzure()"
+          [disabled]="importLoading()"
+        >
+          {{ importLoading() ? LABELS.BUTTONS.IMPORTING : LABELS.BUTTONS.IMPORT_FEATURE }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}
 
 <!-- Refresh Feature Modal -->
-<div class="modal-backdrop" *ngIf="showRefreshFeatureModal()" (click)="closeRefreshFeatureModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ LABELS.HEADERS.REFRESH_FEATURE }}</h3>
-      <button type="button" class="modal-close" (click)="closeRefreshFeatureModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="selectedFeature()?.title || ''"
-        disabled
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.AZURE_ID }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="selectedFeature()?.azureId || ''"
-        disabled
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.ORGANIZATION }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="board()?.organization || ''"
-        disabled
-        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.PROJECT }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="board()?.project || ''"
-        disabled
-        placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.PAT }}</div>
-      <input
-        class="modal-input"
-        type="password"
-        [(ngModel)]="refreshPat"
-        placeholder="{{ PLACEHOLDERS.PAT }}"
-      />
-
-      <div class="checkbox-group">
-        <label>
-          <input 
-            type="checkbox" 
-            [(ngModel)]="rememberPatForRefresh"
-            (ngModelChange)="onRememberPatForRefreshChange($event)" />
-          {{ LABELS.PAT.remember(patTtlMinutes) }}
-        </label>
+@if (showRefreshFeatureModal()) {
+  <div class="modal-backdrop" (click)="closeRefreshFeatureModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.REFRESH_FEATURE }}</h3>
+        <button type="button" class="modal-close" (click)="closeRefreshFeatureModal()">×</button>
       </div>
+      <div class="modal-body">
+        <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
+        <input class="modal-input" type="text" [value]="selectedFeature()?.title || ''" disabled />
 
-      <div *ngIf="refreshError()" class="error-message-inline">
-        {{ refreshError() }}
+        <div class="modal-label">{{ LABELS.FIELDS.AZURE_ID }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="selectedFeature()?.azureId || ''"
+          disabled
+        />
+
+        <div class="modal-label">{{ LABELS.FIELDS.ORGANIZATION }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.organization || ''"
+          disabled
+          placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
+        />
+
+        <div class="modal-label">{{ LABELS.FIELDS.PROJECT }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="board()?.project || ''"
+          disabled
+          placeholder="{{ PLACEHOLDERS.AUTO_POPULATED }}"
+        />
+
+        <div class="modal-label">{{ LABELS.FIELDS.PAT }}</div>
+        <input
+          class="modal-input"
+          type="password"
+          [(ngModel)]="refreshPat"
+          placeholder="{{ PLACEHOLDERS.PAT }}"
+        />
+
+        <div class="checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="rememberPatForRefresh"
+              (ngModelChange)="onRememberPatForRefreshChange($event)"
+            />
+            {{ LABELS.PAT.remember(patTtlMinutes) }}
+          </label>
+        </div>
+
+        @if (refreshError()) {
+        <div class="error-message-inline">
+          {{ refreshError() }}
+        </div>}
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" type="button" (click)="closeRefreshFeatureModal()" [disabled]="refreshLoading()">
-        {{ LABELS.BUTTONS.CANCEL }}
-      </button>
-      <button class="btn-primary" type="button" (click)="refreshFeatureFromAzure()" [disabled]="refreshLoading()">
-        {{ refreshLoading() ? LABELS.BUTTONS.REFRESHING : LABELS.BUTTONS.REFRESH_FEATURE }}
-      </button>
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeRefreshFeatureModal()"
+          [disabled]="refreshLoading()"
+        >
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button
+          class="btn-primary"
+          type="button"
+          (click)="refreshFeatureFromAzure()"
+          [disabled]="refreshLoading()"
+        >
+          {{ refreshLoading() ? LABELS.BUTTONS.REFRESHING : LABELS.BUTTONS.REFRESH_FEATURE }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}
 
 <!-- Delete Feature Modal -->
-<div class="modal-backdrop" *ngIf="showDeleteFeatureModal()" (click)="closeDeleteFeatureModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ LABELS.HEADERS.DELETE_FEATURE }}</h3>
-      <button type="button" class="modal-close" (click)="closeDeleteFeatureModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="featureToDelete()?.title || ''"
-        disabled
-      />
-
-      <div class="modal-label">{{ LABELS.FIELDS.AZURE_ID }}</div>
-      <input
-        class="modal-input"
-        type="text"
-        [value]="featureToDelete()?.azureId || ''"
-        disabled
-      />
-
-      <div class="warning-text">
-        {{ MESSAGES.FEATURE.DELETE_WARNING }}
+@if (showDeleteFeatureModal()) {
+  <div class="modal-backdrop" (click)="closeDeleteFeatureModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.DELETE_FEATURE }}</h3>
+        <button type="button" class="modal-close" (click)="closeDeleteFeatureModal()">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
+      <div class="modal-body">
+        <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
+        <input class="modal-input" type="text" [value]="featureToDelete()?.title || ''" disabled />
 
-      <div *ngIf="deleteError()" class="error-message-inline">
-        {{ deleteError() }}
+        <div class="modal-label">{{ LABELS.FIELDS.AZURE_ID }}</div>
+        <input
+          class="modal-input"
+          type="text"
+          [value]="featureToDelete()?.azureId || ''"
+          disabled
+        />
+
+        <div class="warning-text">
+          {{ MESSAGES.FEATURE.DELETE_WARNING }}
+        </div>
+
+        @if (deleteError()) {
+          <div class="error-message-inline">
+            {{ deleteError() }}
+          </div>
+        }
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" type="button" (click)="closeDeleteFeatureModal()" [disabled]="deleteLoading()">
-        {{ LABELS.BUTTONS.CANCEL }}
-      </button>
-      <button class="btn-danger" type="button" (click)="deleteFeature()" [disabled]="deleteLoading()">
-        {{ deleteLoading() ? LABELS.BUTTONS.DELETING : LABELS.BUTTONS.DELETE_FEATURE }}
-      </button>
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeDeleteFeatureModal()"
+          [disabled]="deleteLoading()"
+        >
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button
+          class="btn-danger"
+          type="button"
+          (click)="deleteFeature()"
+          [disabled]="deleteLoading()"
+        >
+          {{ deleteLoading() ? LABELS.BUTTONS.DELETING : LABELS.BUTTONS.DELETE_FEATURE }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}
 
 <!-- Finalization Confirmation Modal -->
-<div class="modal-backdrop" *ngIf="showFinalizeConfirmation()" (click)="closeFinalizeConfirmation()">
-  <div class="modal modal-finalize" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ LABELS.HEADERS.FINALIZE_BOARD }}</h3>
-      <button type="button" class="modal-close" (click)="closeFinalizeConfirmation()" [disabled]="finalizationLoading()">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="finalize-info">
-        {{ MESSAGES.BOARD.FINALIZE_INFO_PREFIX }} <strong>{{ MESSAGES.BOARD.FINALIZE_INFO_HIGHLIGHT }}</strong>. {{ MESSAGES.BOARD.FINALIZE_INFO_SUFFIX }}
-      </p>
-      <ul class="finalize-restrictions">
-        <li>{{ LABELS.FINALIZE.RESTRICTION_FEATURES }}</li>
-        <li>{{ LABELS.FINALIZE.RESTRICTION_MEMBERS }}</li>
-        <li>{{ LABELS.FINALIZE.RESTRICTION_STORIES }}</li>
-      </ul>
-      <p>{{ MESSAGES.BOARD.FINALIZE_ALLOWED_TITLE }}</p>
-      <ul class="finalize-allowed">
-        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_MOVE }}</li>
-        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_REORDER }}</li>
-        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_CAPACITY }}</li>
-        <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_REFRESH }}</li>
-      </ul>
-
-      <div *ngIf="finalizationWarnings().length > 0" class="warning-section">
-        <h4>{{ MESSAGES.BOARD.WARNINGS_TITLE }}</h4>
-        <ul class="warnings-list">
-          <li *ngFor="let warning of finalizationWarnings()">{{ warning }}</li>
+@if (showFinalizeConfirmation()) {
+  <div class="modal-backdrop" (click)="closeFinalizeConfirmation()">
+    <div class="modal modal-finalize" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.FINALIZE_BOARD }}</h3>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeFinalizeConfirmation()"
+          [disabled]="finalizationLoading()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="finalize-info">
+          {{ MESSAGES.BOARD.FINALIZE_INFO_PREFIX }}
+          <strong>{{ MESSAGES.BOARD.FINALIZE_INFO_HIGHLIGHT }}</strong
+          >. {{ MESSAGES.BOARD.FINALIZE_INFO_SUFFIX }}
+        </p>
+        <ul class="finalize-restrictions">
+          <li>{{ LABELS.FINALIZE.RESTRICTION_FEATURES }}</li>
+          <li>{{ LABELS.FINALIZE.RESTRICTION_MEMBERS }}</li>
+          <li>{{ LABELS.FINALIZE.RESTRICTION_STORIES }}</li>
         </ul>
-      </div>
+        <p>{{ MESSAGES.BOARD.FINALIZE_ALLOWED_TITLE }}</p>
+        <ul class="finalize-allowed">
+          <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_MOVE }}</li>
+          <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_REORDER }}</li>
+          <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_CAPACITY }}</li>
+          <li>✅ {{ MESSAGES.BOARD.FINALIZE_ALLOWED_REFRESH }}</li>
+        </ul>
 
-      <div *ngIf="finalizationError()" class="error-message-inline">
-        {{ finalizationError() }}
+        @if (finalizationWarnings().length > 0) {
+          <div class="warning-section">
+            <h4>{{ MESSAGES.BOARD.WARNINGS_TITLE }}</h4>
+            <ul class="warnings-list">
+              @for (warning of finalizationWarnings(); track warning) {
+                <li>{{ warning }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (finalizationError()) {
+          <div class="error-message-inline">
+            {{ finalizationError() }}
+          </div>
+        }
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" type="button" (click)="closeFinalizeConfirmation()" [disabled]="finalizationLoading()">
-        {{ LABELS.BUTTONS.CANCEL }}
-      </button>
-      <button class="btn-finalize-confirm" type="button" (click)="finalizeBoard()" [disabled]="finalizationLoading()">
-        {{ finalizationLoading() ? LABELS.BUTTONS.FINALIZING : LABELS.BUTTONS.FINALIZE_CONFIRM }}
-      </button>
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeFinalizeConfirmation()"
+          [disabled]="finalizationLoading()"
+        >
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button
+          class="btn-finalize-confirm"
+          type="button"
+          (click)="finalizeBoard()"
+          [disabled]="finalizationLoading()"
+        >
+          {{ finalizationLoading() ? LABELS.BUTTONS.FINALIZING : LABELS.BUTTONS.FINALIZE_CONFIRM }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}
 
 <!-- Operation Blocked Error Banner -->
-<div *ngIf="operationBlockedError()" class="operation-blocked-banner">
-  <span class="error-icon">⚠️</span>
-  <span class="error-text">{{ operationBlockedError() }}</span>
-  <button type="button" class="banner-close" (click)="operationBlockedError.set('')">×</button>
-</div>
+@if (operationBlockedError()) {
+  <div class="operation-blocked-banner">
+    <span class="error-icon">⚠️</span>
+    <span class="error-text">{{ operationBlockedError() }}</span>
+    <button type="button" class="banner-close" (click)="operationBlockedError.set('')">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+}

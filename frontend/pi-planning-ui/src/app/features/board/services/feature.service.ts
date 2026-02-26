@@ -3,6 +3,7 @@ import { FeatureApiService, AzureApiService } from './board-api.service';
 import { BoardService } from './board.service';
 import { firstValueFrom } from 'rxjs';
 import { MESSAGES } from '../../../shared/constants';
+import { IFeatureApiService } from './board-api.interface';
 
 /**
  * Feature Service
@@ -10,7 +11,7 @@ import { MESSAGES } from '../../../shared/constants';
  */
 @Injectable({ providedIn: 'root' })
 export class FeatureService {
-  private featureApi = inject(FeatureApiService);
+  private featureApi: IFeatureApiService = inject(FeatureApiService);
   private azureApi = inject(AzureApiService);
   private boardService = inject(BoardService);
 

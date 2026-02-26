@@ -2,111 +2,143 @@
 <div class="team-capacity-row" [style.gridTemplateColumns]="parent.getGridTemplateColumns()">
   <div class="team-capacity-cell team-capacity-label">{{ LABELS.FIELDS.TEAM }}</div>
   <div class="team-capacity-cell team-capacity-label">{{ LABELS.FIELDS.CAPACITY }}</div>
-  <div class="team-capacity-cell" *ngFor="let sprint of parent.getDisplayedSprints()">
-    <div class="capacity-header">
-      <span class="capacity-title">{{ sprint.name }}</span>
-      <button class="capacity-edit" type="button" (click)="openCapacityEditor(sprint.id)" [disabled]="parent.isOperationBlocked()" [title]="parent.isOperationBlocked() ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.EDIT_CAPACITY) : TOOLTIPS.TEAM.EDIT_CAPACITY">
-        {{ LABELS.BUTTONS.EDIT }}
-      </button>
-    </div>
-    <div class="capacity-list">
-      <div class="capacity-chip" *ngFor="let member of getTeamMembers()">
-        <span class="capacity-name">{{ member.name }}</span>
-        <span *ngIf="showDevTest()" class="capacity-role">{{
-          parent.getMemberRoleLabel(member)
-        }}</span>
-        <ng-container *ngIf="showDevTest(); else totalCapacity">
-          <span *ngIf="member.isDev" class="capacity-value"
-            >{{ LABELS.FIELDS.DEV }}: {{ parent.getMemberSprintCapacity(member, sprint.id).dev }}</span
-          >
-          <span *ngIf="member.isTest" class="capacity-value"
-            >{{ LABELS.FIELDS.TEST }}: {{ parent.getMemberSprintCapacity(member, sprint.id).test }}</span
-          >
-        </ng-container>
-        <ng-template #totalCapacity>
-          <span class="capacity-value"
-            >{{ LABELS.FIELDS.CAPACITY }}:
-            {{
-              parent.getMemberSprintCapacity(member, sprint.id).dev +
-                parent.getMemberSprintCapacity(member, sprint.id).test
-            }}</span
-          >
-        </ng-template>
+  @for (sprint of parent.getDisplayedSprints(); track sprint.id) {
+    <div class="team-capacity-cell">
+      <div class="capacity-header">
+        <span class="capacity-title">{{ sprint.name }}</span>
+        <button
+          class="capacity-edit"
+          type="button"
+          (click)="openCapacityEditor(sprint.id)"
+          [disabled]="parent.isOperationBlocked()"
+          [title]="
+            parent.isOperationBlocked()
+              ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.EDIT_CAPACITY)
+              : TOOLTIPS.TEAM.EDIT_CAPACITY
+          "
+        >
+          {{ LABELS.BUTTONS.EDIT }}
+        </button>
+      </div>
+      <div class="capacity-list">
+        @for (member of getTeamMembers(); track member.id) {
+          <div class="capacity-chip">
+            <span class="capacity-name">{{ member.name }}</span>
+            @if (showDevTest()) {
+              <span class="capacity-role">{{ parent.getMemberRoleLabel(member) }}</span>
+            }
+            @if (showDevTest()) {
+              @if (member.isDev) {
+                <span class="capacity-value"
+                  >{{ LABELS.FIELDS.DEV }}:
+                  {{ parent.getMemberSprintCapacity(member, sprint.id).dev }}</span
+                >
+              }
+              @if (member.isTest) {
+                <span class="capacity-value"
+                  >{{ LABELS.FIELDS.TEST }}:
+                  {{ parent.getMemberSprintCapacity(member, sprint.id).test }}</span
+                >
+              }
+            } @else {
+              <span class="capacity-value"
+                >{{ LABELS.FIELDS.CAPACITY }}:
+                {{
+                  parent.getMemberSprintCapacity(member, sprint.id).dev +
+                    parent.getMemberSprintCapacity(member, sprint.id).test
+                }}</span
+              >
+            }
+          </div>
+        }
       </div>
     </div>
-  </div>
+  }
 </div>
 
 <!-- Capacity Editor Modal -->
-<div class="modal-backdrop" *ngIf="showCapacityModal()">
-  <div class="modal modal-wide" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ LABELS.HEADERS.EDIT_TEAM_CAPACITY }}</h3>
-      <button type="button" class="modal-close" (click)="closeCapacityEditor()">×</button>
-    </div>
-    <div class="modal-body">
-      <div *ngFor="let member of getTeamMembers()" class="capacity-edit-row">
-        <div class="capacity-edit-name">
-          {{ member.name }}
-          <span *ngIf="showDevTest()" class="capacity-edit-role"
-            >({{ getMemberRoleLabel(member) }})</span
-          >
-        </div>
-        <div class="capacity-edit-inputs">
-          <ng-container *ngIf="showDevTest(); else simpleCapacity">
-            <input
-              *ngIf="member.isDev"
-              class="modal-input small"
-              type="number"
-              step="1"
-              min="0"
-              [value]="capacityEdits()[member.id]?.dev ?? 0"
-              (input)="updateCapacityEdit(member.id, 'dev', $any($event.target).valueAsNumber)"
-              placeholder="{{ PLACEHOLDERS.DEV }}"
-            />
-            <input
-              *ngIf="member.isTest"
-              class="modal-input small"
-              type="number"
-              step="1"
-              min="0"
-              [value]="capacityEdits()[member.id]?.test ?? 0"
-              (input)="updateCapacityEdit(member.id, 'test', $any($event.target).valueAsNumber)"
-              placeholder="{{ PLACEHOLDERS.TEST }}"
-            />
-          </ng-container>
-          <ng-template #simpleCapacity>
-            <input
-              class="modal-input small"
-              type="number"
-              step="1"
-              min="0"
-              [value]="member.isDev ? (capacityEdits()[member.id]?.dev ?? 0) : (capacityEdits()[member.id]?.test ?? 0)"
-              (input)="updateCapacityEdit(member.id, member.isDev ? 'dev' : 'test', $any($event.target).valueAsNumber)"
-              placeholder="{{ PLACEHOLDERS.CAPACITY }}"
-            />
-          </ng-template>
-        </div>
+@if (showCapacityModal()) {
+  <div class="modal-backdrop">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.EDIT_TEAM_CAPACITY }}</h3>
+        <button type="button" class="modal-close" (click)="closeCapacityEditor()">×</button>
       </div>
-      <div *ngIf="capacityFormError()" class="form-error">
-        {{ capacityFormError() }}
+      <div class="modal-body">
+        @for (member of getTeamMembers(); track member.id) {
+          <div class="capacity-edit-row">
+            <div class="capacity-edit-name">
+              {{ member.name }}
+              @if (showDevTest()) {
+                <span class="capacity-edit-role">({{ getMemberRoleLabel(member) }})</span>
+              }
+            </div>
+            <div class="capacity-edit-inputs">
+              @if (showDevTest()) {
+                @if (member.isDev) {
+                  <input
+                    class="modal-input small"
+                    type="number"
+                    step="1"
+                    min="0"
+                    [value]="capacityEdits()[member.id]?.dev ?? 0"
+                    (input)="
+                      updateCapacityEdit(member.id, 'dev', $any($event.target).valueAsNumber)
+                    "
+                    placeholder="{{ PLACEHOLDERS.DEV }}"
+                  />
+                }
+                @if (member.isTest) {
+                  <input
+                    class="modal-input small"
+                    type="number"
+                    step="1"
+                    min="0"
+                    [value]="capacityEdits()[member.id]?.test ?? 0"
+                    (input)="
+                      updateCapacityEdit(member.id, 'test', $any($event.target).valueAsNumber)
+                    "
+                    placeholder="{{ PLACEHOLDERS.TEST }}"
+                  />
+                }
+              } @else {
+                <input
+                  class="modal-input small"
+                  type="number"
+                  step="1"
+                  min="0"
+                  [value]="
+                    member.isDev
+                      ? (capacityEdits()[member.id]?.dev ?? 0)
+                      : (capacityEdits()[member.id]?.test ?? 0)
+                  "
+                  (input)="
+                    updateCapacityEdit(
+                      member.id,
+                      member.isDev ? 'dev' : 'test',
+                      $any($event.target).valueAsNumber
+                    )
+                  "
+                  placeholder="{{ PLACEHOLDERS.CAPACITY }}"
+                />
+              }
+            </div>
+          </div>
+        }
+        @if (capacityFormError()) {
+          <div class="form-error">
+            {{ capacityFormError() }}
+          </div>
+        }
       </div>
-    </div>
-    <div class="modal-footer">
-      <button
-        class="btn-secondary"
-        type="button"
-        (click)="closeCapacityEditor()"
-      >
-        {{ LABELS.BUTTONS.CANCEL }}
-      </button>
-      <button
-        class="btn-primary"
-        type="button"
-        (click)="saveCapacityEdits()"
-      >
-        {{ LABELS.BUTTONS.SAVE_CAPACITY }}
-      </button>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" (click)="closeCapacityEditor()">
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button class="btn-primary" type="button" (click)="saveCapacityEdits()">
+          {{ LABELS.BUTTONS.SAVE_CAPACITY }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
+}

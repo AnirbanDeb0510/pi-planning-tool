@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,7 +17,7 @@ import { LABELS, MESSAGES, PLACEHOLDERS } from '../../../../shared/constants';
   templateUrl: './board-list.component.html',
   styleUrls: ['./board-list.component.css']
 })
-export class BoardListComponent implements OnInit {
+export class BoardListComponent {
   private boardApi = inject(BoardApiService);
   private router = inject(Router);
 
@@ -37,10 +37,6 @@ export class BoardListComponent implements OnInit {
   protected readonly LABELS = LABELS;
   protected readonly MESSAGES = MESSAGES;
   protected readonly PLACEHOLDERS = PLACEHOLDERS;
-
-  ngOnInit(): void {
-    // No need to load anything on init - user must provide org/project
-  }
 
   /**
    * Handle organization input change
@@ -86,8 +82,9 @@ export class BoardListComponent implements OnInit {
         this.boards.set(boards);
         this.loading.set(false);
       },
-      error: (error: any) => {
-        this.error.set(error.message || MESSAGES.BOARD_LIST.ERROR);
+      error: (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        this.error.set(message || MESSAGES.BOARD_LIST.ERROR);
         this.loading.set(false);
         console.error('Error loading boards:', error);
       },

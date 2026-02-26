@@ -49,7 +49,7 @@ export class CapacityRow {
   protected updateCapacityEdit(memberId: number, field: 'dev' | 'test', value: number): void {
     const edits = { ...this.capacityEdits() };
     const existing = edits[memberId] ?? { dev: 0, test: 0 };
-    
+
     // When toggle is OFF, preserve role-based capacity field
     if (!this.showDevTest()) {
       const member = this.getTeamMembers().find(m => m.id === memberId);
@@ -64,13 +64,13 @@ export class CapacityRow {
     } else {
       edits[memberId] = { ...existing, [field]: value };
     }
-    
+
     this.capacityEdits.set(edits);
   }
 
   protected saveCapacityEdits(): void {
     this.capacityFormError.set('');
-    
+
     const sprintId = this.selectedSprintId();
     if (sprintId === null) {
       return;
@@ -89,7 +89,7 @@ export class CapacityRow {
 
     // Validate capacities
     const edits = this.capacityEdits();
-    for (const [id, values] of Object.entries(edits)) {
+    for (const [_id, values] of Object.entries(edits)) {
       // Check for integer values
       if (!Number.isInteger(values.dev) || !Number.isInteger(values.test)) {
         this.capacityFormError.set(VALIDATIONS.CAPACITY.NOT_INTEGER);

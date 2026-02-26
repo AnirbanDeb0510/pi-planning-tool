@@ -1,7 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClientService } from '../../../core/services/http-client.service';
-import { BOARD_API, FEATURE_API, STORY_API, TEAM_API, AZURE_API } from '../../../core/constants/api-endpoints.constants';
+import {
+  BOARD_API,
+  FEATURE_API,
+  STORY_API,
+  TEAM_API,
+  AZURE_API,
+} from '../../../core/constants/api-endpoints.constants';
 import {
   BoardResponseDto,
   FeatureResponseDto,
@@ -14,7 +20,13 @@ import {
   BoardSummaryDto,
   BoardFilters,
 } from '../../../shared/models/board-api.dto';
-import { IBoardApiService, IFeatureApiService, IStoryApiService, ITeamApiService } from './board-api.interface';
+import {
+  IBoardApiService,
+  IFeatureApiService,
+  IStoryApiService,
+  ITeamApiService,
+} from './board-api.interface';
+import { HttpParams } from '@angular/common/http';
 
 /**
  * Board API Service Implementation
@@ -33,25 +45,29 @@ export class BoardApiService implements IBoardApiService {
   }
 
   searchBoards(filters?: BoardFilters): Observable<BoardSummaryDto[]> {
-    const params: any = {};
+    let params = new HttpParams();
     if (filters) {
-      if (filters.search) params.search = filters.search;
-      if (filters.organization) params.organization = filters.organization;
-      if (filters.project) params.project = filters.project;
-      if (filters.isLocked !== undefined) params.isLocked = filters.isLocked.toString();
-      if (filters.isFinalized !== undefined) params.isFinalized = filters.isFinalized.toString();
+      if (filters.search) params = params.set('search', filters.search);
+      if (filters.organization) params = params.set('organization', filters.organization);
+      if (filters.project) params = params.set('project', filters.project);
+      if (filters.isLocked !== undefined)
+        params = params.set('isLocked', filters.isLocked.toString());
+      if (filters.isFinalized !== undefined)
+        params = params.set('isFinalized', filters.isFinalized.toString());
     }
     return this.http.get<BoardSummaryDto[]>(BOARD_API.SEARCH_BOARDS, { params });
   }
 
   getBoardList(filters?: BoardFilters): Observable<BoardSummaryDto[]> {
-    const params: any = {};
+    let params = new HttpParams();
     if (filters) {
-      if (filters.search) params.search = filters.search;
-      if (filters.organization) params.organization = filters.organization;
-      if (filters.project) params.project = filters.project;
-      if (filters.isLocked !== undefined) params.isLocked = filters.isLocked.toString();
-      if (filters.isFinalized !== undefined) params.isFinalized = filters.isFinalized.toString();
+      if (filters.search) params = params.set('search', filters.search);
+      if (filters.organization) params = params.set('organization', filters.organization);
+      if (filters.project) params = params.set('project', filters.project);
+      if (filters.isLocked !== undefined)
+        params = params.set('isLocked', filters.isLocked.toString());
+      if (filters.isFinalized !== undefined)
+        params = params.set('isFinalized', filters.isFinalized.toString());
     }
     return this.http.get<BoardSummaryDto[]>(BOARD_API.GET_BOARD_LIST, { params });
   }
@@ -72,8 +88,8 @@ export class BoardApiService implements IBoardApiService {
     return this.http.get<string[]>(BOARD_API.VALIDATE_FINALIZATION(id));
   }
 
-  finalizeBoard(id: number): Observable<any> {
-    return this.http.patch<any>(BOARD_API.FINALIZE_BOARD(id), {});
+  finalizeBoard(id: number): Observable<void> {
+    return this.http.patch<void>(BOARD_API.FINALIZE_BOARD(id), {});
   }
 
   restoreBoard(id: number): Observable<void> {
@@ -92,13 +108,13 @@ export class BoardApiService implements IBoardApiService {
 export class FeatureApiService implements IFeatureApiService {
   private http = inject(HttpClientService);
 
-  importFeature(boardId: number, featureDto: any): Observable<FeatureResponseDto> {
+  importFeature(boardId: number, featureDto: FeatureResponseDto): Observable<FeatureResponseDto> {
     return this.http.post<FeatureResponseDto>(FEATURE_API.IMPORT(boardId), featureDto);
   }
 
   reorderFeatures(
     boardId: number,
-    features: Array<{ featureId: number; newPriority: number }>
+    features: Array<{ featureId: number; newPriority: number }>,
   ): Observable<void> {
     return this.http.patch<void>(FEATURE_API.REORDER(boardId), {
       features,
@@ -110,12 +126,12 @@ export class FeatureApiService implements IFeatureApiService {
     featureId: number,
     organization: string,
     project: string,
-    pat: string
+    pat: string,
   ): Observable<FeatureResponseDto> {
     return this.http.patch<FeatureResponseDto>(
       FEATURE_API.REFRESH(boardId, featureId),
       {},
-      { params: { organization, project, pat } }
+      { params: { organization, project, pat } },
     );
   }
 
@@ -157,7 +173,7 @@ export class TeamApiService implements ITeamApiService {
     boardId: number,
     name: string,
     isDev: boolean,
-    isTest: boolean
+    isTest: boolean,
   ): Observable<TeamMemberResponseDto> {
     return this.http.post<TeamMemberResponseDto>(TEAM_API.ADD_MEMBER(boardId), {
       name,
@@ -171,7 +187,7 @@ export class TeamApiService implements ITeamApiService {
     memberId: number,
     name: string,
     isDev: boolean,
-    isTest: boolean
+    isTest: boolean,
   ): Observable<TeamMemberResponseDto> {
     return this.http.put<TeamMemberResponseDto>(TEAM_API.UPDATE_MEMBER(boardId, memberId), {
       name,
@@ -185,7 +201,7 @@ export class TeamApiService implements ITeamApiService {
     memberId: number,
     sprintId: number,
     capacityDev: number,
-    capacityTest: number
+    capacityTest: number,
   ): Observable<void> {
     return this.http.patch<void>(TEAM_API.UPDATE_CAPACITY(boardId, memberId, sprintId), {
       capacityDev,
@@ -212,11 +228,11 @@ export class AzureApiService {
     organization: string,
     project: string,
     featureId: string,
-    pat: string
+    pat: string,
   ): Observable<FeatureResponseDto> {
     return this.http.get<FeatureResponseDto>(
       AZURE_API.GET_FEATURE(organization, project, featureId),
-      { params: { pat } }
+      { params: { pat } },
     );
   }
 }

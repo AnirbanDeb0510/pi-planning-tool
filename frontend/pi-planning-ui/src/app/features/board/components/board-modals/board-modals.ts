@@ -6,11 +6,12 @@ import { BoardResponseDto, FeatureResponseDto } from '../../../../shared/models/
 import { FeatureService } from '../../services/feature.service';
 import { RuntimeConfig } from '../../../../core/config/runtime-config';
 import { LABELS, MESSAGES, PLACEHOLDERS, VALIDATIONS } from '../../../../shared/constants';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-board-modals',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatIconModule],
   templateUrl: './board-modals.html',
   styleUrls: ['./board-modals.css'],
 })
@@ -109,7 +110,7 @@ export class BoardModals {
         currentBoard.organization,
         currentBoard.project,
         featureId,
-        pat
+        pat,
       );
       if (this.rememberPatForImport()) {
         this.parent.boardService.storePat(pat);
@@ -117,8 +118,9 @@ export class BoardModals {
         this.parent.boardService.clearPat();
       }
       this.closeImportFeatureModal();
-    } catch (error: any) {
-      this.importError.set(error.message || MESSAGES.FEATURE.IMPORT_FAILED);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.importError.set(message || MESSAGES.FEATURE.IMPORT_FAILED);
     } finally {
       this.importLoading.set(false);
     }
@@ -165,7 +167,7 @@ export class BoardModals {
     const feature = this.selectedFeature();
     const currentBoard = this.board();
     const pat = this.refreshPat().trim();
-    
+
     if (!feature || !currentBoard || !pat) return;
 
     if (!currentBoard.organization || !currentBoard.project) {
@@ -175,25 +177,26 @@ export class BoardModals {
 
     this.refreshLoading.set(true);
     this.refreshError.set(null);
-    
+
     try {
       await this.featureService.refreshFeature(
         currentBoard.id,
         feature.id,
         currentBoard.organization,
         currentBoard.project,
-        pat
+        pat,
       );
-      
+
       if (this.rememberPatForRefresh()) {
         this.parent.boardService.storePat(pat);
       } else {
         this.parent.boardService.clearPat();
       }
-      
+
       this.closeRefreshFeatureModal();
-    } catch (error: any) {
-      this.refreshError.set(error.message || MESSAGES.FEATURE.REFRESH_FAILED);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.refreshError.set(message || MESSAGES.FEATURE.REFRESH_FAILED);
     } finally {
       this.refreshLoading.set(false);
     }
@@ -216,17 +219,18 @@ export class BoardModals {
   protected async deleteFeature(): Promise<void> {
     const feature = this.featureToDelete();
     const currentBoard = this.board();
-    
+
     if (!feature || !currentBoard) return;
 
     this.deleteLoading.set(true);
     this.deleteError.set(null);
-    
+
     try {
       await this.featureService.deleteFeature(currentBoard.id, feature.id);
       this.closeDeleteFeatureModal();
-    } catch (error: any) {
-      this.deleteError.set(error.message || MESSAGES.FEATURE.DELETE_FAILED);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.deleteError.set(message || MESSAGES.FEATURE.DELETE_FAILED);
     } finally {
       this.deleteLoading.set(false);
     }
