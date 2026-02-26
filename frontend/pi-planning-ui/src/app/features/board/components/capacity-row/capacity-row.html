@@ -62,7 +62,7 @@
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.EDIT_TEAM_CAPACITY }}</h3>
-        <button type="button" class="modal-close" (click)="closeCapacityEditor()">×</button>
+        <button type="button" class="modal-close" (click)="closeCapacityEditor()" aria-label="close"><mat-icon>close</mat-icon></button>
       </div>
       <div class="modal-body">
         @for (member of getTeamMembers(); track member.id) {

@@ -41,7 +41,7 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.PAT_REQUIRED }}</h3>
-        <button type="button" class="modal-close" (click)="closePatModal()">×</button>
+        <button type="button" class="modal-close" (click)="closePatModal()" aria-label="close"><mat-icon>close</mat-icon></button>
       </div>
       <div class="modal-body">
         <p class="pat-info">

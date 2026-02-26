@@ -1,6 +1,7 @@
 import { Component, Input, signal, Signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
 import { Board } from '../board';
 import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
 import { TeamService } from '../../services/team.service';
@@ -9,7 +10,7 @@ import { LABELS, PLACEHOLDERS, TOOLTIPS, VALIDATIONS } from '../../../../shared/
 @Component({
   selector: 'app-capacity-row',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatIconModule],
   templateUrl: './capacity-row.html',
   styleUrls: ['./capacity-row.css'],
 })
@@ -52,7 +53,7 @@ export class CapacityRow {
 
     // When toggle is OFF, preserve role-based capacity field
     if (!this.showDevTest()) {
-      const member = this.getTeamMembers().find(m => m.id === memberId);
+      const member = this.getTeamMembers().find((m) => m.id === memberId);
       if (member) {
         // Preserve which role's capacity field we're editing
         if (member.isDev) {
@@ -77,7 +78,7 @@ export class CapacityRow {
     }
 
     // Find the sprint to get max capacity
-    const sprint = this.board()?.sprints.find(s => s.id === sprintId);
+    const sprint = this.board()?.sprints.find((s) => s.id === sprintId);
     if (!sprint) return;
 
     // Calculate sprint duration in working days

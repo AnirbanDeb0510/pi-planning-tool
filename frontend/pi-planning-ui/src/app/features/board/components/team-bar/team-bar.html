@@ -107,7 +107,7 @@
         <h3>
           {{ editingMember() ? LABELS.HEADERS.EDIT_TEAM_MEMBER : LABELS.HEADERS.ADD_TEAM_MEMBER }}
         </h3>
-        <button type="button" class="modal-close" (click)="closeAddMember()">×</button>
+        <button type="button" class="modal-close" (click)="closeAddMember()" aria-label="close"><mat-icon>close</mat-icon></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -160,7 +160,7 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.DELETE_TEAM_MEMBER }}</h3>
-        <button type="button" class="modal-close" (click)="closeDeleteMember()">×</button>
+        <button type="button" class="modal-close" (click)="closeDeleteMember()" aria-label="close"><mat-icon>close</mat-icon></button>
       </div>
       <div class="modal-body">
         <p>
