@@ -4,6 +4,7 @@ import {
 } from '../../../shared/models/board.dto';
 import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, AzureApiService } from './board-api.service';
+import { IBoardApiService, IAzureApiService } from './board-api.interface';
 import { firstValueFrom } from 'rxjs';
 import { RuntimeConfig } from '../../../core/config/runtime-config';
 import { MESSAGES } from '../../../shared/constants';
@@ -15,8 +16,8 @@ import { MESSAGES } from '../../../shared/constants';
  */
 @Injectable({ providedIn: 'root' })
 export class BoardService {
-  private boardApi = inject(BoardApiService);
-  private azureApi = inject(AzureApiService);
+  private boardApi: IBoardApiService = inject(BoardApiService);
+  private azureApi: IAzureApiService = inject(AzureApiService);
 
   // State signals
   private boardSignal = signal<BoardResponseDto | null>(null);

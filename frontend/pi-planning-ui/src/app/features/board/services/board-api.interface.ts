@@ -28,9 +28,19 @@ export interface IBoardApiService {
   createBoard(dto: BoardCreateDto): Observable<BoardCreatedDto>;
 
   /**
+   * Search boards with optional filters
+   */
+  searchBoards(filters?: BoardFilters): Observable<BoardSummaryDto[]>;
+
+  /**
    * Get list of boards with optional filters
    */
   getBoardList(filters?: BoardFilters): Observable<BoardSummaryDto[]>;
+
+  /**
+   * Get board preview without loading full data (for PAT validation)
+   */
+  getBoardPreview(boardId: number): Observable<BoardSummaryDto>;
 
   /**
    * Lock a board (prevent modifications)
@@ -43,9 +53,19 @@ export interface IBoardApiService {
   unlockBoard(id: number): Observable<void>;
 
   /**
+   * Validate board for finalization (get warnings)
+   */
+  validateBoardForFinalization(id: number): Observable<string[]>;
+
+  /**
    * Finalize a board (mark as complete)
    */
   finalizeBoard(id: number): Observable<void>;
+
+  /**
+   * Restore a finalized board (allow further editing)
+   */
+  restoreBoard(id: number): Observable<void>;
 
   /**
    * Delete a board
@@ -147,4 +167,19 @@ export interface ITeamApiService {
    * Remove team member from board
    */
   removeTeamMember(boardId: number, memberId: number): Observable<void>;
+}
+
+/**
+ * Azure DevOps API Service Interface
+ */
+export interface IAzureApiService {
+  /**
+   * Fetch feature with children from Azure DevOps
+   */
+  getFeatureWithChildren(
+    organization: string,
+    project: string,
+    featureId: string,
+    pat: string,
+  ): Observable<FeatureResponseDto>;
 }

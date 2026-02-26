@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { StoryApiService } from './board-api.service';
+import { IStoryApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { FeatureResponseDto, UserStoryDto } from '../../../shared/models/board.dto';
 import { MESSAGES } from '../../../shared/constants';
@@ -10,7 +11,7 @@ import { MESSAGES } from '../../../shared/constants';
  */
 @Injectable({ providedIn: 'root' })
 export class StoryService {
-  private storyApi = inject(StoryApiService);
+  private storyApi: IStoryApiService = inject(StoryApiService);
   private boardService = inject(BoardService);
 
   /**

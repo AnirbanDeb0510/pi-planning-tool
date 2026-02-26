@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { FeatureApiService, AzureApiService } from './board-api.service';
+import { IFeatureApiService, IAzureApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { firstValueFrom } from 'rxjs';
 import { MESSAGES } from '../../../shared/constants';
-import { IFeatureApiService } from './board-api.interface';
 
 /**
  * Feature Service
@@ -12,7 +12,7 @@ import { IFeatureApiService } from './board-api.interface';
 @Injectable({ providedIn: 'root' })
 export class FeatureService {
   private featureApi: IFeatureApiService = inject(FeatureApiService);
-  private azureApi = inject(AzureApiService);
+  private azureApi: IAzureApiService = inject(AzureApiService);
   private boardService = inject(BoardService);
 
   /**
