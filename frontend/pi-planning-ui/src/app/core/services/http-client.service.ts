@@ -40,38 +40,32 @@ export class HttpClientService {
     const url = this.buildUrl(endpoint);
     return this.http.get<T>(url, options).pipe(
       retry(1), // Retry once on failure
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
   /**
    * Perform POST request
    */
-  post<T>(endpoint: string, body: any, options?: HttpOptions): Observable<T> {
+  post<T>(endpoint: string, body: unknown, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.post<T>(url, body, options).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.post<T>(url, body, options).pipe(catchError(this.handleError));
   }
 
   /**
    * Perform PUT request
    */
-  put<T>(endpoint: string, body: any, options?: HttpOptions): Observable<T> {
+  put<T>(endpoint: string, body: unknown, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.put<T>(url, body, options).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.put<T>(url, body, options).pipe(catchError(this.handleError));
   }
 
   /**
    * Perform PATCH request
    */
-  patch<T>(endpoint: string, body: any, options?: HttpOptions): Observable<T> {
+  patch<T>(endpoint: string, body: unknown, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.patch<T>(url, body, options).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.patch<T>(url, body, options).pipe(catchError(this.handleError));
   }
 
   /**
@@ -79,9 +73,7 @@ export class HttpClientService {
    */
   delete<T>(endpoint: string, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.delete<T>(url, options).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.delete<T>(url, options).pipe(catchError(this.handleError));
   }
 
   /**

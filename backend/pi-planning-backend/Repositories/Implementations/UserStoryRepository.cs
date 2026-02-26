@@ -10,24 +10,36 @@ namespace PiPlanningBackend.Repositories.Implementations
         private readonly AppDbContext _db = db;
 
         public async Task<UserStory?> GetByAzureIdAsync(string azureId, int featureId)
-            => await _db.UserStories.FirstOrDefaultAsync(u => u.AzureId == azureId && u.FeatureId == featureId);
+        {
+            return await _db.UserStories.FirstOrDefaultAsync(u => u.AzureId == azureId && u.FeatureId == featureId);
+        }
 
         public async Task<UserStory?> GetByIdAsync(int id)
-            => await _db.UserStories.FindAsync(id);
+        {
+            return await _db.UserStories.FindAsync(id);
+        }
 
         public async Task<UserStory?> GetByIdWithDetailsAsync(int id)
-            => await _db.UserStories
-                .Include(s => s.Feature)
-                .FirstOrDefaultAsync(s => s.Id == id);
+        {
+            return await _db.UserStories
+                        .Include(s => s.Feature)
+                        .FirstOrDefaultAsync(s => s.Id == id);
+        }
 
-        public async Task AddAsync(UserStory story) => await _db.UserStories.AddAsync(story);
+        public async Task AddAsync(UserStory story)
+        {
+            _ = await _db.UserStories.AddAsync(story);
+        }
 
         public Task UpdateAsync(UserStory story)
         {
-            _db.UserStories.Update(story);
+            _ = _db.UserStories.Update(story);
             return Task.CompletedTask;
         }
 
-        public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+        public async Task SaveChangesAsync()
+        {
+            _ = await _db.SaveChangesAsync();
+        }
     }
 }

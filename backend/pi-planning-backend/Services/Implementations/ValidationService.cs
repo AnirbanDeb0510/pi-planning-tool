@@ -20,7 +20,7 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateBoardExists(int boardId)
         {
-            var board = await _boardRepository.GetByIdAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+            _ = await _boardRepository.GetByIdAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateStoryBelongsToBoard(int storyId, int boardId)
         {
-            var story = await _userStoryRepository.GetByIdWithDetailsAsync(storyId);
+            UserStory? story = await _userStoryRepository.GetByIdWithDetailsAsync(storyId);
 
             if (story == null || story.Feature?.BoardId != boardId)
             {
@@ -42,7 +42,7 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateTeamMemberBelongsToBoard(int memberId, int boardId)
         {
-            var member = await _teamRepository.GetTeamMemberAsync(memberId);
+            TeamMember? member = await _teamRepository.GetTeamMemberAsync(memberId);
 
             if (member == null || member.BoardId != boardId)
             {
@@ -56,9 +56,9 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateSprintBelongsToBoard(int sprintId, int boardId)
         {
-            var board = await _boardRepository.GetBoardWithSprintsAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+            Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
-            var sprint = board.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new KeyNotFoundException(
+            Sprint sprint = board.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new KeyNotFoundException(
                     $"Sprint with ID {sprintId} not found in board {boardId}.");
         }
 
@@ -67,7 +67,7 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public async Task ValidateFeatureBelongsToBoard(int featureId, int boardId)
         {
-            var feature = await _featureRepository.GetByIdAsync(featureId);
+            Feature? feature = await _featureRepository.GetByIdAsync(featureId);
 
             if (feature == null || feature.BoardId != boardId)
             {

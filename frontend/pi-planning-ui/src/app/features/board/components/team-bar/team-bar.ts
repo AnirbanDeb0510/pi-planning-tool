@@ -7,7 +7,13 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Board } from '../board';
 import { BoardResponseDto, TeamMemberResponseDto } from '../../../../shared/models/board.dto';
 import { TeamService } from '../../services/team.service';
-import { LABELS, MESSAGES, PLACEHOLDERS, TOOLTIPS, VALIDATIONS } from '../../../../shared/constants';
+import {
+  LABELS,
+  MESSAGES,
+  PLACEHOLDERS,
+  TOOLTIPS,
+  VALIDATIONS,
+} from '../../../../shared/constants';
 
 @Component({
   selector: 'app-team-bar',
@@ -64,7 +70,7 @@ export class TeamBar {
 
   protected saveNewMember(): void {
     this.memberFormError.set('');
-    
+
     const name = this.newMemberName().trim();
     if (!name) {
       this.memberFormError.set(VALIDATIONS.TEAM_MEMBER.NAME_REQUIRED);
@@ -78,7 +84,12 @@ export class TeamBar {
 
     const editing = this.editingMember();
     if (editing) {
-      this.teamService.updateTeamMember(editing.id, name, this.newMemberRole(), this.parent.showDevTest());
+      this.teamService.updateTeamMember(
+        editing.id,
+        name,
+        this.newMemberRole(),
+        this.parent.showDevTest(),
+      );
     } else {
       this.teamService.addTeamMember(name, this.newMemberRole(), this.parent.showDevTest());
     }

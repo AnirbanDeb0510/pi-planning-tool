@@ -2,21 +2,33 @@
  * Runtime Configuration Service
  * Reads configuration from window object (injected by Docker at runtime)
  */
+
+interface Config {
+  apiBaseUrl: string;
+  patTtlMinutes: number;
+}
+
+interface WindowWithEnv extends Window {
+  __env?: {
+    apiBaseUrl?: string;
+    patTtlMinutes?: string;
+  };
+}
+
 export class RuntimeConfig {
-  private static config: any = null;
+  private static config: Config | null = null;
 
   /**
    * Load configuration from window object
    */
   static load(): void {
-    const windowEnv = (window as any)['__env'];
-    const rawPatTtlMinutes = windowEnv?.['patTtlMinutes'];
-    const parsedPatTtlMinutes = Number.parseInt(rawPatTtlMinutes, 10);
+    const windowEnv = (window as WindowWithEnv).__env;
+    const rawPatTtlMinutes = windowEnv?.patTtlMinutes;
+    const parsedPatTtlMinutes = Number.parseInt(rawPatTtlMinutes || '', 10);
     this.config = {
-      apiBaseUrl: windowEnv?.['apiBaseUrl'] || 'http://localhost:5000',
-      patTtlMinutes: Number.isFinite(parsedPatTtlMinutes) && parsedPatTtlMinutes > 0
-        ? parsedPatTtlMinutes
-        : 10,
+      apiBaseUrl: windowEnv?.apiBaseUrl || 'http://localhost:5000',
+      patTtlMinutes:
+        Number.isFinite(parsedPatTtlMinutes) && parsedPatTtlMinutes > 0 ? parsedPatTtlMinutes : 10,
     };
   }
 
@@ -27,7 +39,7 @@ export class RuntimeConfig {
     if (!this.config) {
       this.load();
     }
-    return this.config.apiBaseUrl;
+    return this.config!.apiBaseUrl;
   }
 
   /**
@@ -37,6 +49,6 @@ export class RuntimeConfig {
     if (!this.config) {
       this.load();
     }
-    return this.config.patTtlMinutes;
+    return this.config!.patTtlMinutes;
   }
 }

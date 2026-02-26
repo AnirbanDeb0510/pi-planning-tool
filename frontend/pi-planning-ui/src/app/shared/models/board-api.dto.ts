@@ -47,7 +47,7 @@ export interface BoardSummaryDto {
   isFinalized: boolean;
   sprintCount: number;
   featureCount: number;
-  sampleFeatureAzureId?: string;  // Optional: for PAT validation when features exist
+  sampleFeatureAzureId?: string; // Optional: for PAT validation when features exist
 }
 
 export interface PatValidationRequest {

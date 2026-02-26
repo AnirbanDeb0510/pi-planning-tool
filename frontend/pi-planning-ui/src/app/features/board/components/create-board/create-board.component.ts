@@ -15,7 +15,7 @@ import { LABELS, MESSAGES, PLACEHOLDERS, VALIDATIONS } from '../../../../shared/
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './create-board.component.html',
-  styleUrls: ['./create-board.component.css']
+  styleUrls: ['./create-board.component.css'],
 })
 export class CreateBoardComponent {
   private boardApi = inject(BoardApiService);
@@ -79,12 +79,12 @@ export class CreateBoardComponent {
 
     this.boardApi.createBoard(dto).subscribe({
       next: (response: BoardCreatedDto) => {
-        console.log('Board created:', response);
         this.router.navigate(['/boards', response.id]);
       },
-      error: (error: any) => {
+      error: (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
         this.loading.set(false);
-        this.error.set(error.message || MESSAGES.CREATE_BOARD.CREATE_FAILED);
+        this.error.set(message || MESSAGES.CREATE_BOARD.CREATE_FAILED);
         console.error('Error creating board:', error);
       },
     });

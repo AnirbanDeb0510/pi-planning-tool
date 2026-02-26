@@ -26,13 +26,13 @@ namespace PiPlanningBackend.Services.Utilities
         {
             // Generate cryptographically random salt
             byte[] salt = new byte[SaltSize];
-            using (var rng = RandomNumberGenerator.Create())
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(salt);
             }
 
             // Hash password with salt using PBKDF2
-            using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
+            using Rfc2898DeriveBytes pbkdf2 = new(password, salt, Iterations, HashAlgorithmName.SHA256);
             byte[] hash = pbkdf2.GetBytes(HashSize);
 
             // Return salt:hash format (salt needed for verification)
@@ -56,13 +56,15 @@ namespace PiPlanningBackend.Services.Utilities
                 // Parse stored salt:hash format
                 string[] parts = storedHash.Split(':');
                 if (parts.Length != 2)
+                {
                     return false;
+                }
 
                 byte[] salt = Convert.FromBase64String(parts[0]);
                 byte[] storedHashBytes = Convert.FromBase64String(parts[1]);
 
                 // Re-hash input password with extracted salt (same iterations)
-                using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
+                using Rfc2898DeriveBytes pbkdf2 = new(password, salt, Iterations, HashAlgorithmName.SHA256);
                 byte[] computedHash = pbkdf2.GetBytes(HashSize);
 
                 // Use constant-time comparison to prevent timing attacks

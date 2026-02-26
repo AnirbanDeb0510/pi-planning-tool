@@ -40,104 +40,111 @@
     </div>
 
     <!-- Optional Filters (shown only after org/project provided) -->
-    <div *ngIf="organizationInput() && projectInput()" class="filters">
-      <input
-        type="text"
-        class="search-input"
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="loadBoards()"
-        placeholder="{{ PLACEHOLDERS.SEARCH_BOARDS }}"
-      />
-      <div class="filter-chips">
-        <label class="filter-chip">
-          <input
-            type="checkbox"
-            [(ngModel)]="showLockedOnly"
-            (change)="loadBoards()"
-          />
-          {{ LABELS.FILTERS.LOCKED_ONLY }}
-        </label>
-        <label class="filter-chip">
-          <input
-            type="checkbox"
-            [(ngModel)]="showFinalizedOnly"
-            (change)="loadBoards()"
-          />
-          {{ LABELS.FILTERS.FINALIZED_ONLY }}
-        </label>
+    @if (organizationInput() && projectInput()) {
+      <div class="filters">
+        <input
+          type="text"
+          class="search-input"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="loadBoards()"
+          placeholder="{{ PLACEHOLDERS.SEARCH_BOARDS }}"
+        />
+        <div class="filter-chips">
+          <label class="filter-chip">
+            <input type="checkbox" [(ngModel)]="showLockedOnly" (change)="loadBoards()" />
+            {{ LABELS.FILTERS.LOCKED_ONLY }}
+          </label>
+          <label class="filter-chip">
+            <input type="checkbox" [(ngModel)]="showFinalizedOnly" (change)="loadBoards()" />
+            {{ LABELS.FILTERS.FINALIZED_ONLY }}
+          </label>
+        </div>
       </div>
-    </div>
+    }
 
     <!-- Message when org/project not provided -->
-    <div *ngIf="!organizationInput() || !projectInput()" class="selection-required">
-      <div class="selection-message">
-        <p>{{ MESSAGES.BOARD_LIST.SELECTION_REQUIRED }}</p>
-      </div>
-    </div>
-
-    <div *ngIf="loading()" class="loading-state">
-      <div class="spinner"></div>
-      <p>{{ MESSAGES.BOARD_LIST.LOADING }}</p>
-    </div>
-
-    <div *ngIf="error()" class="error-state">
-      <p>{{ error() }}</p>
-      <button class="btn-primary" (click)="loadBoards()">{{ LABELS.BUTTONS.RETRY }}</button>
-    </div>
-
-    <div *ngIf="!loading() && !error() && boards().length === 0 && organizationInput() && projectInput()" class="empty-state">
-      <div class="empty-icon">📋</div>
-      <h3>{{ MESSAGES.BOARD_LIST.EMPTY_TITLE }}</h3>
-      <p>{{ MESSAGES.BOARD_LIST.EMPTY_SUBTITLE }}</p>
-      <button class="btn-primary" (click)="navigateToCreate()">
-        {{ LABELS.BUTTONS.CREATE_BOARD }}
-      </button>
-    </div>
-
-    <div *ngIf="!loading() && !error() && boards().length > 0 && organizationInput() && projectInput()" class="boards-grid">
-      <div
-        *ngFor="let board of boards()"
-        class="board-card"
-        (click)="openBoard(board.id)"
-      >
-        <div class="board-card-header">
-          <h3>{{ board.name }}</h3>
-          <div class="board-badges">
-            <span *ngIf="board.isLocked" class="badge locked">{{ LABELS.BADGES.LOCKED }}</span>
-            <span *ngIf="board.isFinalized" class="badge finalized">{{ LABELS.BADGES.FINALIZED }}</span>
-          </div>
-        </div>
-
-        <div class="board-card-body">
-          <div class="board-info">
-            <span *ngIf="board.organization" class="info-item">
-              <strong>{{ LABELS.INFO.ORG }}</strong> {{ board.organization }}
-            </span>
-            <span *ngIf="board.project" class="info-item">
-              <strong>{{ LABELS.INFO.PROJECT }}</strong> {{ board.project }}
-            </span>
-            <span class="info-item">
-              <strong>{{ LABELS.INFO.SPRINTS }}</strong> {{ board.sprintCount }}
-            </span>
-            <span class="info-item">
-              <strong>{{ LABELS.INFO.FEATURES }}</strong> {{ board.featureCount }}
-            </span>
-          </div>
-
-          <div class="board-date">
-            {{ LABELS.INFO.CREATED }} {{ formatDate(board.createdAt) }}
-          </div>
-        </div>
-
-        <div class="board-card-footer">
-          <button
-            class="btn-link"
-            (click)="openBoard(board.id); $event.stopPropagation()"
-          >
-            {{ LABELS.BUTTONS.OPEN }}
-          </button>
+    @if (!organizationInput() || !projectInput()) {
+      <div class="selection-required">
+        <div class="selection-message">
+          <p>{{ MESSAGES.BOARD_LIST.SELECTION_REQUIRED }}</p>
         </div>
       </div>
-    </div>
+    }
+
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>{{ MESSAGES.BOARD_LIST.LOADING }}</p>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="error-state">
+        <p>{{ error() }}</p>
+        <button class="btn-primary" (click)="loadBoards()">{{ LABELS.BUTTONS.RETRY }}</button>
+      </div>
+    }
+
+    @if (!loading() && !error() && boards().length === 0 && organizationInput() && projectInput()) {
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>{{ MESSAGES.BOARD_LIST.EMPTY_TITLE }}</h3>
+        <p>{{ MESSAGES.BOARD_LIST.EMPTY_SUBTITLE }}</p>
+        <button class="btn-primary" (click)="navigateToCreate()">
+          {{ LABELS.BUTTONS.CREATE_BOARD }}
+        </button>
+      </div>
+    }
+
+    @if (!loading() && !error() && boards().length > 0 && organizationInput() && projectInput()) {
+      <div class="boards-grid">
+        @for (board of boards(); track board.id) {
+          <div class="board-card" (click)="openBoard(board.id)">
+            <div class="board-card-header">
+              <h3>{{ board.name }}</h3>
+              <div class="board-badges">
+                @if (board.isLocked) {
+                  <span class="badge locked">{{ LABELS.BADGES.LOCKED }}</span>
+                }
+                @if (board.isFinalized) {
+                  <span class="badge finalized">{{ LABELS.BADGES.FINALIZED }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="board-card-body">
+              <div class="board-info">
+                @if (board.organization) {
+                  <span class="info-item">
+                    <strong>{{ LABELS.INFO.ORG }}</strong> {{ board.organization }}
+                  </span>
+                }
+                @if (board.project) {
+                  <span class="info-item">
+                    <strong>{{ LABELS.INFO.PROJECT }}</strong> {{ board.project }}
+                  </span>
+                }
+                <span class="info-item">
+                  <strong>{{ LABELS.INFO.SPRINTS }}</strong> {{ board.sprintCount }}
+                </span>
+                <span class="info-item">
+                  <strong>{{ LABELS.INFO.FEATURES }}</strong> {{ board.featureCount }}
+                </span>
+              </div>
+
+              <div class="board-date">
+                {{ LABELS.INFO.CREATED }} {{ formatDate(board.createdAt) }}
+              </div>
+            </div>
+
+            <div class="board-card-footer">
+              <button class="btn-link" (click)="openBoard(board.id); $event.stopPropagation()">
+                {{ LABELS.BUTTONS.OPEN }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
   </div>
 </div>

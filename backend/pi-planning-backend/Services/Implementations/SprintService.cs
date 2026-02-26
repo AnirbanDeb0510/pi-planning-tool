@@ -15,16 +15,16 @@ namespace PiPlanningBackend.Services.Implementations
         /// </summary>
         public List<Sprint> GenerateSprintsForBoard(Board board, int numSprints, int sprintDurationDays)
         {
-            var correlationId = _correlationIdProvider.GetCorrelationId();
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
             _logger.LogInformation(
                 "Sprint generation started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | NumSprints: {NumSprints} | Duration: {Duration}",
                 correlationId, board.Id, numSprints, sprintDurationDays);
 
-            var sprints = new List<Sprint>();
-            var startDateUtc = board.StartDate;
+            List<Sprint> sprints = [];
+            DateTime startDateUtc = board.StartDate;
 
             // Sprint 0 is a placeholder/parking lot (no real dates)
-            var sprintZero = new Sprint
+            Sprint sprintZero = new()
             {
                 Name = "Sprint 0",
                 StartDate = startDateUtc,
@@ -33,10 +33,10 @@ namespace PiPlanningBackend.Services.Implementations
             sprints.Add(sprintZero);
 
             // Actual sprints (1 through NumSprints)
-            var currentSprintStart = startDateUtc;
+            DateTime currentSprintStart = startDateUtc;
             for (int i = 1; i <= numSprints; i++)
             {
-                var sprint = new Sprint
+                Sprint sprint = new()
                 {
                     Name = $"Sprint {i}",
                     StartDate = currentSprintStart,

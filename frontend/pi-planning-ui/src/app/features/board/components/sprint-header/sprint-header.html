@@ -2,49 +2,51 @@
 <div class="sprint-header" [style.gridTemplateColumns]="getGridTemplateColumns()">
   <div class="sprint-header-cell feature-label">{{ LABELS.FIELDS.FEATURE }}</div>
   <div class="sprint-header-cell parking-lot-col">{{ LABELS.FIELDS.PARKING_LOT }}</div>
-  <div class="sprint-header-cell" *ngFor="let sprint of getDisplayedSprints()">
-    <div class="sprint-name">{{ sprint.name }}</div>
-    <div class="sprint-metrics">
-      <div class="metric-block">
-        <div class="metric-label">{{ LABELS.FIELDS.LOAD }}</div>
-        <div class="metric-values">
-          <ng-container *ngIf="showDevTest(); else totalLoad">
-            <span class="dev" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'dev')"
-              >{{ LABELS.FIELDS.DEV }}: {{ getSprintTotals(sprint.id).dev }}</span
-            >
-            <span class="test" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'test')"
-              >{{ LABELS.FIELDS.TEST }}: {{ getSprintTotals(sprint.id).test }}</span
-            >
-            <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
-              >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintTotals(sprint.id).total }}</span
-            >
-          </ng-container>
-          <ng-template #totalLoad>
-            <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
-              >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintTotals(sprint.id).total }}</span
-            >
-          </ng-template>
+  @for (sprint of getDisplayedSprints(); track sprint.id) {
+    <div class="sprint-header-cell">
+      <div class="sprint-name">{{ sprint.name }}</div>
+      <div class="sprint-metrics">
+        <div class="metric-block">
+          <div class="metric-label">{{ LABELS.FIELDS.LOAD }}</div>
+          <div class="metric-values">
+            @if (showDevTest()) {
+              <span class="dev" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'dev')"
+                >{{ LABELS.FIELDS.DEV }}: {{ getSprintTotals(sprint.id).dev }}</span
+              >
+              <span class="test" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'test')"
+                >{{ LABELS.FIELDS.TEST }}: {{ getSprintTotals(sprint.id).test }}</span
+              >
+              <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
+                >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintTotals(sprint.id).total }}</span
+              >
+            } @else {
+              <span class="total" [class.over-capacity]="isSprintOverCapacity(sprint.id, 'total')"
+                >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintTotals(sprint.id).total }}</span
+              >
+            }
+          </div>
         </div>
-      </div>
-      <div class="metric-block">
-        <div class="metric-label">{{ LABELS.FIELDS.CAPACITY }}</div>
-        <div class="metric-values">
-          <ng-container *ngIf="showDevTest(); else totalCapacity">
-            <span class="capacity-dev">{{ LABELS.FIELDS.DEV }}: {{ getSprintCapacityTotals(sprint.id).dev }}</span>
-            <span class="capacity-test"
-              >{{ LABELS.FIELDS.TEST }}: {{ getSprintCapacityTotals(sprint.id).test }}</span
-            >
-            <span class="capacity-total"
-              >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintCapacityTotals(sprint.id).total }}</span
-            >
-          </ng-container>
-          <ng-template #totalCapacity>
-            <span class="capacity-total"
-              >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintCapacityTotals(sprint.id).total }}</span
-            >
-          </ng-template>
+        <div class="metric-block">
+          <div class="metric-label">{{ LABELS.FIELDS.CAPACITY }}</div>
+          <div class="metric-values">
+            @if (showDevTest()) {
+              <span class="capacity-dev"
+                >{{ LABELS.FIELDS.DEV }}: {{ getSprintCapacityTotals(sprint.id).dev }}</span
+              >
+              <span class="capacity-test"
+                >{{ LABELS.FIELDS.TEST }}: {{ getSprintCapacityTotals(sprint.id).test }}</span
+              >
+              <span class="capacity-total"
+                >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintCapacityTotals(sprint.id).total }}</span
+              >
+            } @else {
+              <span class="capacity-total"
+                >{{ LABELS.FIELDS.TOTAL }}: {{ getSprintCapacityTotals(sprint.id).total }}</span
+              >
+            }
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  }
 </div>

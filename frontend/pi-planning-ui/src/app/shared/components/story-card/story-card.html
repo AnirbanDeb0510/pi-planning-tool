@@ -1,30 +1,40 @@
-<div class="story-card" [class.story-moved]="hasMoved() && parent.isBoardFinalized()" [class.story-new]="getStoryIndicator().type === 'new' && parent.isBoardFinalized()">
+<div
+  class="story-card"
+  [class.story-moved]="hasMoved() && parent.isBoardFinalized()"
+  [class.story-new]="getStoryIndicator().type === 'new' && parent.isBoardFinalized()"
+>
   <!-- Story Indicator Badge - Shows icon and label -->
-  <div class="story-indicator" *ngIf="hasMoved() && parent.isBoardFinalized()" [class.moved]="getStoryIndicator().type === 'moved'" [class.new]="getStoryIndicator().type === 'new'" [title]="getStoryIndicator().label">
-    <span class="indicator-icon">{{ getStoryIndicator().icon }}</span>
-    <span class="indicator-label">{{ getStoryIndicator().label }}</span>
-  </div>
+  @if (hasMoved() && parent.isBoardFinalized()) {
+    <div
+      class="story-indicator"
+      [class.moved]="getStoryIndicator().type === 'moved'"
+      [class.new]="getStoryIndicator().type === 'new'"
+      [title]="getStoryIndicator().label"
+    >
+      <span class="indicator-icon">{{ getStoryIndicator().icon }}</span>
+      <span class="indicator-label">{{ getStoryIndicator().label }}</span>
+    </div>
+  }
 
   <div class="story-header">
     <h3>{{ story.title }}</h3>
-    <span class="azure-badge" *ngIf="story.azureId">{{ story.azureId }}</span>
+    @if (story.azureId) {
+      <span class="azure-badge">{{ story.azureId }}</span>
+    }
   </div>
 
   <div class="points">
-    <ng-container *ngIf="parent?.showDevTest?.(); else singlePoints">
+    @if (parent.showDevTest()) {
       <span>💻 {{ LABELS.FIELDS.DEV }}: {{ story.devStoryPoints ?? 0 }}</span>
       <span>🧪 {{ LABELS.FIELDS.TEST }}: {{ story.testStoryPoints ?? 0 }}</span>
-      <span>({{ story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }})</span>
-    </ng-container>
-
-    <ng-template #singlePoints>
-      <span
-        >⭐
-        {{
-          story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0)
-        }}
-        {{ LABELS.UNITS.POINTS }}</span
-      >
-    </ng-template>
+      <span>
+        ({{ story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }})
+      </span>
+    } @else {
+      <span>
+        ⭐ {{ story.storyPoints ?? (story.devStoryPoints || 0) + (story.testStoryPoints || 0) }}
+        {{ LABELS.UNITS.POINTS }}
+      </span>
+    }
   </div>
 </div>

@@ -23,9 +23,8 @@ namespace PiPlanningBackend.Controllers
         [HttpPatch("{storyId}/refresh")]
         public async Task<IActionResult> RefreshStory(int boardId, int storyId, [FromQuery] string organization, [FromQuery] string project, [FromQuery] string pat)
         {
-            var s = await _featureService.RefreshUserStoryFromAzureAsync(boardId, storyId, organization, project, pat);
-            if (s == null) return NotFound();
-            return Ok(s);
+            UserStoryDto? s = await _featureService.RefreshUserStoryFromAzureAsync(boardId, storyId, organization, project, pat);
+            return s == null ? NotFound() : Ok(s);
         }
     }
 }

@@ -4,6 +4,7 @@ import {
 } from '../../../shared/models/board.dto';
 import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, AzureApiService } from './board-api.service';
+import { IBoardApiService, IAzureApiService } from './board-api.interface';
 import { firstValueFrom } from 'rxjs';
 import { RuntimeConfig } from '../../../core/config/runtime-config';
 import { MESSAGES } from '../../../shared/constants';
@@ -15,8 +16,8 @@ import { MESSAGES } from '../../../shared/constants';
  */
 @Injectable({ providedIn: 'root' })
 export class BoardService {
-  private boardApi = inject(BoardApiService);
-  private azureApi = inject(AzureApiService);
+  private boardApi: IBoardApiService = inject(BoardApiService);
+  private azureApi: IAzureApiService = inject(AzureApiService);
 
   // State signals
   private boardSignal = signal<BoardResponseDto | null>(null);
@@ -133,7 +134,7 @@ export class BoardService {
       );
 
       if (result) {
-        // Valid PAT - store it temporarily  
+        // Valid PAT - store it temporarily
         this.patStorage.set({ pat, timestamp: Date.now() });
         return true;
       }
@@ -191,7 +192,7 @@ export class BoardService {
     try {
       const warnings = await firstValueFrom(this.boardApi.validateBoardForFinalization(boardId));
       return warnings;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching finalization warnings:', error);
       return [];
     }
@@ -214,8 +215,8 @@ export class BoardService {
       this.loadingSignal.set(false);
 
       return updatedBoard;
-    } catch (error: any) {
-      const errorMsg = error.message || MESSAGES.BOARD.FINALIZE_FAILED;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : MESSAGES.BOARD.FINALIZE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error finalizing board:', error);
@@ -239,8 +240,8 @@ export class BoardService {
       this.loadingSignal.set(false);
 
       return updatedBoard;
-    } catch (error: any) {
-      const errorMsg = error.message || MESSAGES.BOARD.RESTORE_FAILED;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : MESSAGES.BOARD.RESTORE_FAILED;
       this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error restoring board:', error);

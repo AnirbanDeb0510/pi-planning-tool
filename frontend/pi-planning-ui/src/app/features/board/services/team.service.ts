@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { TeamApiService } from './board-api.service';
+import { ITeamApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { TeamMemberResponseDto } from '../../../shared/models/board.dto';
 import { MESSAGES } from '../../../shared/constants';
@@ -10,7 +11,7 @@ import { MESSAGES } from '../../../shared/constants';
  */
 @Injectable({ providedIn: 'root' })
 export class TeamService {
-  private teamApi = inject(TeamApiService);
+  private teamApi: ITeamApiService = inject(TeamApiService);
   private boardService = inject(BoardService);
 
   /**

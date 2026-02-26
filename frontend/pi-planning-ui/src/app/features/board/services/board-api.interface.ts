@@ -28,9 +28,19 @@ export interface IBoardApiService {
   createBoard(dto: BoardCreateDto): Observable<BoardCreatedDto>;
 
   /**
+   * Search boards with optional filters
+   */
+  searchBoards(filters?: BoardFilters): Observable<BoardSummaryDto[]>;
+
+  /**
    * Get list of boards with optional filters
    */
   getBoardList(filters?: BoardFilters): Observable<BoardSummaryDto[]>;
+
+  /**
+   * Get board preview without loading full data (for PAT validation)
+   */
+  getBoardPreview(boardId: number): Observable<BoardSummaryDto>;
 
   /**
    * Lock a board (prevent modifications)
@@ -43,9 +53,19 @@ export interface IBoardApiService {
   unlockBoard(id: number): Observable<void>;
 
   /**
+   * Validate board for finalization (get warnings)
+   */
+  validateBoardForFinalization(id: number): Observable<string[]>;
+
+  /**
    * Finalize a board (mark as complete)
    */
   finalizeBoard(id: number): Observable<void>;
+
+  /**
+   * Restore a finalized board (allow further editing)
+   */
+  restoreBoard(id: number): Observable<void>;
 
   /**
    * Delete a board
@@ -60,14 +80,14 @@ export interface IFeatureApiService {
   /**
    * Import feature from Azure DevOps
    */
-  importFeature(boardId: number, azureFeatureId: string): Observable<FeatureResponseDto>;
+  importFeature(boardId: number, featureDto: FeatureResponseDto): Observable<FeatureResponseDto>;
 
   /**
    * Reorder feature priority
    */
   reorderFeatures(
     boardId: number,
-    features: Array<{ featureId: number; newPriority: number }>
+    features: Array<{ featureId: number; newPriority: number }>,
   ): Observable<void>;
 
   /**
@@ -78,7 +98,7 @@ export interface IFeatureApiService {
     featureId: number,
     organization: string,
     project: string,
-    pat: string
+    pat: string,
   ): Observable<FeatureResponseDto>;
 
   /**
@@ -114,7 +134,12 @@ export interface ITeamApiService {
   /**
    * Add team member to board
    */
-  addTeamMember(boardId: number, name: string, isDev: boolean, isTest: boolean): Observable<TeamMemberResponseDto>;
+  addTeamMember(
+    boardId: number,
+    name: string,
+    isDev: boolean,
+    isTest: boolean,
+  ): Observable<TeamMemberResponseDto>;
 
   /**
    * Update team member details
@@ -124,7 +149,7 @@ export interface ITeamApiService {
     memberId: number,
     name: string,
     isDev: boolean,
-    isTest: boolean
+    isTest: boolean,
   ): Observable<TeamMemberResponseDto>;
 
   /**
@@ -135,11 +160,26 @@ export interface ITeamApiService {
     memberId: number,
     sprintId: number,
     capacityDev: number,
-    capacityTest: number
+    capacityTest: number,
   ): Observable<void>;
 
   /**
    * Remove team member from board
    */
   removeTeamMember(boardId: number, memberId: number): Observable<void>;
+}
+
+/**
+ * Azure DevOps API Service Interface
+ */
+export interface IAzureApiService {
+  /**
+   * Fetch feature with children from Azure DevOps
+   */
+  getFeatureWithChildren(
+    organization: string,
+    project: string,
+    featureId: string,
+    pat: string,
+  ): Observable<FeatureResponseDto>;
 }

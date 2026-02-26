@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using PiPlanningBackend.DTOs;
 using PiPlanningBackend.Services.Interfaces;
@@ -16,7 +15,7 @@ namespace PiPlanningBackend.Controllers
         public async Task<IActionResult> ImportFeature(int boardId, [FromBody] FeatureDto dto)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
-            var created = await _featureService.ImportFeatureToBoardAsync(boardId, dto);
+            FeatureDto created = await _featureService.ImportFeatureToBoardAsync(boardId, dto);
             return CreatedAtAction(nameof(GetFeature), new { boardId, id = created.Id }, created);
         }
 
@@ -24,16 +23,15 @@ namespace PiPlanningBackend.Controllers
         public IActionResult GetFeature(int boardId, int id)
         {
             // optional: implement retrieval controller or use other endpoint
-            return Ok();
+            return Ok($"GetFeature endpoint hit for BoardId: {boardId}, FeatureId: {id}");
         }
 
         // PATCH api/boards/{boardId}/features/{id}/refresh?org=&project=&pat=
         [HttpPatch("{id}/refresh")]
         public async Task<IActionResult> RefreshFeature(int boardId, int id, [FromQuery] string organization, [FromQuery] string project, [FromQuery] string pat)
         {
-            var f = await _featureService.RefreshFeatureFromAzureAsync(boardId, id, organization, project, pat);
-            if (f == null) return NotFound();
-            return Ok(f);
+            FeatureDto? featureDto = await _featureService.RefreshFeatureFromAzureAsync(boardId, id, organization, project, pat);
+            return featureDto == null ? NotFound() : Ok(featureDto);
         }
 
         // PATCH api/boards/{boardId}/features/reorder
@@ -49,9 +47,8 @@ namespace PiPlanningBackend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFeature(int boardId, int id)
         {
-            var deleted = await _featureService.DeleteFeatureAsync(boardId, id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            bool deleted = await _featureService.DeleteFeatureAsync(boardId, id);
+            return !deleted ? NotFound() : NoContent();
         }
     }
 }

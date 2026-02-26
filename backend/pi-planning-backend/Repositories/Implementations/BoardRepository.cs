@@ -5,19 +5,14 @@ using PiPlanningBackend.Repositories.Interfaces;
 
 namespace PiPlanningBackend.Repositories.Implementations
 {
-    public class BoardRepository : IBoardRepository
+    public class BoardRepository(AppDbContext context) : IBoardRepository
     {
-        private readonly AppDbContext _context;
-
-        public BoardRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<Board> AddAsync(Board board)
         {
-            _context.Boards.Add(board);
-            await _context.SaveChangesAsync();
+            _ = _context.Boards.Add(board);
+            _ = await _context.SaveChangesAsync();
             return board;
         }
 
@@ -36,7 +31,7 @@ namespace PiPlanningBackend.Repositories.Implementations
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
         }
 
         public async Task<Board?> GetBoardWithSprintsAsync(int boardId)
@@ -66,25 +61,35 @@ namespace PiPlanningBackend.Repositories.Implementations
 
         public async Task<IEnumerable<Board>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null)
         {
-            var query = _context.Boards
+            IQueryable<Board> query = _context.Boards
                 .Include(b => b.Sprints)
                 .Include(b => b.Features)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
                 query = query.Where(b => b.Name.Contains(searchTerm));
+            }
 
             if (!string.IsNullOrWhiteSpace(organization))
+            {
                 query = query.Where(b => b.Organization == organization);
+            }
 
             if (!string.IsNullOrWhiteSpace(project))
+            {
                 query = query.Where(b => b.Project == project);
+            }
 
             if (isLocked.HasValue)
+            {
                 query = query.Where(b => b.IsLocked == isLocked.Value);
+            }
 
             if (isFinalized.HasValue)
+            {
                 query = query.Where(b => b.IsFinalized == isFinalized.Value);
+            }
 
             return await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
         }

@@ -14,7 +14,7 @@ namespace PiPlanningBackend.Middleware
             catch (Exception ex)
             {
                 // Extract correlation ID from context (set by RequestCorrelationMiddleware)
-                var correlationId = context.Items.TryGetValue("CorrelationId", out var correlationIdObj)
+                string correlationId = context.Items.TryGetValue("CorrelationId", out object? correlationIdObj)
                     ? correlationIdObj?.ToString() ?? "NO_CORRELATION_ID"
                     : "NO_CORRELATION_ID";
 
@@ -29,7 +29,7 @@ namespace PiPlanningBackend.Middleware
         {
             context.Response.ContentType = "application/json";
 
-            var (statusCode, message, details) = exception switch
+            (int statusCode, string message, string? details) = exception switch
             {
                 // Validation & Input Errors (400) - More specific types FIRST
                 ArgumentNullException ex

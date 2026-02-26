@@ -126,33 +126,39 @@
           <small>{{ MESSAGES.CREATE_BOARD.STORY_POINT_DEFAULT }}</small>
         </div>
 
-        <div *ngIf="formData.devTestToggle" class="form-row">
-          <div class="form-group">
-            <label for="azureDevStoryPointField">{{ LABELS.FIELDS.AZURE_DEV_STORY_POINT_FIELD }}</label>
-            <input
-              id="azureDevStoryPointField"
-              type="text"
-              class="form-input"
-              [(ngModel)]="formData.azureDevStoryPointField"
-              name="azureDevStoryPointField"
-              placeholder="{{ PLACEHOLDERS.DEV_POINT_FIELD }}"
-            />
-            <small>{{ MESSAGES.CREATE_BOARD.DEV_POINT_DEFAULT }}</small>
-          </div>
+        @if (formData.devTestToggle) {
+          <div class="form-row">
+            <div class="form-group">
+              <label for="azureDevStoryPointField">{{
+                LABELS.FIELDS.AZURE_DEV_STORY_POINT_FIELD
+              }}</label>
+              <input
+                id="azureDevStoryPointField"
+                type="text"
+                class="form-input"
+                [(ngModel)]="formData.azureDevStoryPointField"
+                name="azureDevStoryPointField"
+                placeholder="{{ PLACEHOLDERS.DEV_POINT_FIELD }}"
+              />
+              <small>{{ MESSAGES.CREATE_BOARD.DEV_POINT_DEFAULT }}</small>
+            </div>
 
-          <div class="form-group">
-            <label for="azureTestStoryPointField">{{ LABELS.FIELDS.AZURE_TEST_STORY_POINT_FIELD }}</label>
-            <input
-              id="azureTestStoryPointField"
-              type="text"
-              class="form-input"
-              [(ngModel)]="formData.azureTestStoryPointField"
-              name="azureTestStoryPointField"
-              placeholder="{{ PLACEHOLDERS.TEST_POINT_FIELD }}"
-            />
-            <small>{{ MESSAGES.CREATE_BOARD.TEST_POINT_DEFAULT }}</small>
+            <div class="form-group">
+              <label for="azureTestStoryPointField">{{
+                LABELS.FIELDS.AZURE_TEST_STORY_POINT_FIELD
+              }}</label>
+              <input
+                id="azureTestStoryPointField"
+                type="text"
+                class="form-input"
+                [(ngModel)]="formData.azureTestStoryPointField"
+                name="azureTestStoryPointField"
+                placeholder="{{ PLACEHOLDERS.TEST_POINT_FIELD }}"
+              />
+              <small>{{ MESSAGES.CREATE_BOARD.TEST_POINT_DEFAULT }}</small>
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <div class="form-actions">
@@ -160,14 +166,19 @@
           {{ LABELS.BUTTONS.CANCEL }}
         </button>
         <button type="submit" class="btn-primary" [disabled]="loading()">
-          <span *ngIf="!loading()">{{ LABELS.BUTTONS.CREATE_BOARD }}</span>
-          <span *ngIf="loading()">{{ LABELS.BUTTONS.CREATING }}</span>
+          @if (!loading()) {
+            <span>{{ LABELS.BUTTONS.CREATE_BOARD }}</span>
+          } @else {
+            <span>{{ LABELS.BUTTONS.CREATING }}</span>
+          }
         </button>
       </div>
 
-      <div *ngIf="error()" class="error-message">
-        {{ error() }}
-      </div>
+      @if (error()) {
+        <div class="error-message">
+          {{ error() }}
+        </div>
+      }
     </form>
   </div>
 </div>

@@ -40,9 +40,9 @@ export class App {
 
     // Listen to route changes to reset title when leaving board
     this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe((event: any) => {
-        if (!event.url.includes('/board/')) {
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        if (event instanceof NavigationEnd && !event.url.includes('/board/')) {
           this.title.set(LABELS.APP.TITLE);
           this.titleService.setTitle(LABELS.APP.TITLE);
         }

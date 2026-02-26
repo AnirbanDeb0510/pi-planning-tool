@@ -16,7 +16,7 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<List<TeamMemberDto>> GetTeamAsync(int boardId)
         {
-            var correlationId = _correlationIdProvider.GetCorrelationId();
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
             _logger.LogInformation(
                 "Get team members started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
                 correlationId, boardId);
@@ -39,7 +39,7 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<TeamMemberResponseDto> AddTeamMemberAsync(int boardId, TeamMemberDto memberDto)
         {
-            var correlationId = _correlationIdProvider.GetCorrelationId();
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
             _logger.LogInformation(
                 "Team member addition started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberName: {MemberName} | IsDev: {IsDev} | IsTest: {IsTest}",
                 correlationId, boardId, memberDto.Name, memberDto.IsDev, memberDto.IsTest);
@@ -48,10 +48,14 @@ namespace PiPlanningBackend.Services.Implementations
             {
                 // Validate input
                 if (string.IsNullOrWhiteSpace(memberDto.Name))
+                {
                     throw new ArgumentException("Team member name cannot be empty");
+                }
 
                 if (!memberDto.IsDev && !memberDto.IsTest)
+                {
                     throw new ArgumentException("Team member must have at least one role (Dev or Test)");
+                }
 
                 await _validationService.ValidateBoardExists(boardId);
                 Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
@@ -60,7 +64,7 @@ namespace PiPlanningBackend.Services.Implementations
                 // Guard: Prevent adding team members if board is finalized
                 _validationService.ValidateBoardNotFinalized(board, "add team members");
 
-                var member = new TeamMember
+                TeamMember member = new()
                 {
                     BoardId = boardId,
                     Name = memberDto.Name,
@@ -72,7 +76,7 @@ namespace PiPlanningBackend.Services.Implementations
 
                 foreach (Sprint sprint in board.Sprints)
                 {
-                    var (capacityDev, capacityTest) = GetDefaultCapacities(board, sprint, member);
+                    (int capacityDev, int capacityTest) = GetDefaultCapacities(board, sprint, member);
 
                     TeamMemberSprint tms = new()
                     {
@@ -98,20 +102,24 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<TeamMemberResponseDto?> UpdateTeamMemberAsync(int boardId, int memberId, TeamMemberDto memberDto)
         {
-            var correlationId = _correlationIdProvider.GetCorrelationId();
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
             _logger.LogInformation(
                 "Team member update started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberId: {MemberId} | NewName: {NewName}",
                 correlationId, boardId, memberId, memberDto.Name);
 
             // Validate input
             if (string.IsNullOrWhiteSpace(memberDto.Name))
+            {
                 throw new ArgumentException("Team member name cannot be empty");
+            }
 
             if (!memberDto.IsDev && !memberDto.IsTest)
+            {
                 throw new ArgumentException("Team member must have at least one role (Dev or Test)");
+            }
 
             await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
-            var member = await _teamRepository.GetTeamMemberAsync(memberId)
+            TeamMember member = await _teamRepository.GetTeamMemberAsync(memberId)
                 ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
             // Guard: Prevent updating team members if board is finalized
@@ -130,12 +138,12 @@ namespace PiPlanningBackend.Services.Implementations
             // If role changed, recalculate capacities for all sprints
             if (roleChanged)
             {
-                foreach (var tms in member.TeamMemberSprints)
+                foreach (TeamMemberSprint tms in member.TeamMemberSprints)
                 {
-                    var sprint = board.Sprints.FirstOrDefault(s => s.Id == tms.SprintId);
+                    Sprint? sprint = board.Sprints.FirstOrDefault(s => s.Id == tms.SprintId);
                     if (sprint != null)
                     {
-                        var (capacityDev, capacityTest) = GetDefaultCapacities(board, sprint, member);
+                        (int capacityDev, int capacityTest) = GetDefaultCapacities(board, sprint, member);
                         tms.CapacityDev = capacityDev;
                         tms.CapacityTest = capacityTest;
                     }
@@ -153,13 +161,13 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<bool> DeleteTeamMemberAsync(int boardId, int memberId)
         {
-            var correlationId = _correlationIdProvider.GetCorrelationId();
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
             _logger.LogInformation(
                 "Team member deletion started | CorrelationId: {CorrelationId} | BoardId: {BoardId} | MemberId: {MemberId}",
                 correlationId, boardId, memberId);
 
             await _validationService.ValidateTeamMemberBelongsToBoard(memberId, boardId);
-            var member = await _teamRepository.GetTeamMemberAsync(memberId)
+            TeamMember member = await _teamRepository.GetTeamMemberAsync(memberId)
                 ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
             // Guard: Prevent deleting team members if board is finalized
@@ -180,22 +188,22 @@ namespace PiPlanningBackend.Services.Implementations
 
         public async Task<TeamMemberSprint?> UpdateCapacityAsync(int boardId, int sprintId, int teamMemberId, UpdateTeamMemberCapacityDto dto)
         {
-            var correlationId = _correlationIdProvider.GetCorrelationId();
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
             _logger.LogInformation(
                 "Team member capacity update started | CorrelationId: {CorrelationId} | MemberId: {MemberId} | SprintId: {SprintId} | CapacityDev: {CapacityDev} | CapacityTest: {CapacityTest}",
                 correlationId, teamMemberId, sprintId, dto.CapacityDev, dto.CapacityTest);
 
             await _validationService.ValidateTeamMemberBelongsToBoard(teamMemberId, boardId);
             await _validationService.ValidateSprintBelongsToBoard(sprintId, boardId);
-            var tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId)
+            TeamMemberSprint tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId)
                 ?? throw new KeyNotFoundException("Team member sprint mapping not found.");
 
             // Calculate max allowed capacity (working days in sprint)
             int maxCapacity = 0;
             if (tms.Sprint!.StartDate.HasValue && tms.Sprint.EndDate.HasValue)
             {
-                var totalDays = (tms.Sprint.EndDate.Value - tms.Sprint.StartDate.Value).Days + 1;
-                maxCapacity = (int)Math.Floor((totalDays / 7.0) * 5);
+                int totalDays = (tms.Sprint.EndDate.Value - tms.Sprint.StartDate.Value).Days + 1;
+                maxCapacity = (int)Math.Floor(totalDays / 7.0 * 5);
             }
 
             // Validate capacity doesn't exceed sprint duration
@@ -229,14 +237,14 @@ namespace PiPlanningBackend.Services.Implementations
             // Calculate working days from sprint dates (5 working days per 7 calendar days)
             if (sprint.StartDate.HasValue && sprint.EndDate.HasValue)
             {
-                var totalDays = (sprint.EndDate.Value - sprint.StartDate.Value).Days + 1;
-                workingDays = (int)Math.Floor((totalDays / 7.0) * 5);
+                int totalDays = (sprint.EndDate.Value - sprint.StartDate.Value).Days + 1;
+                workingDays = (int)Math.Floor(totalDays / 7.0 * 5);
             }
 
             if (board.DevTestToggle)
             {
-                var dev = member.IsDev ? workingDays : 0;
-                var test = member.IsTest ? workingDays : 0;
+                int dev = member.IsDev ? workingDays : 0;
+                int test = member.IsTest ? workingDays : 0;
                 return (dev, test);
             }
 

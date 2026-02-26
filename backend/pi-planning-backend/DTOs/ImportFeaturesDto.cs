@@ -9,7 +9,7 @@ namespace PiPlanningBackend.DTOs
 
         [Required(ErrorMessage = "At least one Azure feature ID is required")]
         [MinLength(1, ErrorMessage = "At least one feature ID must be provided")]
-        public List<int> AzureFeatureIds { get; set; } = new();
+        public List<int> AzureFeatureIds { get; set; } = [];
 
         [StringLength(500)]
         public string? Pat { get; set; }
