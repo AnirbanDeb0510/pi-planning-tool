@@ -23,9 +23,20 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
 // DbContext
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+string databaseProvider = builder.Configuration["DatabaseProvider"] ?? "PostgreSQL";
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    if (databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
+    {
+        _ = options.UseSqlServer(connectionString);
+        return;
+    }
+
+    _ = options.UseNpgsql(connectionString);
+});
 
 // SignalR
 builder.Services.AddSignalR();
@@ -56,7 +67,13 @@ builder.Services.AddCors(options =>
 
 WebApplication app = builder.Build();
 
+app.Logger.LogInformation(
+    "Active database provider: {DatabaseProvider}",
+    databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase) ? "SqlServer" : "PostgreSQL");
+
 // Apply migrations at startup (optional for Dev & safe if you control migrations)
+// Note: EF Core automatically detects the active provider and applies only compatible migrations
+//       from Migrations/ (PostgreSQL) or Migrations_SqlServer/ (SQL Server) folders
 using (IServiceScope scope = app.Services.CreateScope())
 {
     AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
