@@ -84,7 +84,7 @@ dotnet publish -c Release -o ./publish
 cd ../../frontend/pi-planning-ui
 # Edit public/env.js with your backend URL
 npm install
-npm run build
+npm run build -- --base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/
 ```
 
 Then deploy `publish/` folder to IIS (see detailed steps below).
@@ -265,10 +265,16 @@ window["__env"]["patTtlMinutes"] = "10";
 ```powershell
 cd frontend/pi-planning-ui
 npm install
-npm run build
+npm run build -- --base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/
 ```
 
 This creates production build in: `dist/pi-planning-ui/browser/`
+
+**Validation:** Open `dist/pi-planning-ui/browser/index.html` and verify:
+
+```html
+<base href="/PIPlanningUI/" />
+```
 
 ### Step 3: Deploy to IIS
 
@@ -429,7 +435,7 @@ netsh advfirewall firewall add rule name="PI Planning Tool" dir=in action=allow 
 
 1. Check browser console for JavaScript errors
 2. Verify `env.js` is being loaded (check Network tab)
-3. Verify `base href="/"` in `index.html` matches IIS path
+3. Verify `base href="/PIPlanningUI/"` in `index.html` (build with `--base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/`)
 4. Clear browser cache
 
 ---

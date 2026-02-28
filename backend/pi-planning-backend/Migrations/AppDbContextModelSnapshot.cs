@@ -309,7 +309,7 @@ namespace PiPlanningBackend.Migrations
                     b.HasOne("PiPlanningBackend.Models.TeamMember", "TeamMember")
                         .WithMany("TeamMemberSprints")
                         .HasForeignKey("TeamMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Sprint");
