@@ -75,7 +75,7 @@ namespace PiPlanningBackend.Data
                 .HasMany(t => t.TeamMemberSprints)
                 .WithOne(tms => tms.TeamMember!)
                 .HasForeignKey(tms => tms.TeamMemberId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             // ---------------------
             // Indexes

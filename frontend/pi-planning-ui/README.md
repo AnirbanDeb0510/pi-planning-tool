@@ -2,6 +2,16 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.4 and uses Angular 15+ with standalone components and signals.
 
+## Project Note
+
+Architecture and deployment details in this file may lag behind backend/infrastructure changes.
+
+For current project-level guidance, use:
+
+- [../../README.md](../../README.md)
+- [../../IIS_DEPLOYMENT_GUIDE.md](../../IIS_DEPLOYMENT_GUIDE.md)
+- [../../ROADMAP_CURRENT.md](../../ROADMAP_CURRENT.md)
+
 ## Component Architecture (Phase 3A)
 
 The application uses a modern Angular architecture with standalone components and clear separation of concerns.

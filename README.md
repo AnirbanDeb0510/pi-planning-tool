@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Feb 26, 2026):** Phase 4.6 Code Quality Control completed. Comprehensive quality improvements: 0 linting errors/warnings (frontend), 0 build errors/warnings (backend), type-safe service interfaces, modern Angular control flow (@if/@for), formatter alignment, and interface contract enforcement. See [CHANGELOG.md](CHANGELOG.md) for detailed updates.
+**🎯 Current Status (Feb 28, 2026):** Phase 5 demo scope is complete with dual database provider support (PostgreSQL + SQL Server), IIS deployment validation, and SQL Server migration flow verified on Windows. Post-demo migration hardening is tracked in [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
 
 ---
 
@@ -49,7 +49,7 @@ pi-planning-tool/
 │   ├── Services/
 │   ├── Dockerfile
 │   └── Program.cs
-├── frontend/pi-planning-ui.                   # Angular 20 app
+├── frontend/pi-planning-ui/                   # Angular 20 app
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── components/
@@ -62,8 +62,11 @@ pi-planning-tool/
 ├── db/
 │   ├── Dockerfile
 │   ├── init.sql
+│   └── init-sqlserver.sql
 ├── docker-compose.yml
 ├── README.md
+├── IIS_DEPLOYMENT_GUIDE.md
+├── ROADMAP_CURRENT.md
 └── pi-planning-tool.sln
 
 ```
@@ -111,6 +114,8 @@ docker exec -it pi-postgres psql -U postgres -d PIPlanningDB
 From here, you can run SQL queries, check tables, etc.
 
 ### 3. Run EF Core Migrations
+
+> For SQL Server/IIS deployments, use the dedicated Windows runbook in [IIS_DEPLOYMENT_GUIDE.md](IIS_DEPLOYMENT_GUIDE.md).
 
 1. Navigate to backend:
 
