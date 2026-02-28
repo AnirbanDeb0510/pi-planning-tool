@@ -1,7 +1,7 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
-**Last Updated:** February 26, 2026  
-**Current Status:** Phase 4.6 Complete 🎉 — Code quality controls finalized; ready for Phase 5 (IIS/SQL Server)  
+**Last Updated:** February 28, 2026  
+**Current Status:** Phase 5 demo path validated (IIS + SQL Server); post-demo hardening planned for migration isolation  
 **Current Branch:** `main`
 
 ---
@@ -37,9 +37,10 @@
 
 ## 📋 UPCOMING PHASES
 
-### PHASE 5: Windows IIS + SQL Server Support — HIGH PRIORITY (FOR STAKEHOLDER DEMO)
+### ✅ PHASE 5: Windows IIS + SQL Server Support — COMPLETE
 
-**Status:** Not Started  
+**Status:** Completed (demo scope validated)  
+**Completed On:** February 28, 2026  
 **Estimated Time:** 5-6 hours  
 **Depends On:** Phase 4 & Phase 4.5 & Phase 4.6 (all complete)  
 **Why:** Enables flexible deployment (Docker + IIS); required for stakeholder demo; shows production readiness  
@@ -47,6 +48,14 @@
 **Frontend:** Same env.js approach for both Docker & IIS (Docker generates dynamically, IIS uses static)
 
 _Objective:_ Enable deployment to Windows IIS server with SQL Server database support (in addition to Docker + PostgreSQL).
+
+**Completion Notes (demo validation):**
+
+- SQL Server migration flow was executed and validated on Windows.
+- Backend startup + API checks passed with `DatabaseProvider=SqlServer`.
+- `__EFMigrationsHistory` and table creation were validated.
+- IIS deployment flow (backend + frontend as IIS applications) was documented and tested.
+- Post-demo hardening for provider-isolated migration assemblies is planned under **Phase 9**.
 
 ---
 
@@ -179,7 +188,7 @@ _No code changes needed, just verification:_
   - SQL Server 2016+ (local or remote)
   - Git installed (for cloning repo)
 
-- [ ] **Quick Start (5 steps):**
+- [ ] **Quick Start (6 steps):**
   1. Clone repo and navigate to `backend/pi-planning-backend/`
   2. Edit `appsettings.json`: Set `DatabaseProvider=SqlServer` + SQL Server connection string
   3. Build: `dotnet build -c Release`
@@ -442,8 +451,8 @@ _No code changes needed, just verification:_
 ### Phase 5 (IIS/SQL Server) - Decisions
 
 **✅ SQL Server version:** SQL Server 2019+ or Azure SQL Database
-**✅ Connection strings:** Both in appsettings.json, active one selected via `DB_PROVIDER` env var
-**✅ IIS setup:** Mixture of automated PowerShell script + manual step-by-step guide
+**✅ Connection selection:** `DatabaseProvider` config key (`PostgreSQL`/`SqlServer`) + single `DefaultConnection`
+**✅ IIS setup:** Manual, step-by-step guide with IIS Applications under Default Web Site (`/PIPlanningBackend`, `/PIPlanningUI`)
 **✅ Windows authentication:** Support is optional, not required
 **✅ Priority:** FOR STAKEHOLDER DEMO (before SignalR)
 
@@ -964,3 +973,95 @@ public class AzureContext
 ---
 
 **Ready to begin Phase 4?**
+
+---
+
+## 🛡️ FINAL PHASE (POST-DEMO): Multi-Provider Migration Hardening
+
+### PHASE 9: Provider-Isolated EF Core Migrations (Industry Standard)
+
+**Status:** Planned (post-demo)  
+**Priority:** High (stability + maintainability)  
+**Estimated Time:** 1-2 days  
+**Why now:** Demo path works, but current dual-provider migration setup can still cause provider cross-over risks when migrations are generated/applied in mixed environments.
+
+### Problem Context (Current Limitation)
+
+- Using `-o Migrations_SqlServer` only changes output folder; it does **not** isolate migration discovery at runtime.
+- EF Core can still discover migration metadata from the same assembly/context path.
+- This creates risk of PostgreSQL migration SQL being attempted on SQL Server (or vice versa).
+- Team has already observed this class of issue during Windows validation.
+
+### Industry-Standard Target Architecture
+
+- Keep single backend runtime project (`pi-planning-backend`) for app logic.
+- Split migrations into separate migration assemblies/projects:
+  - `pi-planning-backend.migrations.postgres`
+  - `pi-planning-backend.migrations.sqlserver`
+- In `Program.cs`, choose both provider **and** `MigrationsAssembly(...)` based on `DatabaseProvider`.
+- Keep `db.Database.Migrate()` in startup; it will apply only migrations from the selected provider assembly.
+
+---
+
+### **TASK 9.1: Create Separate Migration Projects**
+
+- [ ] Create two class library projects for migrations only (PostgreSQL + SQL Server).
+- [ ] Add references from each migration project to backend project (for `AppDbContext` and entities).
+- [ ] Add required EF provider package per migration project.
+
+### **TASK 9.2: Wire Provider-Specific Migration Assemblies in Runtime**
+
+- [ ] Update `Program.cs` DbContext registration:
+  - PostgreSQL path: `UseNpgsql(connectionString, x => x.MigrationsAssembly("...postgres"))`
+  - SQL Server path: `UseSqlServer(connectionString, x => x.MigrationsAssembly("...sqlserver"))`
+- [ ] Keep existing `DatabaseProvider` config switch.
+- [ ] Validate startup logs clearly show active provider + migration assembly.
+
+### **TASK 9.3: Re-Scaffold Baseline Migrations per Provider**
+
+- [ ] Generate baseline migration in postgres migration project.
+- [ ] Generate baseline migration in sqlserver migration project.
+- [ ] Ensure each project has its own `AppDbContextModelSnapshot.cs`.
+- [ ] Remove legacy mixed migration ambiguity from backend project after verification.
+
+### **TASK 9.4: Update Commands/Runbooks**
+
+- [ ] Update `IIS_DEPLOYMENT_GUIDE.md` with provider-specific EF commands using:
+  - `--project <migrations-project>`
+  - `--startup-project <backend-project>`
+- [ ] Update local dev and Docker instructions for PostgreSQL migration flow.
+- [ ] Add a short “Do/Don’t” section to prevent using folder-only migration separation.
+
+### **TASK 9.5: Add Validation Gates (CI + Manual)**
+
+- [ ] CI check: generate/apply migrations for PostgreSQL path in isolated test DB.
+- [ ] CI check: generate/apply migrations for SQL Server path in isolated test DB.
+- [ ] Manual smoke tests:
+  - Backend startup + auto-migrate works for each provider.
+  - `__EFMigrationsHistory` contains only expected provider migration set.
+
+---
+
+### Acceptance Criteria for Phase 9
+
+- ✅ Provider-specific migration assemblies exist and are used by runtime.
+- ✅ No provider cross-over during `dotnet ef migrations add` / `database update`.
+- ✅ SQL Server and PostgreSQL migrations can be generated independently without config hacks.
+- ✅ Startup migration succeeds cleanly for both deployment paths.
+- ✅ Documentation updated with exact provider-specific command examples.
+
+### Risks & Mitigations
+
+- **Risk:** Existing migration history mismatch in test environments  
+  **Mitigation:** Use clean test DBs for re-baseline and preserve production DBs until controlled cutover.
+
+- **Risk:** Team accidentally uses old migration commands  
+  **Mitigation:** Add command snippets in README/guide + CI guard checks.
+
+### Proposed Execution Order
+
+1. Scaffold migration projects + wire `MigrationsAssembly`.
+2. Regenerate baseline migrations per provider.
+3. Validate on local Docker (PostgreSQL) and Windows IIS (SQL Server).
+4. Update docs and CI checks.
+5. Merge as post-demo hardening milestone.

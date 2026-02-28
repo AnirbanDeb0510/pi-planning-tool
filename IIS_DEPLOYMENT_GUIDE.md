@@ -15,7 +15,7 @@
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Quick Start (5 Steps)](#quick-start)
+2. [Quick Start (6 Steps)](#quick-start)
 3. [Detailed Backend Deployment](#detailed-backend-deployment)
 4. [Detailed Frontend Deployment](#detailed-frontend-deployment)
 5. [IIS Configuration](#iis-configuration)
@@ -56,7 +56,7 @@
 
 ---
 
-## Quick Start (5 Steps)
+## Quick Start (6 Steps)
 
 ```powershell
 # 1. Clone repository
