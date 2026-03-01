@@ -94,7 +94,7 @@ export class Board implements OnInit, OnDestroy {
 
   // Board state from service
   protected board = this.boardService.board;
-  protected loading = this.boardService.loading;
+  public loading = this.boardService.loading; // Public for header component
   protected error = this.boardService.error;
 
   protected readonly LABELS = LABELS;
@@ -118,7 +118,7 @@ export class Board implements OnInit, OnDestroy {
   public finalizationError = signal<string | null>(null);
 
   @ViewChild(BoardModals)
-  private boardModals?: BoardModals;
+  public modals?: BoardModals;
 
   @ViewChild('boardContainer')
   private boardContainerRef?: ElementRef<HTMLDivElement>;
@@ -232,15 +232,15 @@ export class Board implements OnInit, OnDestroy {
   }
 
   public openImportFeatureModal(): void {
-    this.boardModals?.openImportFeatureModal();
+    this.modals?.openImportFeatureModal();
   }
 
   public openRefreshFeatureModal(feature: FeatureResponseDto): void {
-    this.boardModals?.openRefreshFeatureModal(feature);
+    this.modals?.openRefreshFeatureModal(feature);
   }
 
   public openDeleteFeatureModal(feature: FeatureResponseDto): void {
-    this.boardModals?.openDeleteFeatureModal(feature);
+    this.modals?.openDeleteFeatureModal(feature);
   }
 
   /**
@@ -629,17 +629,21 @@ export class Board implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if operation is blocked by finalization
+   * Check if operation is blocked by finalization or lock
    */
   isOperationBlocked(): boolean {
     const board = this.board();
-    return board?.isFinalized ?? false;
+    return board?.isLocked || board?.isFinalized || false;
   }
 
   /**
    * Get operation blocked error message
    */
   getOperationBlockedMessage(operation: string): string {
+    const board = this.board();
+    if (board?.isLocked) {
+      return MESSAGES.BOARD.OPERATION_BLOCKED_LOCKED;
+    }
     return MESSAGES.BOARD.OPERATION_BLOCKED(operation);
   }
 
@@ -648,6 +652,13 @@ export class Board implements OnInit, OnDestroy {
    */
   isBoardFinalized(): boolean {
     return this.board()?.isFinalized ?? false;
+  }
+
+  /**
+   * Check if board is locked (for child components)
+   */
+  isBoardLocked(): boolean {
+    return this.board()?.isLocked ?? false;
   }
 
   private getBoardRelativePosition(event: MouseEvent): { x: number; y: number } {
@@ -757,6 +768,16 @@ export class Board implements OnInit, OnDestroy {
       this.scheduleBoardReload(event.boardId);
     });
 
+    const boardLockStateChangedSub = this.signalrService.boardLockStateChanged$.subscribe((event) => {
+      if (event.boardId === this.connectedBoardId) {
+        const currentBoard = this.boardService.board();
+        if (currentBoard) {
+          // Directly update lock state without reloading entire board
+          this.boardService.updateBoardState({ ...currentBoard, isLocked: event.isLocked });
+        }
+      }
+    });
+
     const featureImportedSub = this.signalrService.featureImported$.subscribe((event) => {
       this.scheduleBoardReload(event.boardId);
     });
@@ -789,6 +810,7 @@ export class Board implements OnInit, OnDestroy {
       capacityUpdatedSub,
       boardFinalizedSub,
       boardRestoredSub,
+      boardLockStateChangedSub,
       featureImportedSub,
       featureRefreshedSub,
       featuresReorderedSub,

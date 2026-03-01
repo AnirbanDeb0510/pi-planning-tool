@@ -102,18 +102,21 @@
 Team member data is validated at three distinct layers for defense-in-depth:
 
 **Layer 1: Frontend Form Validation**
+
 - Component checks before API call (member name, capacity bounds)
 - HTML constraints prevent invalid input (step="1", min="0")
 - Error signals display to user, prevent form submission
 - Files: board.ts, board.html, board.css
 
 **Layer 2: DTO-Level Data Annotations**
+
 - ASP.NET Core automatic ModelState validation
 - [Required], [StringLength], [Range] attributes
 - Returns HTTP 400 if validation fails (prevents controller)
 - Files: TeamMemberDto.cs, UpdateTeamMemberCapacityDto.cs
 
 **Layer 3: Service Business Logic Validation**
+
 - Complex rules enforced in service methods
 - Add/Update: Name non-empty, at least one role (Dev or Test)
 - UpdateCapacity: Capacity ≤ sprint working days
@@ -123,6 +126,7 @@ Team member data is validated at three distinct layers for defense-in-depth:
 ### Capacity Type System
 
 All capacity fields use **int** (positive integers only):
+
 - Database columns: integer (not float)
 - C# models: int type
 - DTOs: int type
@@ -130,6 +134,7 @@ All capacity fields use **int** (positive integers only):
 - HTML inputs: type="number" step="1" prevents decimals
 
 **Working Days Calculation:**
+
 ```
 totalDays = (endDate - startDate).Days + 1
 workingDays = floor((totalDays / 7) * 5)
@@ -139,6 +144,7 @@ workingDays = floor((totalDays / 7) * 5)
 Example: Sprint Feb 10-21 (12 calendar days) = 8 working days max capacity
 
 ---
+
 ## 🔒 Security Architecture - PAT Validation
 
 ### Board Preview & Access Control
@@ -146,6 +152,7 @@ Example: Sprint Feb 10-21 (12 calendar days) = 8 working days max capacity
 The system implements a two-phase board loading strategy to prevent unauthorized data access:
 
 **Phase 1: Board Preview (Lightweight Metadata)**
+
 ```
 GET /api/boards/{id}/preview
 Returns: {
@@ -154,11 +161,13 @@ Returns: {
   isLocked, isFinalized
 }
 ```
+
 - NO sensitive data (features, stories, team members)
 - Used to determine if PAT validation required
 - Safe to call without authentication
 
 **Phase 2: PAT Validation Flow**
+
 ```
 1. User navigates to /boards/{id}
 2. Frontend calls preview endpoint
@@ -191,6 +200,7 @@ Returns: {
 - Types: `BoardSummaryDto` with optional `sampleFeatureAzureId`
 
 ---
+
 ## �🔄 Data Flow Examples
 
 ### Flow 1: Create Board → Auto-Generate Sprints
@@ -275,26 +285,78 @@ Returns: {
 9. Client: Updates local state, story appears in new sprint
 ```
 
-### Flow 4: Lock Board
+### Flow 4: Lock/Unlock Board (Password-Protected)
+
+**Lock Board Flow:**
 
 ```
-1. User clicks "Lock Board" button
+1. User clicks "Lock Board" button in board header
    ↓
-2. Client: PATCH /api/boards/{id}/lock { password?: "..." }
+2. Client: Opens lock modal
+   - If no password exists: Shows "Set Password" form (password + confirm)
+   - If password exists: Shows "Enter Password" form (single field)
    ↓
-3. BoardsController.LockBoard(id, password)
+3. User enters password → Client validates (required, match for new passwords)
    ↓
-4. BoardService.LockBoardAsync(id, password)
-   - Fetch board
-   - If board.PasswordHash exists, verify password
-   - board.IsLocked = true
+4. Client: PATCH /api/boards/{id}/lock { password: "..." }
    ↓
-5. Repository.UpdateAsync(board) → SaveChangesAsync()
+5. BoardsController.LockBoard(id, lockDto)
    ↓
-6. Return: HTTP 204 No Content
+6. BoardService.LockBoardAsync(id, password)
+   - Fetch board by ID
+   - Check if already locked → return 400 InvalidOperation
+   - Scenario A (no PasswordHash): Hash password with PBKDF2, store hash
+   - Scenario B (has PasswordHash): Verify password against hash → return 403 if invalid
+   - Set board.IsLocked = true
    ↓
-7. Client: DisableMove operations, highlight moved stories
+7. Repository.SaveChangesAsync()
+   ↓
+8. Return: BoardLockActionResponseDto { success, message, board, timestamp }
+   ↓
+9. SignalR: Broadcast "BoardLocked" event to all connected clients (exclude initiator)
+   ↓
+10. Client: Update board state (isLocked = true), show locked badge, disable all edit controls
 ```
+
+**Unlock Board Flow:**
+
+```
+1. User clicks "Unlock Board" button in board header
+   ↓
+2. Client: Opens unlock modal with password input
+   ↓
+3. User enters password → Client: PATCH /api/boards/{id}/unlock { password: "..." }
+   ↓
+4. BoardsController.UnlockBoard(id, unlockDto)
+   ↓
+5. BoardService.UnlockBoardAsync(id, password)
+   - Fetch board by ID
+   - Check if not locked → return 400 InvalidOperation
+   - Verify password against PasswordHash → return 403 if invalid
+   - Set board.IsLocked = false (KEEP PasswordHash for future locks)
+   ↓
+6. Repository.SaveChangesAsync()
+   ↓
+7. Return: BoardLockActionResponseDto { success, message, board, timestamp }
+   ↓
+8. SignalR: Broadcast "BoardUnlocked" event to all connected clients (exclude initiator)
+   ↓
+9. Client: Update board state (isLocked = false), hide locked badge, enable all edit controls
+```
+
+**Lock State Validation:**
+
+- All mutation operations check `ValidateBoardNotLocked()` before proceeding
+- If board is locked, throws `UnauthorizedAccessException` → 403 Forbidden response
+- Blocked operations: Import/delete features, move stories, add/edit team members, finalize/restore board
+- Frontend: All edit buttons disabled when `isLocked = true`, drag-drop disabled
+
+**Password Security:**
+
+- PBKDF2 hashing with 10,000 iterations
+- 16-byte cryptographically random salt per password
+- Constant-time comparison prevents timing attacks
+- Password persists across lock/unlock cycles (not cleared on unlock)
 
 ---
 
@@ -303,23 +365,30 @@ Returns: {
 ### Core Entities
 
 #### Board
+
 - **Purpose:** Represents a single PI planning session
 - **Key Fields:**
   - `Id` (PK)
   - `Name` (e.g., "PI 25 Planning")
-  - `Organization`, `Project` (Azure info)
+  - `Organization`, `Project` (Azure DevOps info)
   - `NumSprints`, `SprintDuration` (e.g., 2-week sprints)
-  - `DevTestToggle` (split points or total)
+  - `DevTestToggle` (split points or total capacity view)
   - `StartDate` (when PI starts)
-  - `IsLocked` (editing disabled)
-  - `PasswordHash` (optional: password protect)
-  - `IsFinalized` (visual mode for moved stories)
+  - `IsLocked` (password-protected read-only state)
+  - `PasswordHash` (PBKDF2 hash with salt, persists across lock/unlock)
+  - `IsFinalized` (visual tracking mode for story movements)
+  - `FinalizedAt` (timestamp when board was finalized, audit trail)
+- **States:**
+  - Can be locked WITHOUT being finalized (complete read-only)
+  - Can be finalized WITHOUT being locked (tracking mode, editing allowed)
+  - Can be BOTH locked AND finalized (read-only with movement tracking)
 - **Relationships:**
-  - Has many Sprints (auto-generated)
-  - Has many Features (imported from Azure)
+  - Has many Sprints (auto-generated based on NumSprints)
+  - Has many Features (imported from Azure DevOps)
   - Has many TeamMembers (configured by user)
 
 #### Sprint
+
 - **Purpose:** Iteration within a Board
 - **Key Fields:**
   - `Id` (PK)
@@ -333,6 +402,7 @@ Returns: {
   - Has many TeamMemberSprints (capacity per person)
 
 #### Feature
+
 - **Purpose:** Epic or feature from Azure DevOps
 - **Key Fields:**
   - `Id` (PK)
@@ -346,6 +416,7 @@ Returns: {
   - Has many UserStories
 
 #### UserStory
+
 - **Purpose:** Work item (usually a User Story) under a Feature
 - **Key Fields:**
   - `Id` (PK)
@@ -365,6 +436,7 @@ Returns: {
   - Can belong to Sprint (original)
 
 #### TeamMember
+
 - **Purpose:** Person on the team planning
 - **Key Fields:**
   - `Id` (PK)
@@ -377,6 +449,7 @@ Returns: {
   - Has many TeamMemberSprints
 
 #### TeamMemberSprint
+
 - **Purpose:** Capacity per team member per sprint
 - **Key Fields:**
   - `Id` (PK)
@@ -389,6 +462,7 @@ Returns: {
   - Belongs to Sprint
 
 #### CursorPresence
+
 - **Purpose:** Real-time cursor tracking (NOT persisted)
 - **Note:** Marked as `Ignored` in EF Core; only in SignalR messages
 - **Usage:** Ephemeral, no DB storage
@@ -405,15 +479,27 @@ POST /api/boards
   Response: Board { id, name, sprints: [...], ... }
 
 GET /api/boards/{id}
-  Response: BoardResponseDto { id, name, sprints, features, teamMembers, isLocked, ... }
+  Response: BoardResponseDto { id, name, sprints, features, teamMembers, isLocked, isFinalized, ... }
 
 PATCH /api/boards/{id}/lock
-  Request: { password?: string }
-  Response: 204 No Content
+  Request: BoardLockDto { password: string }
+  Response: BoardLockActionResponseDto { success: bool, message: string, board: BoardSummaryDto, timestamp: DateTime }
+  Errors: 400 (already locked), 403 (invalid password)
 
 PATCH /api/boards/{id}/unlock
-  Request: { password?: string }
-  Response: 204 No Content
+  Request: BoardUnlockDto { password: string }
+  Response: BoardLockActionResponseDto { success: bool, message: string, board: BoardSummaryDto, timestamp: DateTime }
+  Errors: 400 (not locked), 403 (invalid password)
+
+PATCH /api/boards/{id}/finalize
+  Request: {}
+  Response: { success: bool, message: string, board: BoardSummaryDto, warnings: string[], finalizedAt: DateTime }
+  Errors: 403 (board is locked)
+
+PATCH /api/boards/{id}/restore
+  Request: {}
+  Response: { success: bool, message: string, board: BoardSummaryDto }
+  Errors: 403 (board is locked)
 ```
 
 ### Features
@@ -488,13 +574,13 @@ public async Task MoveUserStoryAsync(int boardId, int storyId, int targetSprintI
 {
     // Fetch + validate
     var story = await _storyRepo.GetByIdAsync(storyId);
-    if (story == null || story.Feature?.BoardId != boardId) 
+    if (story == null || story.Feature?.BoardId != boardId)
         throw new UnauthorizedException();
-    
+
     // Business logic
     story.SprintId = targetSprintId;
     story.IsMoved = story.OriginalSprintId != story.SprintId;
-    
+
     // Persist
     await _storyRepo.UpdateAsync(story);
     await _storyRepo.SaveChangesAsync();
@@ -600,12 +686,13 @@ public async Task<Board?> GetBoardAsync(int boardId)
 
 ### Adding a New Feature
 
-1. **Define Domain Model** (Models/*)
+1. **Define Domain Model** (Models/\*)
    - Create entity class
    - Add properties
    - Configure EF relationships
 
-2. **Create Repository Interface** (Repositories/Interfaces/*)
+2. **Create Repository Interface** (Repositories/Interfaces/\*)
+
    ```csharp
    public interface IMyRepository
    {
@@ -617,18 +704,20 @@ public async Task<Board?> GetBoardAsync(int boardId)
    }
    ```
 
-3. **Implement Repository** (Repositories/Implementations/*)
+3. **Implement Repository** (Repositories/Implementations/\*)
+
    ```csharp
    public class MyRepository : IMyRepository
    {
        private readonly AppDbContext _context;
        public MyRepository(AppDbContext context) => _context = context;
-       
+
        // Implement methods
    }
    ```
 
-4. **Create Service Interface** (Services/Interfaces/*)
+4. **Create Service Interface** (Services/Interfaces/\*)
+
    ```csharp
    public interface IMyService
    {
@@ -637,7 +726,8 @@ public async Task<Board?> GetBoardAsync(int boardId)
    }
    ```
 
-5. **Implement Service** (Services/Implementations/*)
+5. **Implement Service** (Services/Implementations/\*)
+
    ```csharp
    public class MyService : IMyService
    {
@@ -646,7 +736,8 @@ public async Task<Board?> GetBoardAsync(int boardId)
    }
    ```
 
-6. **Create DTO** (DTOs/*)
+6. **Create DTO** (DTOs/\*)
+
    ```csharp
    public class MyDto
    {
@@ -655,7 +746,8 @@ public async Task<Board?> GetBoardAsync(int boardId)
    }
    ```
 
-7. **Create Controller** (Controllers/*)
+7. **Create Controller** (Controllers/\*)
+
    ```csharp
    [ApiController]
    [Route("api/[controller]")]
@@ -671,12 +763,14 @@ public async Task<Board?> GetBoardAsync(int boardId)
    ```
 
 8. **Register in DI** (Program.cs)
+
    ```csharp
    builder.Services.AddScoped<IMyRepository, MyRepository>();
    builder.Services.AddScoped<IMyService, MyService>();
    ```
 
 9. **Create Migration**
+
    ```bash
    dotnet ef migrations add AddMyEntity
    dotnet ef database update
@@ -691,16 +785,16 @@ public async Task<Board?> GetBoardAsync(int boardId)
 
 ## 📚 Design Decisions & Why
 
-| Decision | Reason |
-|----------|--------|
-| **Placeholder Sprint 0** | User control over distribution; avoids auto-split confusion |
-| **SprintId + OriginalSprintId** | Enables move tracking; clean finalization logic |
-| **DevTestToggle** | Flexible story point model; fits Agile (some stories test, some code) |
-| **Reuse DTOs** | Simpler; Azure response → Import DTOs → API response are same shape |
-| **Service-centric logic** | Testable, reusable, controllers stay thin |
-| **Eager loading** | Single round-trip better than N+1; reasonable for board sizes |
-| **CursorPresence ignored** | Ephemeral; no need for DB storage; SignalR only |
-| **Password hashing** | Basic security for board locking |
+| Decision                        | Reason                                                                |
+| ------------------------------- | --------------------------------------------------------------------- |
+| **Placeholder Sprint 0**        | User control over distribution; avoids auto-split confusion           |
+| **SprintId + OriginalSprintId** | Enables move tracking; clean finalization logic                       |
+| **DevTestToggle**               | Flexible story point model; fits Agile (some stories test, some code) |
+| **Reuse DTOs**                  | Simpler; Azure response → Import DTOs → API response are same shape   |
+| **Service-centric logic**       | Testable, reusable, controllers stay thin                             |
+| **Eager loading**               | Single round-trip better than N+1; reasonable for board sizes         |
+| **CursorPresence ignored**      | Ephemeral; no need for DB storage; SignalR only                       |
+| **Password hashing**            | PBKDF2 with 10K iterations + random salt for secure board locking     |
 
 ---
 
@@ -724,20 +818,21 @@ Board (Main Container)
 
 ### Subcomponent Details
 
-| Component | Purpose | Key Features | Files |
-|-----------|---------|--------------|-------|
-| **BoardHeader** | Top bar with mode toggles | Dev/Test toggle, finalization banner | board-header.ts/html/css |
-| **TeamBar** | Team member management | Add/edit/delete members, modal dialogs | team-bar.ts/html/css |
-| **CapacityRow** | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode | capacity-row.ts/html/css |
-| **SprintHeader** | Column headers | Sprint names, load/capacity bars, metrics | sprint-header.ts/html/css |
-| **FeatureRow** | Feature & story container | Drag-drop zones, story cards, dev/test split | feature-row.ts/html/css |
-| **BoardModals** | Dialog overlays | Feature import, finalization warnings, delete | board-modals.ts/html/css |
+| Component        | Purpose                     | Key Features                                  | Files                     |
+| ---------------- | --------------------------- | --------------------------------------------- | ------------------------- |
+| **BoardHeader**  | Top bar with mode toggles   | Dev/Test toggle, finalization banner          | board-header.ts/html/css  |
+| **TeamBar**      | Team member management      | Add/edit/delete members, modal dialogs        | team-bar.ts/html/css      |
+| **CapacityRow**  | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode    | capacity-row.ts/html/css  |
+| **SprintHeader** | Column headers              | Sprint names, load/capacity bars, metrics     | sprint-header.ts/html/css |
+| **FeatureRow**   | Feature & story container   | Drag-drop zones, story cards, dev/test split  | feature-row.ts/html/css   |
+| **BoardModals**  | Dialog overlays             | Feature import, finalization warnings, delete | board-modals.ts/html/css  |
 
 ### Phase 3B: Application Architecture Restructuring
 
 Migrated from flat folder structure to **domain-driven architecture** for improved scalability and maintainability:
 
 **New Folder Structure:**
+
 ```
 frontend/pi-planning-ui/src/
 ├── app/
@@ -777,15 +872,16 @@ frontend/pi-planning-ui/src/
 
 **Service Split (from 850-line monolith):**
 
-| Service | Responsibility | LOC | Key Methods |
-|---------|-----------------|-----|------------|
-| **board.service.ts** | Board fetch, PAT handling, state | 200 | `getBoard()`, `validatePAT()`, `setBoardState()` |
-| **feature.service.ts** | Feature import/refresh/reorder | 150 | `importFeatures()`, `refreshFeature()`, `reorderFeatures()` |
-| **team.service.ts** | Team members & capacity | 120 | `addMember()`, `updateCapacity()`, `deleteMember()` |
-| **story.service.ts** | Story movement between sprints | 100 | `moveStory()`, `refreshStory()`, `getStoryPosition()` |
-| **sprint.service.ts** | Sprint utilities & calculations | 80 | `calculateMetrics()`, `getSprintPath()`, `formatSprintName()` |
+| Service                | Responsibility                   | LOC | Key Methods                                                   |
+| ---------------------- | -------------------------------- | --- | ------------------------------------------------------------- |
+| **board.service.ts**   | Board fetch, PAT handling, state | 200 | `getBoard()`, `validatePAT()`, `setBoardState()`              |
+| **feature.service.ts** | Feature import/refresh/reorder   | 150 | `importFeatures()`, `refreshFeature()`, `reorderFeatures()`   |
+| **team.service.ts**    | Team members & capacity          | 120 | `addMember()`, `updateCapacity()`, `deleteMember()`           |
+| **story.service.ts**   | Story movement between sprints   | 100 | `moveStory()`, `refreshStory()`, `getStoryPosition()`         |
+| **sprint.service.ts**  | Sprint utilities & calculations  | 80  | `calculateMetrics()`, `getSprintPath()`, `formatSprintName()` |
 
 **Barrel Exports (8 files):**
+
 - `core/index.ts` - UserService
 - `shared/models/index.ts` - All DTOs
 - `shared/components/index.ts` - Story-card, Enter-your-name
@@ -796,6 +892,7 @@ frontend/pi-planning-ui/src/
 - `features/home/index.ts` - Home component
 
 **TypeScript Path Aliases (tsconfig.json):**
+
 ```json
 {
   "compilerOptions": {
@@ -809,12 +906,13 @@ frontend/pi-planning-ui/src/
 ```
 
 **Import Pattern Before & After:**
+
 ```typescript
 // Before (flat structure)
-import { BoardService } from '../../../services/board.service';
+import { BoardService } from "../../../services/board.service";
 
 // After (domain-driven with alias)
-import { BoardService } from '@features/board/services';
+import { BoardService } from "@features/board/services";
 ```
 
 ### State Management & Service Layer
@@ -827,6 +925,7 @@ import { BoardService } from '@features/board/services';
 ### CSS Architecture & Dark Mode
 
 **CSS Distribution (Total: 2046 lines):**
+
 - board.css: 214 lines (global layout, PAT modal, responsive)
 - board-header.css: 106 lines (toggle styles, banner)
 - board-modals.css: 470 lines (modal dialogs, form styling)
@@ -836,6 +935,7 @@ import { BoardService } from '@features/board/services';
 - team-bar.css: 400 lines (member chips, member modals)
 
 **Dark Mode Coverage (All 5 Routes):**
+
 - Home (/) - Gradient bg + bright text
 - Board List (/boards) - Cards, filters, search
 - Create Board (/boards/new) - Form inputs, checkboxes
@@ -843,6 +943,7 @@ import { BoardService } from '@features/board/services';
 - Welcome (/name) - Modal + input
 
 **Dark Theme Implementation:**
+
 - All 80+ UI elements use `:host-context(.dark-theme)` selectors (70+ instances) for app-controlled theming (not OS-detected)
 - Text color: #e8f0ff (light blue) for improved contrast vs #374151 default
 - Input styling: box-sizing border-box to prevent overflow
@@ -879,14 +980,14 @@ Board (Main Container)
 
 ### Subcomponent Details
 
-| Component | Purpose | Key Features | Files |
-|-----------|---------|--------------|-------|
-| **BoardHeader** | Top bar with mode toggles | Dev/Test toggle, finalization banner | board-header.ts/html/css |
-| **TeamBar** | Team member management | Add/edit/delete members, modal dialogs | team-bar.ts/html/css |
-| **CapacityRow** | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode | capacity-row.ts/html/css |
-| **SprintHeader** | Column headers | Sprint names, load/capacity bars, metrics | sprint-header.ts/html/css |
-| **FeatureRow** | Feature & story container | Drag-drop zones, story cards, dev/test split | feature-row.ts/html/css |
-| **BoardModals** | Dialog overlays | Feature import, finalization warnings, delete | board-modals.ts/html/css |
+| Component        | Purpose                     | Key Features                                  | Files                     |
+| ---------------- | --------------------------- | --------------------------------------------- | ------------------------- |
+| **BoardHeader**  | Top bar with mode toggles   | Dev/Test toggle, finalization banner          | board-header.ts/html/css  |
+| **TeamBar**      | Team member management      | Add/edit/delete members, modal dialogs        | team-bar.ts/html/css      |
+| **CapacityRow**  | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode    | capacity-row.ts/html/css  |
+| **SprintHeader** | Column headers              | Sprint names, load/capacity bars, metrics     | sprint-header.ts/html/css |
+| **FeatureRow**   | Feature & story container   | Drag-drop zones, story cards, dev/test split  | feature-row.ts/html/css   |
+| **BoardModals**  | Dialog overlays             | Feature import, finalization warnings, delete | board-modals.ts/html/css  |
 
 ### State Management
 
@@ -897,6 +998,7 @@ Board (Main Container)
 ### CSS Architecture
 
 **CSS Distribution (Total: 2046 lines):**
+
 - board.css: 214 lines (global layout, PAT modal, responsive)
 - board-header.css: 106 lines (toggle styles, banner)
 - board-modals.css: 470 lines (modal dialogs, form styling)
@@ -978,4 +1080,3 @@ Before marking a feature "done":
 ---
 
 **Keep this as your reference. Update as you build!**
-

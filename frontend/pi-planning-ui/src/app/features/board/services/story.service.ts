@@ -4,6 +4,7 @@ import { IStoryApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { FeatureResponseDto, UserStoryDto } from '../../../shared/models/board.dto';
 import { MESSAGES } from '../../../shared/constants';
+import { getErrorMessage } from '../../../core/utils/error-handler.util';
 
 /**
  * Story Service
@@ -53,10 +54,11 @@ export class StoryService {
       // Sync with backend (if using real API)
       this.storyApi.moveStory(currentBoard.id, storyId, toSprintId).subscribe({
         error: (error) => {
+          const message = getErrorMessage(error, MESSAGES.STORY.MOVE_FAILED);
           console.error('Error moving story:', error);
           // Rollback on error
           this.boardService.updateBoardState(currentBoard);
-          this.boardService.setError(MESSAGES.STORY.MOVE_FAILED);
+          this.boardService.setError(message);
         },
       });
     }

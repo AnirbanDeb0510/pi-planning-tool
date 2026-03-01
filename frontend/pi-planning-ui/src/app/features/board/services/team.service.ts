@@ -4,6 +4,7 @@ import { ITeamApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { TeamMemberResponseDto } from '../../../shared/models/board.dto';
 import { MESSAGES } from '../../../shared/constants';
+import { getErrorMessage } from '../../../core/utils/error-handler.util';
 
 /**
  * Team Service
@@ -72,10 +73,11 @@ export class TeamService {
         this.boardService.updateBoardState(finalBoard);
       },
       error: (error) => {
+        const message = getErrorMessage(error, MESSAGES.TEAM.ADD_FAILED);
         console.error('Error adding team member:', error);
         // Rollback on error
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError(MESSAGES.TEAM.ADD_FAILED);
+        this.boardService.setError(message);
       },
     });
   }
@@ -115,9 +117,10 @@ export class TeamService {
         this.boardService.updateBoardState(finalBoard);
       },
       error: (error) => {
+        const message = getErrorMessage(error, MESSAGES.TEAM.UPDATE_FAILED);
         console.error('Error updating team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError(MESSAGES.TEAM.UPDATE_FAILED);
+        this.boardService.setError(message);
       },
     });
   }
@@ -139,9 +142,10 @@ export class TeamService {
       next: () => {
       },
       error: (error) => {
+        const message = getErrorMessage(error, MESSAGES.TEAM.REMOVE_FAILED);
         console.error('Error removing team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError(MESSAGES.TEAM.REMOVE_FAILED);
+        this.boardService.setError(message);
       },
     });
   }
@@ -180,10 +184,11 @@ export class TeamService {
         next: () => {
         },
         error: (error) => {
+          const message = getErrorMessage(error, MESSAGES.TEAM.CAPACITY_FAILED);
           console.error('Error updating capacity:', error);
           // Rollback on error
           this.boardService.updateBoardState(currentBoard);
-          this.boardService.setError(MESSAGES.TEAM.CAPACITY_FAILED);
+          this.boardService.setError(message);
         },
       });
   }

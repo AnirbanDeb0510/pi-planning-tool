@@ -4,6 +4,7 @@ import { IFeatureApiService, IAzureApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { firstValueFrom } from 'rxjs';
 import { MESSAGES } from '../../../shared/constants';
+import { getErrorMessage } from '../../../core/utils/error-handler.util';
 
 /**
  * Feature Service
@@ -38,9 +39,9 @@ export class FeatureService {
       // Step 3: Reload the board to ensure UI matches backend state
       this.boardService.loadBoard(boardId);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error, MESSAGES.FEATURE.IMPORT_FAILED);
       console.error('Error importing feature:', error);
-      throw new Error(message || MESSAGES.FEATURE.IMPORT_FAILED);
+      throw new Error(message);
     }
   }
 
@@ -62,9 +63,9 @@ export class FeatureService {
       // Reload board to show updated data
       this.boardService.loadBoard(boardId);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error, MESSAGES.FEATURE.REFRESH_FAILED);
       console.error('Error refreshing feature:', error);
-      throw new Error(message || MESSAGES.FEATURE.REFRESH_FAILED);
+      throw new Error(message);
     }
   }
 
@@ -79,9 +80,9 @@ export class FeatureService {
       await firstValueFrom(this.featureApi.reorderFeatures(boardId, features));
       this.boardService.loadBoard(boardId);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error, MESSAGES.FEATURE.REORDER_FAILED);
       console.error('Error reordering features:', error);
-      throw new Error(message || MESSAGES.FEATURE.REORDER_FAILED);
+      throw new Error(message);
     }
   }
 
@@ -95,9 +96,9 @@ export class FeatureService {
       // Reload board to show updated data
       this.boardService.loadBoard(boardId);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorMessage(error, MESSAGES.FEATURE.DELETE_FAILED);
       console.error('Error deleting feature:', error);
-      throw new Error(message || MESSAGES.FEATURE.DELETE_FAILED);
+      throw new Error(message);
     }
   }
 }

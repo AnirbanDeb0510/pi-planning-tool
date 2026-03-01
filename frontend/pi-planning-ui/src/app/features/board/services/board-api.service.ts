@@ -18,6 +18,7 @@ import {
   BoardCreateDto,
   BoardCreatedDto,
   BoardSummaryDto,
+  BoardLockActionResponseDto,
   BoardFilters,
 } from '../../../shared/models/board-api.dto';
 import {
@@ -76,12 +77,12 @@ export class BoardApiService implements IBoardApiService {
     return this.http.get<BoardSummaryDto>(BOARD_API.GET_BOARD_PREVIEW(boardId));
   }
 
-  lockBoard(id: number): Observable<void> {
-    return this.http.patch<void>(BOARD_API.LOCK_BOARD(id), {});
+  lockBoard(id: number, password: string): Observable<BoardLockActionResponseDto> {
+    return this.http.patch<BoardLockActionResponseDto>(BOARD_API.LOCK_BOARD(id), { password });
   }
 
-  unlockBoard(id: number): Observable<void> {
-    return this.http.patch<void>(BOARD_API.UNLOCK_BOARD(id), {});
+  unlockBoard(id: number, password: string): Observable<BoardLockActionResponseDto> {
+    return this.http.patch<BoardLockActionResponseDto>(BOARD_API.UNLOCK_BOARD(id), { password });
   }
 
   validateBoardForFinalization(id: number): Observable<string[]> {

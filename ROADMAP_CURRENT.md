@@ -1,9 +1,9 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
 **Last Updated:** March 2, 2026  
-**Current Status:** Phase 7 IN PROGRESS ⚙️ (Backend complete ✅, Frontend pending)  
+**Current Status:** Phase 7 COMPLETE ✅  
 **Current Branch:** `main`  
-**Next Phase:** Phase 7 - Board Lock/Unlock Frontend Implementation
+**Next Phase:** Phase 8 - Documentation & Integration Testing
 
 ---
 
@@ -11,10 +11,9 @@
 
 **Immediate Next Steps:**
 
-1. **Phase 7** - Board Lock/Unlock Endpoints (2-3 hrs)
-2. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
-3. **Phase 9** - Cloud/Hosting Deployment (1-2 days)
-4. **Phase 10** - Provider-Isolated EF Core Migrations (1-2 days, post-demo hardening)
+1. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
+2. **Phase 9** - Cloud/Hosting Deployment (1-2 days)
+3. **Phase 10** - Provider-Isolated EF Core Migrations (1-2 days, post-demo hardening)
 
 ## ✅ COMPLETED PHASES (Summary)
 
@@ -39,14 +38,26 @@
 - Milestones A/B/C delivered and manually validated
 - Production-ready: presence, cursor sync, and all mutation broadcasts
 
+### Phase 7 — Board Lock/Unlock Feature
+
+- Completed on Mar 2, 2026
+- Backend: Password-based lock/unlock endpoints with PBKDF2 hashing
+- Frontend: Lock/unlock modals with password validation and error handling
+- UI: Redesigned board header with status badges and action buttons
+- Real-time: SignalR broadcasts for lock state changes
+- Validation: All mutations blocked when board is locked (403 enforcement)
+- UX: Error banners, disabled controls, dark mode support
+- Quality: All strings externalized to constants, clean build/lint
+
 ---
 
 ## 📋 UPCOMING PHASES
 
-### PHASE 7: Board Lock/Unlock Endpoints — IN PROGRESS
+### PHASE 7: Board Lock/Unlock Feature — ✅ COMPLETE
 
-**Status:** Backend Complete ✅, Frontend Pending  
-**Estimated Time:** 2-3 hours (1.5 hours completed, ~1-1.5 hours remaining)  
+**Status:** Complete ✅  
+**Completed:** March 2, 2026  
+**Total Time:** ~4 hours  
 **Depends On:** Phase 4, 5, 6
 **Why:** Enables board state control; provides complete workflow control alongside Finalization
 
@@ -134,71 +145,89 @@
 
 #### Frontend Implementation:
 
-**TASK 7.5: Create Lock/Unlock Modals**
+**TASK 7.5: Create Lock/Unlock Modals** ✅ COMPLETE
 
-- [ ] `LockBoardModal` component with password inputs
-  - Show "Set password" form if no password exists
-  - Show "Enter password" form if password exists
-  - Include password confirmation for new passwords
-  - Display error messages for invalid passwords
-- [ ] `UnlockBoardModal` component with password input
+- [x] `LockBoardModal` component with password inputs in `board-modals` component
+  - Set password form when no password exists (password + confirm)
+  - Enter password form when password exists (single field)
+  - Password validation with mismatch checking
+  - Error messages displayed for invalid passwords
+- [x] `UnlockBoardModal` component with password input
   - Single password field
   - Display error on invalid password
+  - Modal-level error handling (no navigation away)
 
-**TASK 7.6: Add Lock/Unlock UI to Board Header**
+**TASK 7.6: Add Lock/Unlock UI to Board Header** ✅ COMPLETE
 
-- [ ] Add lock/unlock button in `board-header` component
-  - Button shows based on `board().isLocked` state
-  - Icon: `lock` (when unlocked) / `lock_open` (when locked)
-  - Text: "Lock Board" / "Unlock Board"
-  - Click handler opens appropriate modal
-- [ ] Update button disabled state based on loading
-- [ ] Show locked badge in board header (similar to finalized badge)
+- [x] Redesigned `board-header` component with modern layout
+  - LEFT section: Dev/Test toggle + Status badges (Locked, Finalized)
+  - RIGHT section: Action buttons (Finalize/Restore, Lock/Unlock, Refresh)
+  - Lock/Unlock button toggles based on `board().isLocked` state
+  - Icons: `lock` (when unlocked) / `lock_open` (when locked)
+  - Click handlers open appropriate modals
+- [x] Button disabled states properly handled
+  - Finalize disabled when locked
+  - Restore disabled when locked OR during loading
+  - Refresh disabled during loading
+- [x] Status badges show lock/finalized states independently
+  - Red "Locked" badge with lock icon
+  - Green "Finalized" badge with check icon
+  - Both can appear simultaneously
 
-**TASK 7.7: Add Real-Time Lock State Updates**
+**TASK 7.7: Add Real-Time Lock State Updates** ✅ COMPLETE
 
-- [ ] Subscribe to SignalR event: `"BoardLocked"`
+- [x] Subscribe to SignalR event: `"BoardLocked"`
   - Update board state: `isLocked = true`
-  - Show toast notification: "🔒 Board locked"
-  - Disable all edit buttons immediately
-- [ ] Subscribe to SignalR event: `"BoardUnlocked"`
+  - Real-time UI update (badge appears, buttons disable)
+- [x] Subscribe to SignalR event: `"BoardUnlocked"`
   - Update board state: `isLocked = false`
-  - Show toast notification: "🔓 Board unlocked"
-  - Enable edit buttons immediately
+  - Real-time UI update (badge disappears, buttons enable)
+- [x] SignalR connection ID added to request headers to exclude initiator
 
-**TASK 7.8: Add Refresh Button**
+**TASK 7.8: Add Refresh Button** ✅ COMPLETE
 
-- [ ] Add refresh button in `board-header` component
-  - Icon: `refresh` with spinning animation during load
+- [x] Refresh button in `board-header` component
+  - Icon: `refresh` with spinning animation during load (CSS keyframes)
   - Click handler: `this.boardService.loadBoard(boardId)`
   - Disabled during loading
-  - Show toast: "Board refreshed"
+  - Positioned as rightmost button in header
 
-**TASK 7.9: Block Operations on Locked Board**
+**TASK 7.9: Block Operations on Locked Board** ✅ COMPLETE
 
-- [ ] Update all mutation API calls to check `isLocked`
-- [ ] Disable UI controls (buttons, drag-drop) when `isLocked = true`
-- [ ] Show readonly indicators in UI
-- [ ] Handle 403 errors with user-friendly messages
+- [x] All mutation operations return 403 when board is locked
+- [x] UI controls disabled when `isLocked = true`:
+  - Add feature button disabled
+  - Add team member button disabled
+  - Edit/delete buttons disabled
+  - Drag-drop disabled via `[cdkDragDisabled]` binding
+  - Finalize/restore buttons disabled
+- [x] Error handling without navigation away:
+  - Created error banner below header for finalize/restore errors
+  - Lock/unlock errors shown in modals
+  - HTTP client extracts `error.details` for specific messages
+  - GlobalExceptionHandlingMiddleware returns 403 for UnauthorizedAccessException
+- [x] Dark mode support for all new UI elements
 
-#### Acceptance Criteria:
+#### Acceptance Criteria: ✅ ALL VERIFIED
 
-- [ ] Lock endpoint works - Scenario A (new password) creates and locks
-- [ ] Lock endpoint works - Scenario B (existing password) validates and locks
-- [ ] Unlock endpoint validates password and removes lock flag
-- [ ] Password persists across lock/unlock cycles
-- [ ] Invalid password attempts rejected with 403 Unauthorized
-- [ ] All mutation operations blocked when locked (return 403)
-- [ ] Locked board shows lock badge independent from finalized state
-- [ ] Refresh button reloads board data without page refresh
-- [ ] SignalR broadcasts lock/unlock events to all connected users
-- [ ] Real-time UI updates when lock status changes via SignalR
-- [ ] Board can be locked without being finalized
-- [ ] Board can be finalized without being locked
-- [ ] Board can be both finalized AND locked simultaneously
-- [ ] Load board does NOT require password (read-only by default)
-- [ ] All UI controls disabled when board is locked
-- [ ] Build: 0 errors, all tests passing
+- [x] Lock endpoint works - Scenario A (new password) creates and locks
+- [x] Lock endpoint works - Scenario B (existing password) validates and locks
+- [x] Unlock endpoint validates password and removes lock flag
+- [x] Password persists across lock/unlock cycles
+- [x] Invalid password attempts rejected with 403 Forbidden
+- [x] All mutation operations blocked when locked (return 403)
+- [x] Locked board shows lock badge independent from finalized state
+- [x] Refresh button reloads board data without page refresh
+- [x] SignalR broadcasts lock/unlock events to all connected users
+- [x] Real-time UI updates when lock status changes via SignalR
+- [x] Board can be locked without being finalized
+- [x] Board can be finalized without being locked
+- [x] Board can be both finalized AND locked simultaneously
+- [x] Load board does NOT require password (read-only by default)
+- [x] All UI controls disabled when board is locked
+- [x] Build: 0 errors, 0 warnings (888.62 kB bundle)
+- [x] Lint: Clean (0 errors, 0 warnings)
+- [x] Manual testing: Complete and verified
 
 ---
 

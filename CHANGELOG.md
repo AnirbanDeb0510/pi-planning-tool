@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added - Phase 7: Board Lock/Unlock (Backend) (Mar 2, 2026)
+### Added - Phase 7: Board Lock/Unlock Feature (Mar 2, 2026) ✅ COMPLETE
+
+**Backend Implementation:**
 
 - **Lock/Unlock DTOs:**
   - Created `BoardLockDto` and `BoardUnlockDto` for password-based operations
-  - Lock/unlock operations return `BoardSummaryDto` with updated state
+  - Lock/unlock operations return `BoardLockActionResponseDto` envelope wrapping `BoardSummaryDto`
 
 - **Password-Protected Lock Endpoints:**
   - `PATCH /api/boards/{id}/lock` - Lock board with password (two scenarios)
@@ -21,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Scenario B: Subsequent locks verify existing password before locking
   - `PATCH /api/boards/{id}/unlock` - Unlock board with password verification
     - Password hash persists after unlock for future lock operations
-  - Both endpoints return 401 Unauthorized for invalid passwords
+  - Both endpoints return 403 Forbidden for invalid passwords (via `UnauthorizedAccessException`)
   - Already-locked/unlocked states return 400 InvalidOperation
 
 - **Lock Validation Service:**
@@ -35,23 +37,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensures complete read-only enforcement when board is locked
 
 - **SignalR Real-Time Lock Events:**
-  - Created `BoardLockStateChangedDto` for unified lock/unlock broadcasts
-  - Lock endpoint broadcasts `"BoardLockStateChanged"` event (isLocked: true)
-  - Unlock endpoint broadcasts `"BoardLockStateChanged"` event (isLocked: false)
+  - Created `BoardLockedDto` and `BoardUnlockedDto` for lock state broadcasts
+  - Lock endpoint broadcasts `"BoardLocked"` event with board state
+  - Unlock endpoint broadcasts `"BoardUnlocked"` event with board state
   - Real-time notifications to all connected users on board
+  - Connection ID header excludes initiator from receiving their own events
 
-- **BoardService Refactoring:**
-  - Removed redundant transaction wrappers from Lock/Unlock/Restore methods
-  - Transactions retained only for multi-operation methods (Create, Finalize)
-  - Removed redundant null checks after validation (using `ArgumentNullException.ThrowIfNull`)
-  - Consistent pattern across all single-operation methods
+- **Exception Handling Middleware:**
+  - Added `UnauthorizedAccessException` case to `GlobalExceptionHandlingMiddleware`
+  - Returns 403 Forbidden with detailed error message
+  - Includes timestamp and error details in response
 
 - **Code Quality - Password Utilities:**
-  - Extracted `PasswordHelper` to dedicated utility class
-  - Centralized PBKDF2 password hashing and verification
-  - Consistent password handling across BoardService
+  - `PasswordHelper` uses PBKDF2 for secure password hashing
+  - 10,000 iterations with 16-byte salt per password
+  - Constant-time comparison prevents timing attacks
 
-- **Status:** Backend complete ✅ (DTOs + endpoints + validation + SignalR) | Frontend pending ⏳
+**Frontend Implementation:**
+
+- **Lock/Unlock Modals:**
+  - Created lock/unlock modal in `board-modals` component
+  - Lock modal shows two forms:
+    - Set password (password + confirm) when no password exists
+    - Enter password (single field) when password exists
+  - Unlock modal with single password field
+  - Password validation with mismatch checking
+  - Modal-level error display (no full-page navigation)
+
+- **Board Header Redesign:**
+  - Modern layout: LEFT (Dev/Test toggle + Status badges) | RIGHT (Action buttons)
+  - Status badges for Locked (red with lock icon) and Finalized (green with check icon)
+  - Lock/Unlock button toggles based on board state
+  - Finalize/Restore button disabled when board is locked
+  - Refresh button with spinning animation during load
+  - All buttons have Material tooltips
+  - Rounded corners (8px) matching team-bar design
+  - CSS variables for theming (16 light mode + 16 dark mode variables)
+
+- **Real-Time Lock State Updates:**
+  - Subscribe to SignalR `BoardLocked` event → Update board state, show badge, disable controls
+  - Subscribe to SignalR `BoardUnlocked` event → Update board state, hide badge, enable controls
+  - Instant UI updates across all connected clients
+
+- **Lock State Enforcement:**
+  - All mutation operations disabled when `isLocked = true`:
+    - Add feature/team member buttons disabled
+    - Edit/delete buttons disabled
+    - Drag-drop disabled via `[cdkDragDisabled]="board()?.isLocked"`
+    - Finalize/restore buttons disabled
+  - Error banner below header for finalize/restore errors (replaces full-page error)
+  - Lock/unlock errors displayed in modals
+
+- **Error Handling Improvements:**
+  - `HttpClientService` extracts `error.details` from API responses for specific messages
+  - `getErrorMessage()` utility detects 403 errors and returns appropriate messages
+  - Finalize/restore errors no longer trigger global error navigation
+  - Lock/unlock errors handled at modal level
+
+- **Constants & Code Quality:**
+  - All hardcoded strings moved to constants:
+    - `LABELS.BUTTONS`: LOCK_PLAIN, UNLOCK_PLAIN, FINALIZE_PLAIN, RESTORE_PLAIN, REFRESH_PLAIN
+    - `LABELS.BADGES`: LOCKED_PLAIN, FINALIZED_PLAIN
+    - `TOOLTIPS.BOARD`: LOCK, UNLOCK, FINALIZE_DETAIL, RESTORE_BUTTON, REFRESH
+    - `MESSAGES.BOARD`: LOCK_INFO, UNLOCK_INFO, LOCK_FAILED, UNLOCK_FAILED
+    - `PLACEHOLDERS`: PASSWORD, CONFIRM_PASSWORD
+  - Dark mode support for all new components
+  - Clean build (888.62 kB bundle) and lint (0 errors)
+
+- **Logged-In Users UI:**
+  - Redesigned logged-in users section with circular avatars
+  - Displays below board header, matching team-bar styling
+  - Shows user initials in colored circles with full name on hover
+
+**Status:** ✅ Complete (Backend + Frontend + UX Polish + Manual Testing)
 
 ### Added - Phase 4.6: Code Quality Control (Feb 26, 2026)
 

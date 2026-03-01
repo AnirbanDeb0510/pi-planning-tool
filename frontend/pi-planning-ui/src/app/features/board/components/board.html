@@ -19,29 +19,15 @@
   </div>
 }
 
-<!-- Finalized Board Banner -->
-@if (board()?.isFinalized) {
-  <div class="finalized-board-banner">
-    <span class="finalized-icon">✓</span>
-    <span class="finalized-text">{{ MESSAGES.BOARD.FINALIZED }}</span>
-    <button
-      type="button"
-      class="restore-banner-btn"
-      (click)="restoreBoard()"
-      title="{{ TOOLTIPS.BOARD.RESTORE }}"
-    >
-      {{ LABELS.BUTTONS.RESTORE_PLAIN }}
-    </button>
-  </div>
-}
-
 <!-- PAT Validation Modal -->
 @if (showPatModal()) {
   <div class="modal-backdrop">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.PAT_REQUIRED }}</h3>
-        <button type="button" class="modal-close" (click)="closePatModal()" aria-label="close"><mat-icon>close</mat-icon></button>
+        <button type="button" class="modal-close" (click)="closePatModal()" aria-label="close">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="modal-body">
         <p class="pat-info">
@@ -93,10 +79,18 @@
   <div>
     <div class="board-container" #boardContainer (mousemove)="onMouseMove($event)">
       @if (presenceUsers().length > 0) {
-        <div class="presence-panel">
-          @for (user of presenceUsers(); track user.userId) {
-            <span class="presence-chip" [style.background]="user.color">{{ user.avatar }} {{ user.displayName }}</span>
-          }
+        <div class="logged-in-users-bar">
+          <div class="users-bar-title">{{ LABELS.HEADERS.LOGGED_IN_USERS }}</div>
+          <div class="users-list">
+            @for (user of presenceUsers(); track user.userId) {
+              <div class="user-chip">
+                <div class="user-avatar" [style.background]="user.color" [title]="user.displayName">
+                  {{ user.avatar }}
+                </div>
+                <span class="user-name">{{ user.displayName }}</span>
+              </div>
+            }
+          </div>
         </div>
       }
 
@@ -106,7 +100,21 @@
         [parent]="this"
         [showDevTest]="showDevTest"
       ></app-board-header>
-
+      <!-- Finalization Error Alert -->
+      @if (finalizationError()) {
+        <div class="finalization-error-alert">
+          <mat-icon>error</mat-icon>
+          <span>{{ finalizationError() }}</span>
+          <button
+            type="button"
+            class="close-alert"
+            (click)="finalizationError.set(null)"
+            aria-label="Close"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
       <!-- Team Bar -->
       <app-team-bar [board]="board" [parent]="this"></app-team-bar>
 
@@ -132,6 +140,7 @@
           cdkDropList
           cdkDropListOrientation="vertical"
           [cdkDropListData]="board()!.features"
+          [cdkDropListDisabled]="board()?.isLocked ?? false"
           (cdkDropListDropped)="dropFeature($event)"
         >
           @for (feature of board()!.features; track feature.id) {
@@ -142,7 +151,14 @@
               [parent]="this"
               cdkDrag
               [cdkDragData]="feature"
-              [title]="board()?.isFinalized ? TOOLTIPS.BOARD.FINALIZED_REORDER : ''"
+              [cdkDragDisabled]="board()?.isLocked ?? false"
+              [title]="
+                board()?.isLocked
+                  ? TOOLTIPS.BOARD.LOCKED_REORDER
+                  : board()?.isFinalized
+                    ? TOOLTIPS.BOARD.FINALIZED_REORDER
+                    : ''
+              "
             ></app-feature-row>
           }
         </div>
@@ -159,7 +175,7 @@
           [ngStyle]="{
             top: remoteCursor.y + 'px',
             left: remoteCursor.x + 'px',
-            background: remoteCursor.color
+            background: remoteCursor.color,
           }"
         >
           {{ remoteCursor.displayName }}

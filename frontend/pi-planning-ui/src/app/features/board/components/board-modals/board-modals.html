@@ -4,7 +4,14 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.IMPORT_FEATURE }}</h3>
-        <button type="button" class="modal-close" (click)="closeImportFeatureModal()" aria-label="close"><mat-icon>close</mat-icon></button>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeImportFeatureModal()"
+          aria-label="close"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="modal-body">
         <div class="modal-label">{{ LABELS.FIELDS.FEATURE_ID }}</div>
@@ -53,9 +60,10 @@
         </div>
 
         @if (importError()) {
-        <div class="error-message-inline">
-          {{ importError() }}
-        </div>}
+          <div class="error-message-inline">
+            {{ importError() }}
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button
@@ -85,7 +93,14 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.REFRESH_FEATURE }}</h3>
-        <button type="button" class="modal-close" (click)="closeRefreshFeatureModal()" aria-label="close"><mat-icon>close</mat-icon></button>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeRefreshFeatureModal()"
+          aria-label="close"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="modal-body">
         <div class="modal-label">{{ LABELS.FIELDS.FEATURE }}</div>
@@ -137,9 +152,10 @@
         </div>
 
         @if (refreshError()) {
-        <div class="error-message-inline">
-          {{ refreshError() }}
-        </div>}
+          <div class="error-message-inline">
+            {{ refreshError() }}
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button
@@ -284,6 +300,126 @@
           [disabled]="finalizationLoading()"
         >
           {{ finalizationLoading() ? LABELS.BUTTONS.FINALIZING : LABELS.BUTTONS.FINALIZE_CONFIRM }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Lock Board Modal -->
+@if (showLockBoardModal()) {
+  <div class="modal-backdrop" (click)="closeLockBoardModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.LOCK_BOARD }}</h3>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeLockBoardModal()"
+          [disabled]="lockLoading()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="finalize-info">
+          {{ MESSAGES.BOARD.LOCK_INFO }}
+        </p>
+
+        <div class="modal-label">{{ LABELS.FIELDS.PASSWORD }}</div>
+        <input
+          class="modal-input"
+          type="password"
+          [(ngModel)]="lockPassword"
+          placeholder="{{ PLACEHOLDERS.PASSWORD }}"
+          [disabled]="lockLoading()"
+        />
+
+        @if (!hasExistingPassword()) {
+          <div class="modal-label">{{ LABELS.FIELDS.CONFIRM_PASSWORD }}</div>
+          <input
+            class="modal-input"
+            type="password"
+            [(ngModel)]="lockPasswordConfirm"
+            placeholder="{{ PLACEHOLDERS.CONFIRM_PASSWORD }}"
+            [disabled]="lockLoading()"
+          />
+        }
+
+        @if (lockError()) {
+          <div class="error-message-inline">
+            {{ lockError() }}
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeLockBoardModal()"
+          [disabled]="lockLoading()"
+        >
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button class="btn-primary" type="button" (click)="lockBoard()" [disabled]="lockLoading()">
+          {{ lockLoading() ? LABELS.BUTTONS.LOCKING : LABELS.BUTTONS.LOCK_BOARD }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Unlock Board Modal -->
+@if (showUnlockBoardModal()) {
+  <div class="modal-backdrop" (click)="closeUnlockBoardModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ LABELS.HEADERS.UNLOCK_BOARD }}</h3>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeUnlockBoardModal()"
+          [disabled]="unlockLoading()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="finalize-info">
+          {{ MESSAGES.BOARD.UNLOCK_INFO }}
+        </p>
+
+        <div class="modal-label">{{ LABELS.FIELDS.PASSWORD }}</div>
+        <input
+          class="modal-input"
+          type="password"
+          [(ngModel)]="unlockPassword"
+          placeholder="{{ PLACEHOLDERS.PASSWORD }}"
+          [disabled]="unlockLoading()"
+        />
+
+        @if (unlockError()) {
+          <div class="error-message-inline">
+            {{ unlockError() }}
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeUnlockBoardModal()"
+          [disabled]="unlockLoading()"
+        >
+          {{ LABELS.BUTTONS.CANCEL }}
+        </button>
+        <button
+          class="btn-primary"
+          type="button"
+          (click)="unlockBoard()"
+          [disabled]="unlockLoading()"
+        >
+          {{ unlockLoading() ? LABELS.BUTTONS.UNLOCKING : LABELS.BUTTONS.UNLOCK_BOARD }}
         </button>
       </div>
     </div>

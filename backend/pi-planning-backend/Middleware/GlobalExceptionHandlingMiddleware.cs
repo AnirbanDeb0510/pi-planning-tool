@@ -41,6 +41,10 @@ namespace PiPlanningBackend.Middleware
                 InvalidOperationException ex
                     => (StatusCodes.Status400BadRequest, "Invalid operation", ex.Message),
 
+                // Authorization Errors (403)
+                UnauthorizedAccessException ex
+                    => (StatusCodes.Status403Forbidden, "Access denied", ex.Message),
+
                 // Entity Framework Errors
                 Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException
                     => (StatusCodes.Status409Conflict, "Concurrency conflict - record was modified by another user", null),

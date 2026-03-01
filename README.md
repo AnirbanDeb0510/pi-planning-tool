@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Mar 1, 2026):** ✅ **Phase 6 - SignalR Real-time Collaboration COMPLETE**. All milestones (A: Presence, B: Story Move, C: Remaining Broadcasts) delivered and validated. 12 mutation methods refactored with unified broadcast pattern. Multi-user concurrent editing working. Ready for Phase 7. See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
+**🎯 Current Status (Mar 2, 2026):** ✅ **Phase 7 - Board Lock/Unlock Feature COMPLETE**. Password-protected board locking with PBKDF2 security, real-time SignalR updates, redesigned header UI with status badges, and complete validation enforcement. Manual testing verified. Ready for Phase 8 (Documentation). See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
 
 ---
 
@@ -13,6 +13,12 @@ A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boa
   - Search and filter boards by name, organization, project, or status.
   - Board preview endpoint for secure access control.
   - PAT validation before accessing boards with Azure features.
+- **Password-Protected Board Locking**:
+  - Lock boards with password to prevent editing (PBKDF2 hashing with salt).
+  - Unlock boards with password verification.
+  - Real-time lock state updates via SignalR.
+  - All mutation operations blocked when board is locked (403 enforcement).
+  - Independent from finalization state (can be locked without finalization).
 - **Interactive Board**: Draggable cards representing User Stories, organized by Feature (rows) and Sprint (columns).
 - **Capacity & Load Management**:
   - Team members' capacity per sprint.
