@@ -2,6 +2,7 @@ import { Injectable, NgZone, inject } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { RuntimeConfig } from '../../../core/config/runtime-config';
+import { TeamMemberResponseDto, UserStoryDto } from '../../../shared/models/board.dto';
 
 export interface CursorPresenceEvent {
   boardId: number;
@@ -36,6 +37,82 @@ export interface StoryMovedEvent {
   timestampUtc: string;
 }
 
+export interface TeamMemberAddedEvent {
+  boardId: number;
+  teamMember: TeamMemberResponseDto;
+  timestampUtc: string;
+}
+
+export interface TeamMemberUpdatedEvent {
+  boardId: number;
+  teamMember: TeamMemberResponseDto;
+  timestampUtc: string;
+}
+
+export interface TeamMemberDeletedEvent {
+  boardId: number;
+  teamMemberId: number;
+  timestampUtc: string;
+}
+
+export interface CapacityUpdatedEvent {
+  boardId: number;
+  teamMemberId: number;
+  sprintId: number;
+  capacityDev: number;
+  capacityTest: number;
+  timestampUtc: string;
+}
+
+export interface BoardFinalizedEvent {
+  boardId: number;
+  isFinalized: boolean;
+  timestampUtc: string;
+}
+
+export interface BoardRestoredEvent {
+  boardId: number;
+  isFinalized: boolean;
+  timestampUtc: string;
+}
+
+export interface FeatureImportedEvent {
+  boardId: number;
+  feature: FeatureSignalREvent;
+  timestampUtc: string;
+}
+
+export interface FeatureRefreshedEvent {
+  boardId: number;
+  feature: FeatureSignalREvent;
+  timestampUtc: string;
+}
+
+export interface FeaturesReorderedEvent {
+  boardId: number;
+  features: Array<{ featureId: number; newPriority: number }>;
+  timestampUtc: string;
+}
+
+export interface FeatureDeletedEvent {
+  boardId: number;
+  featureId: number;
+  timestampUtc: string;
+}
+
+export interface StoryRefreshedEvent extends UserStoryDto {
+  boardId?: number;
+}
+
+export interface FeatureSignalREvent {
+  id?: number;
+  title: string;
+  azureId?: string;
+  priority?: number;
+  valueArea?: string;
+  children?: UserStoryDto[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class SignalrService {
   private readonly ngZone = inject(NgZone);
@@ -55,10 +132,32 @@ export class SignalrService {
   private readonly cursorSubject = new Subject<CursorPresenceEvent>();
   private readonly presenceSubject = new BehaviorSubject<UserPresenceEvent[]>([]);
   private readonly storyMovedSubject = new Subject<StoryMovedEvent>();
+  private readonly teamMemberAddedSubject = new Subject<TeamMemberAddedEvent>();
+  private readonly teamMemberUpdatedSubject = new Subject<TeamMemberUpdatedEvent>();
+  private readonly teamMemberDeletedSubject = new Subject<TeamMemberDeletedEvent>();
+  private readonly capacityUpdatedSubject = new Subject<CapacityUpdatedEvent>();
+  private readonly boardFinalizedSubject = new Subject<BoardFinalizedEvent>();
+  private readonly boardRestoredSubject = new Subject<BoardRestoredEvent>();
+  private readonly featureImportedSubject = new Subject<FeatureImportedEvent>();
+  private readonly featureRefreshedSubject = new Subject<FeatureRefreshedEvent>();
+  private readonly featuresReorderedSubject = new Subject<FeaturesReorderedEvent>();
+  private readonly featureDeletedSubject = new Subject<FeatureDeletedEvent>();
+  private readonly storyRefreshedSubject = new Subject<StoryRefreshedEvent>();
 
   readonly cursor$ = this.cursorSubject.asObservable();
   readonly presence$ = this.presenceSubject.asObservable();
   readonly storyMoved$ = this.storyMovedSubject.asObservable();
+  readonly teamMemberAdded$ = this.teamMemberAddedSubject.asObservable();
+  readonly teamMemberUpdated$ = this.teamMemberUpdatedSubject.asObservable();
+  readonly teamMemberDeleted$ = this.teamMemberDeletedSubject.asObservable();
+  readonly capacityUpdated$ = this.capacityUpdatedSubject.asObservable();
+  readonly boardFinalized$ = this.boardFinalizedSubject.asObservable();
+  readonly boardRestored$ = this.boardRestoredSubject.asObservable();
+  readonly featureImported$ = this.featureImportedSubject.asObservable();
+  readonly featureRefreshed$ = this.featureRefreshedSubject.asObservable();
+  readonly featuresReordered$ = this.featuresReorderedSubject.asObservable();
+  readonly featureDeleted$ = this.featureDeletedSubject.asObservable();
+  readonly storyRefreshed$ = this.storyRefreshedSubject.asObservable();
 
   async connect(boardId: number, userId: string, userName: string): Promise<void> {
     if (
@@ -129,6 +228,10 @@ export class SignalrService {
     this.lastSentX = Number.NaN;
     this.lastSentY = Number.NaN;
     this.presenceSubject.next([]);
+  }
+
+  getConnectionId(): string | null {
+    return this.connection?.connectionId ?? null;
   }
 
   async sendCursorUpdate(x: number, y: number): Promise<void> {
@@ -203,6 +306,72 @@ export class SignalrService {
     connection.on('StoryMoved', (payload: StoryMovedEvent) => {
       this.ngZone.run(() => {
         this.storyMovedSubject.next(payload);
+      });
+    });
+
+    connection.on('TeamMemberAdded', (payload: TeamMemberAddedEvent) => {
+      this.ngZone.run(() => {
+        this.teamMemberAddedSubject.next(payload);
+      });
+    });
+
+    connection.on('TeamMemberUpdated', (payload: TeamMemberUpdatedEvent) => {
+      this.ngZone.run(() => {
+        this.teamMemberUpdatedSubject.next(payload);
+      });
+    });
+
+    connection.on('TeamMemberDeleted', (payload: TeamMemberDeletedEvent) => {
+      this.ngZone.run(() => {
+        this.teamMemberDeletedSubject.next(payload);
+      });
+    });
+
+    connection.on('CapacityUpdated', (payload: CapacityUpdatedEvent) => {
+      this.ngZone.run(() => {
+        this.capacityUpdatedSubject.next(payload);
+      });
+    });
+
+    connection.on('BoardFinalized', (payload: BoardFinalizedEvent) => {
+      this.ngZone.run(() => {
+        this.boardFinalizedSubject.next(payload);
+      });
+    });
+
+    connection.on('BoardRestored', (payload: BoardRestoredEvent) => {
+      this.ngZone.run(() => {
+        this.boardRestoredSubject.next(payload);
+      });
+    });
+
+    connection.on('FeatureImported', (payload: FeatureImportedEvent) => {
+      this.ngZone.run(() => {
+        this.featureImportedSubject.next(payload);
+      });
+    });
+
+    connection.on('FeatureRefreshed', (payload: FeatureRefreshedEvent) => {
+      this.ngZone.run(() => {
+        this.featureRefreshedSubject.next(payload);
+      });
+    });
+
+    connection.on('FeaturesReordered', (payload: FeaturesReorderedEvent) => {
+      this.ngZone.run(() => {
+        this.featuresReorderedSubject.next(payload);
+      });
+    });
+
+    connection.on('FeatureDeleted', (payload: FeatureDeletedEvent) => {
+      this.ngZone.run(() => {
+        this.featureDeletedSubject.next(payload);
+      });
+    });
+
+    connection.on('StoryRefreshed', (payload: StoryRefreshedEvent) => {
+      this.ngZone.run(() => {
+        this.storyRefreshedSubject.next(payload);
       });
     });
   }

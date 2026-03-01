@@ -106,9 +106,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(id))
-                .SendAsync("BoardFinalized", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, id, "BoardFinalized", payload, initiatorConnectionId);
 
             return Ok(new
             {
@@ -137,9 +136,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(id))
-                .SendAsync("BoardRestored", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, id, "BoardRestored", payload, initiatorConnectionId);
 
             return Ok(new
             {

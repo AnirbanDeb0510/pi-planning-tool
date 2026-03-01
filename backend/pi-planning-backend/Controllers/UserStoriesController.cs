@@ -29,9 +29,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("StoryMoved", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "StoryMoved", payload, initiatorConnectionId);
 
             return NoContent();
         }
@@ -46,9 +45,8 @@ namespace PiPlanningBackend.Controllers
                 return NotFound();
             }
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("StoryRefreshed", s);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "StoryRefreshed", s, initiatorConnectionId);
 
             return Ok(s);
         }

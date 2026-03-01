@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { SignalrService } from '../../features/board/services/signalr.service';
 
 /**
  * HTTP request options
@@ -31,6 +32,7 @@ export interface ApiError {
 @Injectable({ providedIn: 'root' })
 export class HttpClientService {
   private http = inject(HttpClient);
+  private signalrService = inject(SignalrService);
   private baseUrl = environment.apiBaseUrl;
 
   /**
@@ -49,7 +51,8 @@ export class HttpClientService {
    */
   post<T>(endpoint: string, body: unknown, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.post<T>(url, body, options).pipe(catchError(this.handleError));
+    const mergedOptions = this.addConnectionIdHeader(options);
+    return this.http.post<T>(url, body, mergedOptions).pipe(catchError(this.handleError));
   }
 
   /**
@@ -57,7 +60,8 @@ export class HttpClientService {
    */
   put<T>(endpoint: string, body: unknown, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.put<T>(url, body, options).pipe(catchError(this.handleError));
+    const mergedOptions = this.addConnectionIdHeader(options);
+    return this.http.put<T>(url, body, mergedOptions).pipe(catchError(this.handleError));
   }
 
   /**
@@ -65,7 +69,8 @@ export class HttpClientService {
    */
   patch<T>(endpoint: string, body: unknown, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.patch<T>(url, body, options).pipe(catchError(this.handleError));
+    const mergedOptions = this.addConnectionIdHeader(options);
+    return this.http.patch<T>(url, body, mergedOptions).pipe(catchError(this.handleError));
   }
 
   /**
@@ -73,7 +78,8 @@ export class HttpClientService {
    */
   delete<T>(endpoint: string, options?: HttpOptions): Observable<T> {
     const url = this.buildUrl(endpoint);
-    return this.http.delete<T>(url, options).pipe(catchError(this.handleError));
+    const mergedOptions = this.addConnectionIdHeader(options);
+    return this.http.delete<T>(url, mergedOptions).pipe(catchError(this.handleError));
   }
 
   /**
@@ -84,6 +90,36 @@ export class HttpClientService {
     // Remove leading slash if present to avoid double slashes
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     return `${this.baseUrl}/${cleanEndpoint}`;
+  }
+
+  /**
+   * Add SignalR connectionId header to request options
+   * This header is used by the backend to exclude the initiator from broadcast notifications
+   */
+  private addConnectionIdHeader(options?: HttpOptions): HttpOptions {
+    const connectionId = this.signalrService.getConnectionId();
+    if (!connectionId) {
+      return options || {};
+    }
+
+    // Get existing headers or create new ones
+    let headers: HttpHeaders;
+
+    if (options?.headers instanceof HttpHeaders) {
+      // Already an HttpHeaders object
+      headers = options.headers.set('X-SignalR-ConnectionId', connectionId);
+    } else if (options?.headers) {
+      // It's a plain object with header values
+      headers = new HttpHeaders(options.headers).set('X-SignalR-ConnectionId', connectionId);
+    } else {
+      // No headers provided
+      headers = new HttpHeaders().set('X-SignalR-ConnectionId', connectionId);
+    }
+
+    return {
+      ...options,
+      headers,
+    };
   }
 
   /**

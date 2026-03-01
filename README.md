@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Mar 1, 2026):** Phase 6 SignalR is in progress. Milestone A (presence + remote cursor stream) and Milestone B (`StoryMoved` real-time broadcast) are complete; Milestone C (remaining broadcasts for team/feature/board actions) is pending. See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
+**🎯 Current Status (Mar 1, 2026):** ✅ **Phase 6 - SignalR Real-time Collaboration COMPLETE**. All milestones (A: Presence, B: Story Move, C: Remaining Broadcasts) delivered and validated. 12 mutation methods refactored with unified broadcast pattern. Multi-user concurrent editing working. Ready for Phase 7. See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
 
 ---
 
@@ -18,10 +18,14 @@ A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boa
   - Team members' capacity per sprint.
   - Dev/Test split for story points and capacities.
   - Load vs capacity visualization.
-- **Real-time Collaboration**: Multi-user updates via **SignalR** with cursor presence.
-- **Board Configuration**:
   - Unique board ID.
-  - Optional password protection.
+    **Real-time Collaboration**: ✅ Complete SignalR Implementation
+    - Live presence tracking: See all connected users working on the board
+    - Remote cursor synchronization: View other users' cursor positions in real-time (15Hz throttled)
+    - Broadcast events: Story moves, team capacity updates, feature operations sync instantly across all browsers
+    - Auto-reconnection: Handles network interruptions gracefully with exponential backoff
+    - Idle cursor labels: Auto-hide after inactivity, reappear on movement
+    - Concurrent editing: Multiple users can make changes simultaneously without conflicts
   - Start date for planning.
   - Finalization mode with visual indicators for moved stories.
 - **Security**:

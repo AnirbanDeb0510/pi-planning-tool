@@ -128,6 +128,35 @@ namespace PiPlanningBackend.Hubs
             return $"board:{boardId}";
         }
 
+        /// <summary>
+        /// Broadcast an event to all clients in a board group, optionally excluding the initiator.
+        /// </summary>
+        /// <param name="clients">The IHubClients from IHubContext</param>
+        /// <param name="boardId">The board ID to broadcast to</param>
+        /// <param name="eventName">The event name to send (e.g., "FeatureImported")</param>
+        /// <param name="payload">The payload to send with the event</param>
+        /// <param name="initiatorConnectionId">Optional connection ID of the initiator to exclude from broadcast</param>
+        public static async Task BroadcastToBoardAsync(
+            IHubClients clients,
+            int boardId,
+            string eventName,
+            object payload,
+            string? initiatorConnectionId = null)
+        {
+            string boardGroup = GetBoardGroupName(boardId);
+
+            if (!string.IsNullOrEmpty(initiatorConnectionId))
+            {
+                // Exclude the initiator from the broadcast
+                await clients.GroupExcept(boardGroup, initiatorConnectionId).SendAsync(eventName, payload);
+            }
+            else
+            {
+                // Broadcast to all clients in the group
+                await clients.Group(boardGroup).SendAsync(eventName, payload);
+            }
+        }
+
         private static ConnectionState BuildConnectionState(int boardId, string userId, string userName)
         {
             string normalizedName = userName.Trim();

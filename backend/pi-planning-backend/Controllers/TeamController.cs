@@ -35,9 +35,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("TeamMemberAdded", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "TeamMemberAdded", payload, initiatorConnectionId);
 
             return Ok(created);
         }
@@ -59,9 +58,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("TeamMemberUpdated", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "TeamMemberUpdated", payload, initiatorConnectionId);
 
             return Ok(updated);
         }
@@ -82,9 +80,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("TeamMemberDeleted", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "TeamMemberDeleted", payload, initiatorConnectionId);
 
             return NoContent();
         }
@@ -117,9 +114,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("CapacityUpdated", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "CapacityUpdated", payload, initiatorConnectionId);
 
             return Ok(responseDto);
         }

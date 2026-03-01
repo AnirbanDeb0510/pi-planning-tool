@@ -27,6 +27,10 @@ import { FeatureService } from '../services/feature.service';
 import { TeamService } from '../services/team.service';
 import {
   SignalrService,
+  CapacityUpdatedEvent,
+  TeamMemberAddedEvent,
+  TeamMemberDeletedEvent,
+  TeamMemberUpdatedEvent,
   CursorPresenceEvent,
   UserPresenceEvent,
   StoryMovedEvent,
@@ -123,6 +127,7 @@ export class Board implements OnInit, OnDestroy {
   private realtimeSubscriptions: Subscription[] = [];
   private remoteCursorMap = new Map<string, RemoteCursorViewModel>();
   private remoteCursorCleanupIntervalId: number | null = null;
+  private boardReloadTimeoutId: number | null = null;
   private readonly cursorLabelOffset = 20;
   private readonly remoteCursorIdleMs = 3000;
 
@@ -690,10 +695,106 @@ export class Board implements OnInit, OnDestroy {
     });
 
     const storyMovedSub = this.signalrService.storyMoved$.subscribe((event) => {
-      this.applyStoryMovedEvent(event);
+      try {
+        this.applyStoryMovedEvent(event);
+      } catch (error) {
+        console.error('Failed to apply story moved event:', error);
+        if (this.connectedBoardId != null) {
+          this.scheduleBoardReload(this.connectedBoardId);
+        }
+      }
     });
 
-    this.realtimeSubscriptions.push(presenceSub, cursorSub, storyMovedSub);
+    const teamMemberAddedSub = this.signalrService.teamMemberAdded$.subscribe((event) => {
+      try {
+        this.applyTeamMemberAddedEvent(event);
+      } catch (error) {
+        console.error('Failed to apply team member added event:', error);
+        if (this.connectedBoardId != null) {
+          this.scheduleBoardReload(this.connectedBoardId);
+        }
+      }
+    });
+
+    const teamMemberUpdatedSub = this.signalrService.teamMemberUpdated$.subscribe((event) => {
+      try {
+        this.applyTeamMemberUpdatedEvent(event);
+      } catch (error) {
+        console.error('Failed to apply team member updated event:', error);
+        if (this.connectedBoardId != null) {
+          this.scheduleBoardReload(this.connectedBoardId);
+        }
+      }
+    });
+
+    const teamMemberDeletedSub = this.signalrService.teamMemberDeleted$.subscribe((event) => {
+      try {
+        this.applyTeamMemberDeletedEvent(event);
+      } catch (error) {
+        console.error('Failed to apply team member deleted event:', error);
+        if (this.connectedBoardId != null) {
+          this.scheduleBoardReload(this.connectedBoardId);
+        }
+      }
+    });
+
+    const capacityUpdatedSub = this.signalrService.capacityUpdated$.subscribe((event) => {
+      try {
+        this.applyCapacityUpdatedEvent(event);
+      } catch (error) {
+        console.error('Failed to apply capacity updated event:', error);
+        if (this.connectedBoardId != null) {
+          this.scheduleBoardReload(this.connectedBoardId);
+        }
+      }
+    });
+
+    const boardFinalizedSub = this.signalrService.boardFinalized$.subscribe((event) => {
+      this.scheduleBoardReload(event.boardId);
+    });
+
+    const boardRestoredSub = this.signalrService.boardRestored$.subscribe((event) => {
+      this.scheduleBoardReload(event.boardId);
+    });
+
+    const featureImportedSub = this.signalrService.featureImported$.subscribe((event) => {
+      this.scheduleBoardReload(event.boardId);
+    });
+
+    const featureRefreshedSub = this.signalrService.featureRefreshed$.subscribe((event) => {
+      this.scheduleBoardReload(event.boardId);
+    });
+
+    const featuresReorderedSub = this.signalrService.featuresReordered$.subscribe((event) => {
+      this.scheduleBoardReload(event.boardId);
+    });
+
+    const featureDeletedSub = this.signalrService.featureDeleted$.subscribe((event) => {
+      this.scheduleBoardReload(event.boardId);
+    });
+
+    const storyRefreshedSub = this.signalrService.storyRefreshed$.subscribe(() => {
+      if (this.connectedBoardId != null) {
+        this.scheduleBoardReload(this.connectedBoardId);
+      }
+    });
+
+    this.realtimeSubscriptions.push(
+      presenceSub,
+      cursorSub,
+      storyMovedSub,
+      teamMemberAddedSub,
+      teamMemberUpdatedSub,
+      teamMemberDeletedSub,
+      capacityUpdatedSub,
+      boardFinalizedSub,
+      boardRestoredSub,
+      featureImportedSub,
+      featureRefreshedSub,
+      featuresReorderedSub,
+      featureDeletedSub,
+      storyRefreshedSub,
+    );
   }
 
   private applyStoryMovedEvent(event: StoryMovedEvent): void {
@@ -756,6 +857,162 @@ export class Board implements OnInit, OnDestroy {
     this.remoteCursors.set([...this.remoteCursorMap.values()]);
   }
 
+  private applyTeamMemberAddedEvent(event: TeamMemberAddedEvent): void {
+    if (this.connectedBoardId !== event.boardId) {
+      return;
+    }
+
+    const currentBoard = this.boardService.getBoard();
+    if (!currentBoard) {
+      return;
+    }
+
+    const existingMemberIndex = currentBoard.teamMembers.findIndex(
+      (member) => member.id === event.teamMember.id,
+    );
+
+    const updatedTeamMembers = [...currentBoard.teamMembers];
+    if (existingMemberIndex === -1) {
+      updatedTeamMembers.push(event.teamMember);
+    } else {
+      updatedTeamMembers[existingMemberIndex] = event.teamMember;
+    }
+
+    this.boardService.updateBoardState({
+      ...currentBoard,
+      teamMembers: updatedTeamMembers,
+    });
+  }
+
+  private applyTeamMemberUpdatedEvent(event: TeamMemberUpdatedEvent): void {
+    if (this.connectedBoardId !== event.boardId) {
+      return;
+    }
+
+    const currentBoard = this.boardService.getBoard();
+    if (!currentBoard) {
+      return;
+    }
+
+    let hasChanges = false;
+    const updatedTeamMembers = currentBoard.teamMembers.map((member) => {
+      if (member.id !== event.teamMember.id) {
+        return member;
+      }
+
+      hasChanges = true;
+      return event.teamMember;
+    });
+
+    if (!hasChanges) {
+      return;
+    }
+
+    this.boardService.updateBoardState({
+      ...currentBoard,
+      teamMembers: updatedTeamMembers,
+    });
+  }
+
+  private applyTeamMemberDeletedEvent(event: TeamMemberDeletedEvent): void {
+    if (this.connectedBoardId !== event.boardId) {
+      return;
+    }
+
+    const currentBoard = this.boardService.getBoard();
+    if (!currentBoard) {
+      return;
+    }
+
+    const updatedTeamMembers = currentBoard.teamMembers.filter(
+      (member) => member.id !== event.teamMemberId,
+    );
+
+    if (updatedTeamMembers.length === currentBoard.teamMembers.length) {
+      return;
+    }
+
+    this.boardService.updateBoardState({
+      ...currentBoard,
+      teamMembers: updatedTeamMembers,
+    });
+  }
+
+  private applyCapacityUpdatedEvent(event: CapacityUpdatedEvent): void {
+    if (this.connectedBoardId !== event.boardId) {
+      return;
+    }
+
+    const currentBoard = this.boardService.getBoard();
+    if (!currentBoard) {
+      return;
+    }
+
+    let hasChanges = false;
+    const updatedTeamMembers = currentBoard.teamMembers.map((member) => {
+      if (member.id !== event.teamMemberId) {
+        return member;
+      }
+
+      const capacityIndex = member.sprintCapacities.findIndex(
+        (capacity) => capacity.sprintId === event.sprintId,
+      );
+
+      const updatedSprintCapacities = [...member.sprintCapacities];
+      if (capacityIndex === -1) {
+        updatedSprintCapacities.push({
+          sprintId: event.sprintId,
+          capacityDev: event.capacityDev,
+          capacityTest: event.capacityTest,
+        });
+      } else {
+        const currentCapacity = updatedSprintCapacities[capacityIndex];
+        if (
+          currentCapacity.capacityDev === event.capacityDev &&
+          currentCapacity.capacityTest === event.capacityTest
+        ) {
+          return member;
+        }
+
+        updatedSprintCapacities[capacityIndex] = {
+          ...currentCapacity,
+          capacityDev: event.capacityDev,
+          capacityTest: event.capacityTest,
+        };
+      }
+
+      hasChanges = true;
+      return {
+        ...member,
+        sprintCapacities: updatedSprintCapacities,
+      };
+    });
+
+    if (!hasChanges) {
+      return;
+    }
+
+    this.boardService.updateBoardState({
+      ...currentBoard,
+      teamMembers: updatedTeamMembers,
+    });
+  }
+
+  private scheduleBoardReload(boardId: number): void {
+    if (this.connectedBoardId !== boardId) {
+      return;
+    }
+
+    if (this.boardReloadTimeoutId !== null) {
+      return;
+    }
+
+    this.boardReloadTimeoutId = window.setTimeout(() => {
+      this.boardReloadTimeoutId = null;
+      this.boardService.loadBoard(boardId);
+    }, 1000);
+  }
+
   private startRemoteCursorCleanup(): void {
     if (this.remoteCursorCleanupIntervalId !== null) {
       window.clearInterval(this.remoteCursorCleanupIntervalId);
@@ -797,6 +1054,11 @@ export class Board implements OnInit, OnDestroy {
     if (this.remoteCursorCleanupIntervalId !== null) {
       window.clearInterval(this.remoteCursorCleanupIntervalId);
       this.remoteCursorCleanupIntervalId = null;
+    }
+
+    if (this.boardReloadTimeoutId !== null) {
+      window.clearTimeout(this.boardReloadTimeoutId);
+      this.boardReloadTimeoutId = null;
     }
   }
 

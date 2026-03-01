@@ -28,9 +28,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("FeatureImported", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "FeatureImported", payload, initiatorConnectionId);
 
             return CreatedAtAction(nameof(GetFeature), new { boardId, id = created.Id }, created);
         }
@@ -59,9 +58,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("FeatureRefreshed", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "FeatureRefreshed", payload, initiatorConnectionId);
 
             return Ok(featureDto);
         }
@@ -80,9 +78,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("FeaturesReordered", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "FeaturesReordered", payload, initiatorConnectionId);
 
             return NoContent();
         }
@@ -104,9 +101,8 @@ namespace PiPlanningBackend.Controllers
                 TimestampUtc = DateTime.UtcNow
             };
 
-            await _hubContext.Clients
-                .Group(PlanningHub.GetBoardGroupName(boardId))
-                .SendAsync("FeatureDeleted", payload);
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "FeatureDeleted", payload, initiatorConnectionId);
 
             return NoContent();
         }
