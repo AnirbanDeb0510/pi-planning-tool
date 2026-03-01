@@ -16,4 +16,6 @@ export const PLACEHOLDERS = {
   DEV: 'Dev',
   TEST: 'Test',
   CAPACITY: 'Capacity',
+  PASSWORD: 'Enter password',
+  CONFIRM_PASSWORD: 'Confirm password',
 };

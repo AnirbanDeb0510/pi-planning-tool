@@ -1,13 +1,12 @@
 import { Injectable, signal, inject } from '@angular/core';
-import {
-  BoardResponseDto,
-} from '../../../shared/models/board.dto';
-import { BoardSummaryDto } from '../../../shared/models/board-api.dto';
+import { BoardResponseDto } from '../../../shared/models/board.dto';
+import { BoardSummaryDto, BoardLockActionResponseDto } from '../../../shared/models/board-api.dto';
 import { BoardApiService, AzureApiService } from './board-api.service';
 import { IBoardApiService, IAzureApiService } from './board-api.interface';
 import { firstValueFrom } from 'rxjs';
 import { RuntimeConfig } from '../../../core/config/runtime-config';
 import { MESSAGES } from '../../../shared/constants';
+import { getErrorMessage } from '../../../core/utils/error-handler.util';
 
 /**
  * Board Service - State Management Layer
@@ -119,18 +118,13 @@ export class BoardService {
     organization: string,
     project: string,
     featureAzureId: string,
-    pat: string
+    pat: string,
   ): Promise<boolean> {
     try {
       // Make a test call to verify PAT access
       // This is a read-only operation (fetch feature details)
       const result = await firstValueFrom(
-        this.azureApi.getFeatureWithChildren(
-          organization,
-          project,
-          featureAzureId,
-          pat
-        )
+        this.azureApi.getFeatureWithChildren(organization, project, featureAzureId, pat),
       );
 
       if (result) {
@@ -160,9 +154,7 @@ export class BoardService {
    */
   public async getBoardPreview(boardId: number): Promise<BoardSummaryDto | null> {
     try {
-      const preview = await firstValueFrom(
-        this.boardApi.getBoardPreview(boardId)
-      );
+      const preview = await firstValueFrom(this.boardApi.getBoardPreview(boardId));
       return preview;
     } catch (error) {
       console.error('Error fetching board preview:', error);
@@ -217,7 +209,6 @@ export class BoardService {
       return updatedBoard;
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : MESSAGES.BOARD.FINALIZE_FAILED;
-      this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error finalizing board:', error);
       throw new Error(errorMsg);
@@ -242,9 +233,66 @@ export class BoardService {
       return updatedBoard;
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : MESSAGES.BOARD.RESTORE_FAILED;
-      this.errorSignal.set(errorMsg);
       this.loadingSignal.set(false);
       console.error('Error restoring board:', error);
+      throw new Error(errorMsg);
+    }
+  }
+
+  /**
+   * Lock board with password
+   */
+  public async lockBoard(
+    boardId: number,
+    password: string,
+  ): Promise<BoardLockActionResponseDto | null> {
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const result = await firstValueFrom(this.boardApi.lockBoard(boardId, password));
+
+      // Update board state with isLocked = true
+      const currentBoard = this.boardSignal();
+      if (currentBoard) {
+        this.boardSignal.set({ ...currentBoard, isLocked: true });
+      }
+
+      this.loadingSignal.set(false);
+      return result;
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error, MESSAGES.BOARD.LOCK_FAILED);
+      this.loadingSignal.set(false);
+      console.error('Error locking board:', error);
+      throw new Error(errorMsg);
+    }
+  }
+
+  /**
+   * Unlock board with password
+   */
+  public async unlockBoard(
+    boardId: number,
+    password: string,
+  ): Promise<BoardLockActionResponseDto | null> {
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const result = await firstValueFrom(this.boardApi.unlockBoard(boardId, password));
+
+      // Update board state with isLocked = false
+      const currentBoard = this.boardSignal();
+      if (currentBoard) {
+        this.boardSignal.set({ ...currentBoard, isLocked: false });
+      }
+
+      this.loadingSignal.set(false);
+      return result;
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error, MESSAGES.BOARD.UNLOCK_FAILED);
+      this.loadingSignal.set(false);
+      console.error('Error unlocking board:', error);
       throw new Error(errorMsg);
     }
   }

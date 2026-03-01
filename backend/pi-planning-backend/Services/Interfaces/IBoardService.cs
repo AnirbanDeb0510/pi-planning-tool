@@ -12,5 +12,7 @@ namespace PiPlanningBackend.Services.Interfaces
         Task<(bool Success, List<string> Warnings)> ValidateBoardForFinalizationAsync(int boardId);
         Task<BoardSummaryDto?> FinalizeBoardAsync(int boardId);
         Task<BoardSummaryDto?> RestoreBoardAsync(int boardId);
+        Task<BoardSummaryDto?> LockBoardAsync(int boardId, string password);
+        Task<BoardSummaryDto?> UnlockBoardAsync(int boardId, string password);
     }
 }

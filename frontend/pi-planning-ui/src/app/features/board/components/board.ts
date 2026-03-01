@@ -25,16 +25,10 @@ import { BoardService } from '../services/board.service';
 import { StoryService } from '../services/story.service';
 import { FeatureService } from '../services/feature.service';
 import { TeamService } from '../services/team.service';
-import {
-  SignalrService,
-  CapacityUpdatedEvent,
-  TeamMemberAddedEvent,
-  TeamMemberDeletedEvent,
-  TeamMemberUpdatedEvent,
-  CursorPresenceEvent,
-  UserPresenceEvent,
-  StoryMovedEvent,
-} from '../services/signalr.service';
+import { SignalrService } from '../services/signalr.service';
+import { BoardCalculationService } from '../services/board-calculation.service';
+import { CursorTrackingService } from '../services/cursor-tracking.service';
+import { BoardRealtimeService } from '../services/board-realtime.service';
 import {
   SprintDto,
   FeatureResponseDto,
@@ -49,17 +43,6 @@ import { SprintHeader } from './sprint-header/sprint-header';
 import { FeatureRow } from './feature-row/feature-row';
 import { BoardModals } from './board-modals/board-modals';
 import { BoardSummaryDto } from '../../../shared';
-import { Subscription } from 'rxjs';
-
-interface RemoteCursorViewModel {
-  userId: string;
-  displayName: string;
-  color: string;
-  x: number;
-  y: number;
-  lastSeenAt: number;
-  sequence: number;
-}
 
 @Component({
   selector: 'app-board',
@@ -88,13 +71,16 @@ export class Board implements OnInit, OnDestroy {
   public teamService = inject(TeamService);
   private signalrService = inject(SignalrService);
   private userService = inject(UserService);
+  private calculationService = inject(BoardCalculationService);
+  private cursorTrackingService = inject(CursorTrackingService);
+  private realtimeService = inject(BoardRealtimeService);
   private route = inject(ActivatedRoute);
   protected router = inject(Router); // Make public for template
   private cdr = inject(ChangeDetectorRef);
 
   // Board state from service
   protected board = this.boardService.board;
-  protected loading = this.boardService.loading;
+  public loading = this.boardService.loading; // Public for header component
   protected error = this.boardService.error;
 
   protected readonly LABELS = LABELS;
@@ -103,12 +89,16 @@ export class Board implements OnInit, OnDestroy {
   protected readonly TOOLTIPS = TOOLTIPS;
   protected readonly PLACEHOLDERS = PLACEHOLDERS;
 
-  // Local UI state - needed by sub components
+  // Cursor state from cursor tracking service
   protected cursorName = signal(this.userService.getName() || LABELS.APP.GUEST);
-  protected cursorX = signal(0);
-  protected cursorY = signal(0);
-  protected remoteCursors = signal<RemoteCursorViewModel[]>([]);
-  protected presenceUsers = signal<UserPresenceEvent[]>([]);
+  protected cursorX = this.cursorTrackingService.cursorX;
+  protected cursorY = this.cursorTrackingService.cursorY;
+  protected remoteCursors = this.cursorTrackingService.remoteCursors;
+
+  // Presence state from realtime service
+  protected presenceUsers = this.realtimeService.presenceUsers;
+
+  // Local UI state - needed by sub components
   public showDevTest = signal(false);
 
   // Board finalization state - managed here, used by board-header and board-modals
@@ -118,18 +108,10 @@ export class Board implements OnInit, OnDestroy {
   public finalizationError = signal<string | null>(null);
 
   @ViewChild(BoardModals)
-  private boardModals?: BoardModals;
+  public modals?: BoardModals;
 
   @ViewChild('boardContainer')
   private boardContainerRef?: ElementRef<HTMLDivElement>;
-
-  private connectedBoardId: number | null = null;
-  private realtimeSubscriptions: Subscription[] = [];
-  private remoteCursorMap = new Map<string, RemoteCursorViewModel>();
-  private remoteCursorCleanupIntervalId: number | null = null;
-  private boardReloadTimeoutId: number | null = null;
-  private readonly cursorLabelOffset = 20;
-  private readonly remoteCursorIdleMs = 3000;
 
   // PAT modal state
   protected showPatModal = signal(false);
@@ -141,11 +123,16 @@ export class Board implements OnInit, OnDestroy {
   protected boardPreview = signal<BoardSummaryDto | null>(null);
 
   ngOnInit(): void {
+    // Subscribe to cursor events (visual concern, handled at component level)
+    this.signalrService.cursor$.subscribe((event) => {
+      this.cursorTrackingService.applyRemoteCursorEvent(event);
+    });
+
     // Load board from route parameter
     this.route.params.subscribe(async (params) => {
       const boardId = Number(params['id']);
       if (boardId) {
-        await this.ensureRealtimeDisconnectedIfBoardChanged(boardId);
+        await this.realtimeService.ensureDisconnectedIfBoardChanged(boardId);
 
         this.currentBoardId.set(boardId);
         this.patValidated.set(false);
@@ -163,7 +150,8 @@ export class Board implements OnInit, OnDestroy {
           // No PAT needed, load board immediately
           this.patValidated.set(true);
           this.boardService.loadBoard(boardId);
-          await this.connectRealtime(boardId);
+          await this.realtimeService.connect(boardId);
+          this.cursorTrackingService.startRemoteCursorCleanup();
         }
       } else {
         console.error('No board ID provided');
@@ -208,7 +196,8 @@ export class Board implements OnInit, OnDestroy {
 
         // Now load the board with validated PAT
         this.boardService.loadBoard(boardId);
-        await this.connectRealtime(boardId);
+        await this.realtimeService.connect(boardId);
+        this.cursorTrackingService.startRemoteCursorCleanup();
       } else {
         this.patValidationError.set(VALIDATIONS.PAT.INVALID);
       }
@@ -232,15 +221,15 @@ export class Board implements OnInit, OnDestroy {
   }
 
   public openImportFeatureModal(): void {
-    this.boardModals?.openImportFeatureModal();
+    this.modals?.openImportFeatureModal();
   }
 
   public openRefreshFeatureModal(feature: FeatureResponseDto): void {
-    this.boardModals?.openRefreshFeatureModal(feature);
+    this.modals?.openRefreshFeatureModal(feature);
   }
 
   public openDeleteFeatureModal(feature: FeatureResponseDto): void {
-    this.boardModals?.openDeleteFeatureModal(feature);
+    this.modals?.openDeleteFeatureModal(feature);
   }
 
   /**
@@ -263,18 +252,17 @@ export class Board implements OnInit, OnDestroy {
     return sprint?.name || `${LABELS.FIELDS.SPRINT} ${sprintId}`;
   }
 
-  private isParkingLotSprint(sprint: SprintDto): boolean {
-    return sprint.name?.trim().toLowerCase() === 'sprint 0';
-  }
-
   /**
    * Get the Sprint 0 (parking lot) ID from the board
    */
   private getParkingLotSprintId(): number {
     const currentBoard = this.board();
     if (!currentBoard) return 0;
-    const sprint0 = currentBoard.sprints.find((s) => this.isParkingLotSprint(s));
-    return sprint0?.id ?? 0;
+    return this.calculationService.getParkingLotSprintId(currentBoard);
+  }
+
+  private isParkingLotSprint(sprint: SprintDto): boolean {
+    return this.calculationService.isParkingLotSprint(sprint);
   }
 
   public getTeamMembers(): TeamMemberResponseDto[] {
@@ -311,29 +299,15 @@ export class Board implements OnInit, OnDestroy {
     test: number;
     total: number;
   } {
-    let dev = 0;
-    let test = 0;
-
-    this.getTeamMembers().forEach((member) => {
-      const cap = this.getMemberSprintCapacity(member, sprintId);
-      dev += cap.dev;
-      test += cap.test;
-    });
-
-    return { dev, test, total: dev + test };
+    const currentBoard = this.board();
+    if (!currentBoard) return { dev: 0, test: 0, total: 0 };
+    return this.calculationService.getSprintCapacityTotals(currentBoard.teamMembers, sprintId);
   }
 
   public isSprintOverCapacity(sprintId: number, type: 'dev' | 'test' | 'total'): boolean {
-    const load = this.getSprintTotals(sprintId);
-    const cap = this.getSprintCapacityTotals(sprintId);
-
-    if (type === 'dev') {
-      return load.dev > cap.dev;
-    }
-    if (type === 'test') {
-      return load.test > cap.test;
-    }
-    return load.total > cap.total;
+    const currentBoard = this.board();
+    if (!currentBoard) return false;
+    return this.calculationService.isSprintOverCapacity(currentBoard, sprintId, type);
   }
 
   /**
@@ -430,12 +404,8 @@ export class Board implements OnInit, OnDestroy {
    * 'feature_1_sprint_2' → 2
    */
   private parseSprintIdFromDropListId(id: string): number {
-    if (id.includes('parkingLot')) {
-      return this.getParkingLotSprintId(); // Return actual Sprint 0 ID
-    }
-    // For sprint IDs: 'feature_X_sprint_Y' → extract Y
-    const parts = id.split('_');
-    return parseInt(parts[parts.length - 1], 10);
+    const parkingLotSprintId = this.getParkingLotSprintId();
+    return this.calculationService.parseSprintIdFromDropListId(id, parkingLotSprintId);
   }
 
   /**
@@ -444,20 +414,14 @@ export class Board implements OnInit, OnDestroy {
   getConnectedLists(featureId: number): string[] {
     const currentBoard = this.board();
     if (!currentBoard) return [];
-    const lists = [`feature_${featureId}_parkingLot`];
-    currentBoard.sprints
-      .filter((sprint) => this.isParkingLotSprint(sprint) === false)
-      .forEach((sprint) => {
-        lists.push(`feature_${featureId}_sprint_${sprint.id}`);
-      });
-    return lists;
+    return this.calculationService.getConnectedLists(currentBoard, featureId);
   }
 
   /**
    * Get stories for a feature in a specific sprint
    */
   getStoriesInSprint(feature: FeatureResponseDto, sprintId: number): UserStoryDto[] {
-    return feature.userStories.filter((story) => story.sprintId === sprintId);
+    return this.calculationService.getStoriesInSprint(feature, sprintId);
   }
 
   /**
@@ -465,26 +429,14 @@ export class Board implements OnInit, OnDestroy {
    */
   getParkingLotStories(feature: FeatureResponseDto): UserStoryDto[] {
     const parkingLotId = this.getParkingLotSprintId();
-    return feature.userStories.filter((story) => story.sprintId === parkingLotId);
-  }
-
-  /**
-   * Calculate total story points for a story
-   */
-  private getStoryTotalPoints(story: UserStoryDto): number {
-    const hasDevOrTest = (story.devStoryPoints ?? 0) + (story.testStoryPoints ?? 0);
-    const dev = story.devStoryPoints ?? 0;
-    const test = story.testStoryPoints ?? 0;
-    const base = story.storyPoints ?? 0;
-
-    return hasDevOrTest > 0 ? dev + test : base;
+    return this.calculationService.getParkingLotStories(feature, parkingLotId);
   }
 
   /**
    * Get feature-level total points
    */
   getFeatureTotal(feature: FeatureResponseDto): number {
-    return feature.userStories.reduce((sum, s) => sum + this.getStoryTotalPoints(s), 0);
+    return this.calculationService.getFeatureTotal(feature);
   }
 
   /**
@@ -493,21 +445,7 @@ export class Board implements OnInit, OnDestroy {
   getSprintTotals(sprintId: number): { dev: number; test: number; total: number } {
     const currentBoard = this.board();
     if (!currentBoard) return { dev: 0, test: 0, total: 0 };
-
-    let dev = 0,
-      test = 0,
-      total = 0;
-
-    currentBoard.features.forEach((feature) => {
-      const sprintStories = this.getStoriesInSprint(feature, sprintId);
-      sprintStories.forEach((story) => {
-        dev += story.devStoryPoints ?? 0;
-        test += story.testStoryPoints ?? 0;
-        total += this.getStoryTotalPoints(story);
-      });
-    });
-
-    return { dev, test, total };
+    return this.calculationService.getSprintTotals(currentBoard, sprintId);
   }
 
   /**
@@ -517,19 +455,7 @@ export class Board implements OnInit, OnDestroy {
     feature: FeatureResponseDto,
     sprintId: number,
   ): { dev: number; test: number; total: number } {
-    const sprintStories = this.getStoriesInSprint(feature, sprintId);
-
-    let dev = 0,
-      test = 0,
-      total = 0;
-
-    sprintStories.forEach((story) => {
-      dev += story.devStoryPoints ?? 0;
-      test += story.testStoryPoints ?? 0;
-      total += this.getStoryTotalPoints(story);
-    });
-
-    return { dev, test, total };
+    return this.calculationService.getFeatureSprintDevTestTotals(feature, sprintId);
   }
 
   /**
@@ -544,17 +470,13 @@ export class Board implements OnInit, OnDestroy {
    * Mouse move handler for cursor display
    */
   onMouseMove(event: MouseEvent): void {
-    const position = this.getBoardRelativePosition(event);
-
-    this.cursorX.set(position.x + this.cursorLabelOffset);
-    this.cursorY.set(position.y + this.cursorLabelOffset);
-
+    const position = this.cursorTrackingService.updateLocalCursor(event, this.boardContainerRef);
     void this.signalrService.sendCursorUpdate(position.x, position.y);
   }
 
   ngOnDestroy(): void {
-    this.teardownRealtimeState();
-    void this.signalrService.disconnect();
+    this.cursorTrackingService.stopRemoteCursorCleanup();
+    void this.realtimeService.disconnect();
   }
 
   async openFinalizeConfirmation(): Promise<void> {
@@ -629,17 +551,21 @@ export class Board implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if operation is blocked by finalization
+   * Check if operation is blocked by finalization or lock
    */
   isOperationBlocked(): boolean {
     const board = this.board();
-    return board?.isFinalized ?? false;
+    return board?.isLocked || board?.isFinalized || false;
   }
 
   /**
    * Get operation blocked error message
    */
   getOperationBlockedMessage(operation: string): string {
+    const board = this.board();
+    if (board?.isLocked) {
+      return MESSAGES.BOARD.OPERATION_BLOCKED_LOCKED;
+    }
     return MESSAGES.BOARD.OPERATION_BLOCKED(operation);
   }
 
@@ -650,420 +576,10 @@ export class Board implements OnInit, OnDestroy {
     return this.board()?.isFinalized ?? false;
   }
 
-  private getBoardRelativePosition(event: MouseEvent): { x: number; y: number } {
-    const boardContainer = this.boardContainerRef?.nativeElement;
-    if (!boardContainer) {
-      return {
-        x: event.clientX,
-        y: event.clientY,
-      };
-    }
-
-    const rect = boardContainer.getBoundingClientRect();
-
-    return {
-      x: Math.round(event.clientX - rect.left + boardContainer.scrollLeft),
-      y: Math.round(event.clientY - rect.top + boardContainer.scrollTop),
-    };
-  }
-
-  private async connectRealtime(boardId: number): Promise<void> {
-    if (this.connectedBoardId === boardId) {
-      return;
-    }
-
-    const rawUserName = this.userService.getName().trim();
-    const userName = rawUserName || LABELS.APP.GUEST;
-    const userId = this.userService.getOrCreateUserId();
-
-    await this.signalrService.connect(boardId, userId, userName);
-    this.connectedBoardId = boardId;
-
-    this.subscribeRealtimeStreams();
-    this.startRemoteCursorCleanup();
-  }
-
-  private subscribeRealtimeStreams(): void {
-    this.clearRealtimeSubscriptions();
-
-    const presenceSub = this.signalrService.presence$.subscribe((users) => {
-      this.presenceUsers.set(users);
-    });
-
-    const cursorSub = this.signalrService.cursor$.subscribe((event) => {
-      this.applyRemoteCursorEvent(event);
-    });
-
-    const storyMovedSub = this.signalrService.storyMoved$.subscribe((event) => {
-      try {
-        this.applyStoryMovedEvent(event);
-      } catch (error) {
-        console.error('Failed to apply story moved event:', error);
-        if (this.connectedBoardId != null) {
-          this.scheduleBoardReload(this.connectedBoardId);
-        }
-      }
-    });
-
-    const teamMemberAddedSub = this.signalrService.teamMemberAdded$.subscribe((event) => {
-      try {
-        this.applyTeamMemberAddedEvent(event);
-      } catch (error) {
-        console.error('Failed to apply team member added event:', error);
-        if (this.connectedBoardId != null) {
-          this.scheduleBoardReload(this.connectedBoardId);
-        }
-      }
-    });
-
-    const teamMemberUpdatedSub = this.signalrService.teamMemberUpdated$.subscribe((event) => {
-      try {
-        this.applyTeamMemberUpdatedEvent(event);
-      } catch (error) {
-        console.error('Failed to apply team member updated event:', error);
-        if (this.connectedBoardId != null) {
-          this.scheduleBoardReload(this.connectedBoardId);
-        }
-      }
-    });
-
-    const teamMemberDeletedSub = this.signalrService.teamMemberDeleted$.subscribe((event) => {
-      try {
-        this.applyTeamMemberDeletedEvent(event);
-      } catch (error) {
-        console.error('Failed to apply team member deleted event:', error);
-        if (this.connectedBoardId != null) {
-          this.scheduleBoardReload(this.connectedBoardId);
-        }
-      }
-    });
-
-    const capacityUpdatedSub = this.signalrService.capacityUpdated$.subscribe((event) => {
-      try {
-        this.applyCapacityUpdatedEvent(event);
-      } catch (error) {
-        console.error('Failed to apply capacity updated event:', error);
-        if (this.connectedBoardId != null) {
-          this.scheduleBoardReload(this.connectedBoardId);
-        }
-      }
-    });
-
-    const boardFinalizedSub = this.signalrService.boardFinalized$.subscribe((event) => {
-      this.scheduleBoardReload(event.boardId);
-    });
-
-    const boardRestoredSub = this.signalrService.boardRestored$.subscribe((event) => {
-      this.scheduleBoardReload(event.boardId);
-    });
-
-    const featureImportedSub = this.signalrService.featureImported$.subscribe((event) => {
-      this.scheduleBoardReload(event.boardId);
-    });
-
-    const featureRefreshedSub = this.signalrService.featureRefreshed$.subscribe((event) => {
-      this.scheduleBoardReload(event.boardId);
-    });
-
-    const featuresReorderedSub = this.signalrService.featuresReordered$.subscribe((event) => {
-      this.scheduleBoardReload(event.boardId);
-    });
-
-    const featureDeletedSub = this.signalrService.featureDeleted$.subscribe((event) => {
-      this.scheduleBoardReload(event.boardId);
-    });
-
-    const storyRefreshedSub = this.signalrService.storyRefreshed$.subscribe(() => {
-      if (this.connectedBoardId != null) {
-        this.scheduleBoardReload(this.connectedBoardId);
-      }
-    });
-
-    this.realtimeSubscriptions.push(
-      presenceSub,
-      cursorSub,
-      storyMovedSub,
-      teamMemberAddedSub,
-      teamMemberUpdatedSub,
-      teamMemberDeletedSub,
-      capacityUpdatedSub,
-      boardFinalizedSub,
-      boardRestoredSub,
-      featureImportedSub,
-      featureRefreshedSub,
-      featuresReorderedSub,
-      featureDeletedSub,
-      storyRefreshedSub,
-    );
-  }
-
-  private applyStoryMovedEvent(event: StoryMovedEvent): void {
-    if (this.connectedBoardId !== event.boardId) {
-      return;
-    }
-
-    const currentBoard = this.boardService.getBoard();
-    if (!currentBoard) {
-      return;
-    }
-
-    let hasChanges = false;
-    const updatedFeatures = currentBoard.features.map((feature) => {
-      const updatedStories = feature.userStories.map((story) => {
-        if (story.id !== event.storyId) {
-          return story;
-        }
-
-        hasChanges = hasChanges || story.sprintId !== event.targetSprintId;
-        return {
-          ...story,
-          sprintId: event.targetSprintId,
-          isMoved: story.originalSprintId !== event.targetSprintId,
-        };
-      });
-
-      return {
-        ...feature,
-        userStories: updatedStories,
-      };
-    });
-
-    if (!hasChanges) {
-      return;
-    }
-
-    this.boardService.updateBoardState({
-      ...currentBoard,
-      features: updatedFeatures,
-    });
-  }
-
-  private applyRemoteCursorEvent(event: CursorPresenceEvent): void {
-    const existing = this.remoteCursorMap.get(event.userId);
-    if (existing && event.sequence <= existing.sequence) {
-      return;
-    }
-
-    this.remoteCursorMap.set(event.userId, {
-      userId: event.userId,
-      displayName: event.displayName,
-      color: event.color,
-      x: event.cursor.x + this.cursorLabelOffset,
-      y: event.cursor.y + this.cursorLabelOffset,
-      lastSeenAt: Date.now(),
-      sequence: event.sequence,
-    });
-
-    this.remoteCursors.set([...this.remoteCursorMap.values()]);
-  }
-
-  private applyTeamMemberAddedEvent(event: TeamMemberAddedEvent): void {
-    if (this.connectedBoardId !== event.boardId) {
-      return;
-    }
-
-    const currentBoard = this.boardService.getBoard();
-    if (!currentBoard) {
-      return;
-    }
-
-    const existingMemberIndex = currentBoard.teamMembers.findIndex(
-      (member) => member.id === event.teamMember.id,
-    );
-
-    const updatedTeamMembers = [...currentBoard.teamMembers];
-    if (existingMemberIndex === -1) {
-      updatedTeamMembers.push(event.teamMember);
-    } else {
-      updatedTeamMembers[existingMemberIndex] = event.teamMember;
-    }
-
-    this.boardService.updateBoardState({
-      ...currentBoard,
-      teamMembers: updatedTeamMembers,
-    });
-  }
-
-  private applyTeamMemberUpdatedEvent(event: TeamMemberUpdatedEvent): void {
-    if (this.connectedBoardId !== event.boardId) {
-      return;
-    }
-
-    const currentBoard = this.boardService.getBoard();
-    if (!currentBoard) {
-      return;
-    }
-
-    let hasChanges = false;
-    const updatedTeamMembers = currentBoard.teamMembers.map((member) => {
-      if (member.id !== event.teamMember.id) {
-        return member;
-      }
-
-      hasChanges = true;
-      return event.teamMember;
-    });
-
-    if (!hasChanges) {
-      return;
-    }
-
-    this.boardService.updateBoardState({
-      ...currentBoard,
-      teamMembers: updatedTeamMembers,
-    });
-  }
-
-  private applyTeamMemberDeletedEvent(event: TeamMemberDeletedEvent): void {
-    if (this.connectedBoardId !== event.boardId) {
-      return;
-    }
-
-    const currentBoard = this.boardService.getBoard();
-    if (!currentBoard) {
-      return;
-    }
-
-    const updatedTeamMembers = currentBoard.teamMembers.filter(
-      (member) => member.id !== event.teamMemberId,
-    );
-
-    if (updatedTeamMembers.length === currentBoard.teamMembers.length) {
-      return;
-    }
-
-    this.boardService.updateBoardState({
-      ...currentBoard,
-      teamMembers: updatedTeamMembers,
-    });
-  }
-
-  private applyCapacityUpdatedEvent(event: CapacityUpdatedEvent): void {
-    if (this.connectedBoardId !== event.boardId) {
-      return;
-    }
-
-    const currentBoard = this.boardService.getBoard();
-    if (!currentBoard) {
-      return;
-    }
-
-    let hasChanges = false;
-    const updatedTeamMembers = currentBoard.teamMembers.map((member) => {
-      if (member.id !== event.teamMemberId) {
-        return member;
-      }
-
-      const capacityIndex = member.sprintCapacities.findIndex(
-        (capacity) => capacity.sprintId === event.sprintId,
-      );
-
-      const updatedSprintCapacities = [...member.sprintCapacities];
-      if (capacityIndex === -1) {
-        updatedSprintCapacities.push({
-          sprintId: event.sprintId,
-          capacityDev: event.capacityDev,
-          capacityTest: event.capacityTest,
-        });
-      } else {
-        const currentCapacity = updatedSprintCapacities[capacityIndex];
-        if (
-          currentCapacity.capacityDev === event.capacityDev &&
-          currentCapacity.capacityTest === event.capacityTest
-        ) {
-          return member;
-        }
-
-        updatedSprintCapacities[capacityIndex] = {
-          ...currentCapacity,
-          capacityDev: event.capacityDev,
-          capacityTest: event.capacityTest,
-        };
-      }
-
-      hasChanges = true;
-      return {
-        ...member,
-        sprintCapacities: updatedSprintCapacities,
-      };
-    });
-
-    if (!hasChanges) {
-      return;
-    }
-
-    this.boardService.updateBoardState({
-      ...currentBoard,
-      teamMembers: updatedTeamMembers,
-    });
-  }
-
-  private scheduleBoardReload(boardId: number): void {
-    if (this.connectedBoardId !== boardId) {
-      return;
-    }
-
-    if (this.boardReloadTimeoutId !== null) {
-      return;
-    }
-
-    this.boardReloadTimeoutId = window.setTimeout(() => {
-      this.boardReloadTimeoutId = null;
-      this.boardService.loadBoard(boardId);
-    }, 1000);
-  }
-
-  private startRemoteCursorCleanup(): void {
-    if (this.remoteCursorCleanupIntervalId !== null) {
-      window.clearInterval(this.remoteCursorCleanupIntervalId);
-    }
-
-    this.remoteCursorCleanupIntervalId = window.setInterval(() => {
-      const now = Date.now();
-      let hasChanges = false;
-
-      for (const [userId, cursor] of this.remoteCursorMap.entries()) {
-        if (now - cursor.lastSeenAt > this.remoteCursorIdleMs) {
-          this.remoteCursorMap.delete(userId);
-          hasChanges = true;
-        }
-      }
-
-      if (hasChanges) {
-        this.remoteCursors.set([...this.remoteCursorMap.values()]);
-      }
-    }, 500);
-  }
-
-  private async ensureRealtimeDisconnectedIfBoardChanged(nextBoardId: number): Promise<void> {
-    if (this.connectedBoardId === null || this.connectedBoardId === nextBoardId) {
-      return;
-    }
-
-    await this.signalrService.disconnect();
-    this.teardownRealtimeState();
-  }
-
-  private teardownRealtimeState(): void {
-    this.connectedBoardId = null;
-    this.clearRealtimeSubscriptions();
-    this.remoteCursorMap.clear();
-    this.remoteCursors.set([]);
-    this.presenceUsers.set([]);
-
-    if (this.remoteCursorCleanupIntervalId !== null) {
-      window.clearInterval(this.remoteCursorCleanupIntervalId);
-      this.remoteCursorCleanupIntervalId = null;
-    }
-
-    if (this.boardReloadTimeoutId !== null) {
-      window.clearTimeout(this.boardReloadTimeoutId);
-      this.boardReloadTimeoutId = null;
-    }
-  }
-
-  private clearRealtimeSubscriptions(): void {
-    this.realtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
-    this.realtimeSubscriptions = [];
+  /**
+   * Check if board is locked (for child components)
+   */
+  isBoardLocked(): boolean {
+    return this.board()?.isLocked ?? false;
   }
 }

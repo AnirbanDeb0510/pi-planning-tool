@@ -11,7 +11,12 @@ export const MESSAGES = {
     FINALIZE_FAILED: 'Failed to finalize board',
     FINALIZE_WARNINGS_FAILED: 'Failed to fetch finalization warnings',
     RESTORE_FAILED: 'Failed to restore board',
-    OPERATION_BLOCKED: (operation: string) => `Cannot ${operation} on a finalized board. Restore the board first.`,
+    LOCK_FAILED: 'Failed to lock board',
+    UNLOCK_FAILED: 'Failed to unlock board',
+    LOCKED: 'This board is locked and read-only',
+    OPERATION_BLOCKED: (operation: string) =>
+      `Cannot ${operation} on a finalized board. Restore the board first.`,
+    OPERATION_BLOCKED_LOCKED: 'Board is locked - no changes allowed. Unlock the board first.',
     FINALIZE_INFO_PREFIX: 'Finalizing marks the board as',
     FINALIZE_INFO_HIGHLIGHT: 'ready for execution',
     FINALIZE_INFO_SUFFIX: 'You will not be able to:',
@@ -24,13 +29,16 @@ export const MESSAGES = {
     FINALIZE_ALLOWED_CAPACITY: 'Update capacity allocations',
     FINALIZE_ALLOWED_REFRESH: 'Refresh features from Azure DevOps',
     WARNINGS_TITLE: '⚠️ Warnings:',
+    LOCK_INFO:
+      'Locking this board will make it read-only. No changes will be allowed until the board is unlocked with the password.',
+    UNLOCK_INFO: 'Enter the password to unlock this board and allow changes.',
   },
   ERROR: {
     TITLE: '⚠️ Error',
   },
   PAT: {
     INFO: 'This board contains features from Azure DevOps. Please provide a Personal Access Token (PAT) to verify access.',
-    HINT: 'Your PAT will not be stored. It\'s used only to verify access.',
+    HINT: "Your PAT will not be stored. It's used only to verify access.",
   },
   BOARD_LIST: {
     SELECTION_REQUIRED: '📋 Please enter your organization and project names to find boards.',
@@ -60,7 +68,8 @@ export const MESSAGES = {
     CAPACITY_FAILED: 'Failed to update capacity. Please try again.',
   },
   FEATURE: {
-    DELETE_WARNING: 'This will delete the feature and all associated user stories. This action cannot be undone.',
+    DELETE_WARNING:
+      'This will delete the feature and all associated user stories. This action cannot be undone.',
     IMPORT_FAILED: 'Failed to import feature',
     REFRESH_FAILED: 'Failed to refresh feature',
     REORDER_FAILED: 'Failed to reorder features',

@@ -76,6 +76,12 @@ export interface BoardRestoredEvent {
   timestampUtc: string;
 }
 
+export interface BoardLockStateChangedEvent {
+  boardId: number;
+  isLocked: boolean;
+  timestampUtc: string;
+}
+
 export interface FeatureImportedEvent {
   boardId: number;
   feature: FeatureSignalREvent;
@@ -138,6 +144,7 @@ export class SignalrService {
   private readonly capacityUpdatedSubject = new Subject<CapacityUpdatedEvent>();
   private readonly boardFinalizedSubject = new Subject<BoardFinalizedEvent>();
   private readonly boardRestoredSubject = new Subject<BoardRestoredEvent>();
+  private readonly boardLockStateChangedSubject = new Subject<BoardLockStateChangedEvent>();
   private readonly featureImportedSubject = new Subject<FeatureImportedEvent>();
   private readonly featureRefreshedSubject = new Subject<FeatureRefreshedEvent>();
   private readonly featuresReorderedSubject = new Subject<FeaturesReorderedEvent>();
@@ -153,6 +160,7 @@ export class SignalrService {
   readonly capacityUpdated$ = this.capacityUpdatedSubject.asObservable();
   readonly boardFinalized$ = this.boardFinalizedSubject.asObservable();
   readonly boardRestored$ = this.boardRestoredSubject.asObservable();
+  readonly boardLockStateChanged$ = this.boardLockStateChangedSubject.asObservable();
   readonly featureImported$ = this.featureImportedSubject.asObservable();
   readonly featureRefreshed$ = this.featureRefreshedSubject.asObservable();
   readonly featuresReordered$ = this.featuresReorderedSubject.asObservable();
@@ -342,6 +350,12 @@ export class SignalrService {
     connection.on('BoardRestored', (payload: BoardRestoredEvent) => {
       this.ngZone.run(() => {
         this.boardRestoredSubject.next(payload);
+      });
+    });
+
+    connection.on('BoardLockStateChanged', (payload: BoardLockStateChangedEvent) => {
+      this.ngZone.run(() => {
+        this.boardLockStateChangedSubject.next(payload);
       });
     });
 

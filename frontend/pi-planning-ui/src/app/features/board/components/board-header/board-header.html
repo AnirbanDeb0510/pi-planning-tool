@@ -1,9 +1,120 @@
-<!-- Dev-Test Toggle -->
-<div class="toggle-container">
-  <label class="switch">
-    <input type="checkbox" [checked]="showDevTest()" (change)="toggleDevTest()" />
-    <span class="slider"></span>
-  </label>
-  <span class="toggle-label">{{ LABELS.FIELDS.DEV_TEST_TOGGLE }}</span>
-</div>
+<!-- Board Header - Modern Clean Design -->
+<div class="board-header-container">
+  <!-- Left Section: Dev/Test Toggle + Status Badges -->
+  <div class="header-left">
+    <!-- Dev-Test Toggle -->
+    <div class="toggle-section">
+      <label class="switch" [attr.title]="LABELS.FIELDS.DEV_TEST_TOGGLE">
+        <input type="checkbox" [checked]="showDevTest()" (change)="toggleDevTest()" />
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">{{ LABELS.FIELDS.DEV_TEST_TOGGLE }}</span>
+    </div>
 
+    <!-- Status Badges -->
+    <div class="status-badges">
+      @if (board()?.isLocked) {
+        <div class="badge badge-locked">
+          <mat-icon>lock</mat-icon>
+          <span>{{ LABELS.BADGES.LOCKED_PLAIN }}</span>
+        </div>
+      }
+      @if (board()?.isFinalized) {
+        <div class="badge badge-finalized">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ LABELS.BADGES.FINALIZED_PLAIN }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Section: Action Buttons -->
+  <div class="header-right">
+    <!-- Add Feature Button -->
+    <button
+      class="btn-action btn-add-feature"
+      (click)="parent.openImportFeatureModal()"
+      [disabled]="parent.isOperationBlocked()"
+      type="button"
+      [matTooltip]="
+        parent.isOperationBlocked()
+          ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_FEATURES)
+          : TOOLTIPS.TEAM.ADD_FEATURE
+      "
+      matTooltipPosition="above"
+    >
+      <mat-icon>add_circle</mat-icon>
+      <span class="btn-label">{{ LABELS.BUTTONS.ADD_FEATURE }}</span>
+    </button>
+
+    <!-- Finalize/Restore Button -->
+    @if (!board()?.isFinalized) {
+      <button
+        class="btn-action btn-finalize"
+        (click)="parent.openFinalizeConfirmation()"
+        [disabled]="board()?.isLocked ?? false"
+        type="button"
+        matTooltip="{{ TOOLTIPS.BOARD.FINALIZE_DETAIL }}"
+        matTooltipPosition="above"
+      >
+        <mat-icon>done_all</mat-icon>
+        <span class="btn-label">{{ LABELS.BUTTONS.FINALIZE_PLAIN }}</span>
+      </button>
+    } @else {
+      <button
+        class="btn-action btn-restore"
+        (click)="parent.restoreBoard()"
+        [disabled]="board()?.isLocked || parent.finalizationLoading()"
+        type="button"
+        matTooltip="{{ TOOLTIPS.BOARD.RESTORE_BUTTON }}"
+        matTooltipPosition="above"
+      >
+        <mat-icon>restore</mat-icon>
+        <span class="btn-label">{{
+          parent.finalizationLoading()
+            ? LABELS.BUTTONS.RESTORING_PLAIN
+            : LABELS.BUTTONS.RESTORE_PLAIN
+        }}</span>
+      </button>
+    }
+
+    <!-- Lock/Unlock Button -->
+    @if (board()?.isLocked) {
+      <button
+        class="btn-action btn-unlock"
+        (click)="openUnlockModal()"
+        type="button"
+        matTooltip="{{ TOOLTIPS.BOARD.UNLOCK }}"
+        matTooltipPosition="above"
+      >
+        <mat-icon>lock_open</mat-icon>
+        <span class="btn-label">{{ LABELS.BUTTONS.UNLOCK_PLAIN }}</span>
+      </button>
+    } @else {
+      <button
+        class="btn-action btn-lock"
+        (click)="openLockModal()"
+        type="button"
+        matTooltip="{{ TOOLTIPS.BOARD.LOCK }}"
+        matTooltipPosition="above"
+      >
+        <mat-icon>lock</mat-icon>
+        <span class="btn-label">{{ LABELS.BUTTONS.LOCK_PLAIN }}</span>
+      </button>
+    }
+
+    <!-- Refresh Button (Rightmost) -->
+    <button
+      class="btn-action btn-refresh"
+      (click)="refreshBoard()"
+      [attr.aria-label]="'Refresh board data'"
+      [disabled]="parent.loading()"
+      type="button"
+      matTooltip="{{ TOOLTIPS.BOARD.REFRESH }}"
+      matTooltipPosition="above"
+    >
+      <mat-icon [class.rotating]="parent.loading()">refresh</mat-icon>
+      <span class="btn-label">{{ LABELS.BUTTONS.REFRESH_PLAIN }}</span>
+    </button>
+  </div>
+</div>

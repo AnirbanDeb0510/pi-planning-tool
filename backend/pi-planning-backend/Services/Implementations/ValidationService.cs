@@ -89,6 +89,18 @@ namespace PiPlanningBackend.Services.Implementations
         }
 
         /// <summary>
+        /// Validates that a board is not locked before allowing modifications.
+        /// </summary>
+        public void ValidateBoardNotLocked(Board board, string operation)
+        {
+            if (board.IsLocked)
+            {
+                throw new UnauthorizedAccessException(
+                    $"Cannot {operation} on locked board '{board.Name}'. Unlock the board first.");
+            }
+        }
+
+        /// <summary>
         /// Validates team member capacity for a sprint.
         /// </summary>
         public void ValidateTeamMemberCapacity(int capacity, int sprintWorkDays)

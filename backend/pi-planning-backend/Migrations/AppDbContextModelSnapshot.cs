@@ -303,13 +303,13 @@ namespace PiPlanningBackend.Migrations
                     b.HasOne("PiPlanningBackend.Models.Sprint", "Sprint")
                         .WithMany("TeamMemberSprints")
                         .HasForeignKey("SprintId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("PiPlanningBackend.Models.TeamMember", "TeamMember")
                         .WithMany("TeamMemberSprints")
                         .HasForeignKey("TeamMemberId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Sprint");

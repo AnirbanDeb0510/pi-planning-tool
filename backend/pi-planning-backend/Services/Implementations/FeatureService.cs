@@ -36,6 +36,9 @@ namespace PiPlanningBackend.Services.Implementations
                 await _validationService.ValidateBoardExists(boardId);
                 Board board = await _boardRepo.GetBoardWithSprintsAsync(boardId) ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
+                // Guard: Prevent adding features if board is locked
+                _validationService.ValidateBoardNotLocked(board, "add features");
+
                 // Guard: Prevent adding features if board is finalized (unless bypass flag is set for refresh)
                 if (checkFinalized)
                 {
@@ -195,6 +198,11 @@ namespace PiPlanningBackend.Services.Implementations
                     ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
                 Feature feature = story.Feature
                     ?? throw new KeyNotFoundException($"Feature for story {storyId} not found.");
+                Board board = await _boardRepo.GetByIdAsync(boardId)
+                    ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+                // Guard: Prevent refresh if board is locked
+                _validationService.ValidateBoardNotLocked(board, "refresh user story");
 
                 if (string.IsNullOrEmpty(story.AzureId))
                 {
@@ -235,6 +243,11 @@ namespace PiPlanningBackend.Services.Implementations
             await _validationService.ValidateSprintBelongsToBoard(targetSprintId, boardId);
             UserStory story = await _storyRepo.GetByIdWithDetailsAsync(storyId)
                 ?? throw new KeyNotFoundException($"User story with ID {storyId} not found.");
+            Board board = await _boardRepo.GetByIdAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            // Guard: Prevent moving stories if board is locked
+            _validationService.ValidateBoardNotLocked(board, "move user stories");
 
             int previousSprintId = story.SprintId;
             story.SprintId = targetSprintId;
@@ -262,6 +275,13 @@ namespace PiPlanningBackend.Services.Implementations
                 return;
             }
 
+            await _validationService.ValidateBoardExists(boardId);
+            Board board = await _boardRepo.GetByIdAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            // Guard: Prevent reordering if board is locked
+            _validationService.ValidateBoardNotLocked(board, "reorder features");
+
             foreach (ReorderFeatureItemDto item in features)
             {
                 await _validationService.ValidateFeatureBelongsToBoard(item.FeatureId, boardId);
@@ -286,6 +306,11 @@ namespace PiPlanningBackend.Services.Implementations
                 await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
                 Feature feature = await _featureRepo.GetByIdAsync(featureId)
                     ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
+                Board board = await _boardRepo.GetByIdAsync(boardId)
+                    ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+                // Guard: Prevent deletion if board is locked
+                _validationService.ValidateBoardNotLocked(board, "delete feature");
 
                 int storyCount = feature.UserStories?.Count ?? 0;
                 // Delete feature - EF Core will cascade delete user stories

@@ -31,7 +31,11 @@
       }
 
       <mat-menu #featureMenu="matMenu">
-        <button mat-menu-item (click)="openRefreshFeatureModal(feature)">
+        <button
+          mat-menu-item
+          (click)="openRefreshFeatureModal(feature)"
+          [disabled]="isOperationBlocked()"
+        >
           <mat-icon>refresh</mat-icon>
           <span>{{ LABELS.BUTTONS.REFRESH_FROM_AZURE }}</span>
         </button>
@@ -57,12 +61,24 @@
       [id]="'feature_' + feature.id + '_parkingLot'"
       [cdkDropListData]="getParkingLotStories(feature)"
       [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
+      [cdkDropListDisabled]="board()?.isLocked ?? false"
       class="story-list"
       (cdkDropListDropped)="parent.drop($event)"
-      [title]="board()?.isFinalized ? TOOLTIPS.BOARD.FINALIZED_MOVE : ''"
+      [title]="
+        board()?.isLocked
+          ? TOOLTIPS.BOARD.LOCKED_MOVE
+          : board()?.isFinalized
+            ? TOOLTIPS.BOARD.FINALIZED_MOVE
+            : ''
+      "
     >
       @for (story of getParkingLotStories(feature); track story.id) {
-        <app-story-card [story]="story" [parent]="parent" cdkDrag></app-story-card>
+        <app-story-card
+          [story]="story"
+          [parent]="parent"
+          cdkDrag
+          [cdkDragDisabled]="board()?.isLocked ?? false"
+        ></app-story-card>
       }
     </div>
   </div>
@@ -75,14 +91,24 @@
         [id]="'feature_' + feature.id + '_sprint_' + sprint.id"
         [cdkDropListData]="getStoriesInSprint(feature, sprint.id)"
         [cdkDropListConnectedTo]="getConnectedLists(feature.id)"
+        [cdkDropListDisabled]="board()?.isLocked ?? false"
         class="story-list"
         (cdkDropListDropped)="parent.drop($event)"
         [title]="
-          board()?.isFinalized ? 'Board is finalized - story movements are displayed only' : ''
+          board()?.isLocked
+            ? TOOLTIPS.BOARD.LOCKED_MOVE
+            : board()?.isFinalized
+              ? TOOLTIPS.BOARD.FINALIZED_MOVE
+              : ''
         "
       >
         @for (story of getStoriesInSprint(feature, sprint.id); track story.id) {
-          <app-story-card [story]="story" [parent]="parent" cdkDrag></app-story-card>
+          <app-story-card
+            [story]="story"
+            [parent]="parent"
+            cdkDrag
+            [cdkDragDisabled]="board()?.isLocked ?? false"
+          ></app-story-card>
         }
       </div>
       <div class="sprint-feature-points">

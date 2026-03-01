@@ -40,6 +40,18 @@ export class BoardModals {
   protected deleteLoading = signal(false);
   protected deleteError = signal<string | null>(null);
 
+  protected showLockBoardModal = signal(false);
+  protected lockPassword = signal('');
+  protected lockPasswordConfirm = signal('');
+  protected hasExistingPassword = signal(false);
+  protected lockLoading = signal(false);
+  protected lockError = signal<string | null>(null);
+
+  protected showUnlockBoardModal = signal(false);
+  protected unlockPassword = signal('');
+  protected unlockLoading = signal(false);
+  protected unlockError = signal<string | null>(null);
+
   protected operationBlockedError = signal<string | null>(null);
   protected patTtlMinutes = RuntimeConfig.patTtlMinutes;
 
@@ -233,6 +245,100 @@ export class BoardModals {
       this.deleteError.set(message || MESSAGES.FEATURE.DELETE_FAILED);
     } finally {
       this.deleteLoading.set(false);
+    }
+  }
+
+  // Lock Board methods
+  public openLockBoardModal(): void {
+    const currentBoard = this.board();
+    if (!currentBoard) return;
+
+    // Check if board already has a password (Scenario B) or not (Scenario A)
+    // We can't directly check from frontend, so we'll show single password field
+    // Backend will handle both scenarios
+    this.hasExistingPassword.set(false); // For now, always show password + confirm
+    this.lockPassword.set('');
+    this.lockPasswordConfirm.set('');
+    this.lockError.set(null);
+    this.showLockBoardModal.set(true);
+  }
+
+  protected closeLockBoardModal(): void {
+    this.showLockBoardModal.set(false);
+    this.lockPassword.set('');
+    this.lockPasswordConfirm.set('');
+    this.lockLoading.set(false);
+    this.lockError.set(null);
+  }
+
+  protected async lockBoard(): Promise<void> {
+    const currentBoard = this.board();
+    if (!currentBoard) return;
+
+    const password = this.lockPassword().trim();
+    const passwordConfirm = this.lockPasswordConfirm().trim();
+
+    if (!password) {
+      this.lockError.set('Password is required');
+      return;
+    }
+
+    // Only validate confirmation if we're setting a new password
+    if (!this.hasExistingPassword() && password !== passwordConfirm) {
+      this.lockError.set('Passwords do not match');
+      return;
+    }
+
+    this.lockLoading.set(true);
+    this.lockError.set(null);
+
+    try {
+      await this.parent.boardService.lockBoard(currentBoard.id, password);
+      this.closeLockBoardModal();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.lockError.set(message || MESSAGES.BOARD.LOCK_FAILED);
+    } finally {
+      this.lockLoading.set(false);
+    }
+  }
+
+  // Unlock Board methods
+  public openUnlockBoardModal(): void {
+    this.unlockPassword.set('');
+    this.unlockError.set(null);
+    this.showUnlockBoardModal.set(true);
+  }
+
+  protected closeUnlockBoardModal(): void {
+    this.showUnlockBoardModal.set(false);
+    this.unlockPassword.set('');
+    this.unlockLoading.set(false);
+    this.unlockError.set(null);
+  }
+
+  protected async unlockBoard(): Promise<void> {
+    const currentBoard = this.board();
+    if (!currentBoard) return;
+
+    const password = this.unlockPassword().trim();
+
+    if (!password) {
+      this.unlockError.set('Password is required');
+      return;
+    }
+
+    this.unlockLoading.set(true);
+    this.unlockError.set(null);
+
+    try {
+      await this.parent.boardService.unlockBoard(currentBoard.id, password);
+      this.closeUnlockBoardModal();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.unlockError.set(message || MESSAGES.BOARD.UNLOCK_FAILED);
+    } finally {
+      this.unlockLoading.set(false);
     }
   }
 

@@ -19,7 +19,12 @@
           class="member-action"
           type="button"
           (click)="openEditMember(member)"
-          title="{{ TOOLTIPS.TEAM.EDIT_MEMBER }}"
+          [disabled]="parent.isOperationBlocked()"
+          [title]="
+            parent.isOperationBlocked()
+              ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.EDIT_MEMBERS)
+              : TOOLTIPS.TEAM.EDIT_MEMBER
+          "
         >
           <mat-icon>edit</mat-icon>
         </button>
@@ -53,49 +58,6 @@
     >
       {{ LABELS.BUTTONS.ADD_MEMBER }}
     </button>
-    <button
-      class="add-feature-button"
-      type="button"
-      (click)="parent.openImportFeatureModal()"
-      [disabled]="parent.isOperationBlocked()"
-      [title]="
-        parent.isOperationBlocked()
-          ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_FEATURES)
-          : TOOLTIPS.TEAM.ADD_FEATURE
-      "
-    >
-      {{ LABELS.BUTTONS.ADD_FEATURE }}
-    </button>
-
-    <!-- Finalization buttons -->
-    <div class="finalization-buttons">
-      @if (!board()?.isFinalized) {
-        <button
-          class="btn-finalize"
-          type="button"
-          (click)="parent.openFinalizeConfirmation()"
-          title="{{ TOOLTIPS.BOARD.FINALIZE }}"
-        >
-          {{ LABELS.BUTTONS.FINALIZE }}
-        </button>
-      }
-      @if (board()?.isFinalized) {
-        <button
-          class="btn-restore"
-          type="button"
-          (click)="parent.restoreBoard()"
-          [disabled]="parent.finalizationLoading()"
-          title="{{ TOOLTIPS.BOARD.RESTORE_BUTTON }}"
-        >
-          {{ parent.finalizationLoading() ? LABELS.BUTTONS.RESTORING : LABELS.BUTTONS.RESTORE }}
-        </button>
-      }
-      @if (board()?.isFinalized) {
-        <span class="finalized-badge">
-          {{ LABELS.BADGES.FINALIZED_PLAIN }}
-        </span>
-      }
-    </div>
   </div>
 </div>
 
@@ -107,7 +69,9 @@
         <h3>
           {{ editingMember() ? LABELS.HEADERS.EDIT_TEAM_MEMBER : LABELS.HEADERS.ADD_TEAM_MEMBER }}
         </h3>
-        <button type="button" class="modal-close" (click)="closeAddMember()" aria-label="close"><mat-icon>close</mat-icon></button>
+        <button type="button" class="modal-close" (click)="closeAddMember()" aria-label="close">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -160,7 +124,9 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.DELETE_TEAM_MEMBER }}</h3>
-        <button type="button" class="modal-close" (click)="closeDeleteMember()" aria-label="close"><mat-icon>close</mat-icon></button>
+        <button type="button" class="modal-close" (click)="closeDeleteMember()" aria-label="close">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="modal-body">
         <p>
@@ -168,13 +134,28 @@
           >?
         </p>
         <p class="warning">{{ MESSAGES.TEAM.DELETE_WARNING }}</p>
+        @if (deleteMemberError()) {
+          <div class="form-error">
+            {{ deleteMemberError() }}
+          </div>
+        }
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" (click)="closeDeleteMember()">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeDeleteMember()"
+          [disabled]="deleteMemberLoading()"
+        >
           {{ LABELS.BUTTONS.CANCEL }}
         </button>
-        <button class="btn-danger" type="button" (click)="confirmDeleteMember()">
-          {{ LABELS.BUTTONS.DELETE }}
+        <button
+          class="btn-danger"
+          type="button"
+          (click)="confirmDeleteMember()"
+          [disabled]="deleteMemberLoading()"
+        >
+          {{ deleteMemberLoading() ? LABELS.BUTTONS.DELETING : LABELS.BUTTONS.DELETE }}
         </button>
       </div>
     </div>

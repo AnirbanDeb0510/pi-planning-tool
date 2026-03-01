@@ -1,9 +1,9 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
-**Last Updated:** March 1, 2026  
-**Current Status:** Phase 6 COMPLETE ✅ (All milestones A + B + C complete, manual testing validated)  
+**Last Updated:** March 2, 2026  
+**Current Status:** Phase 7 COMPLETE ✅  
 **Current Branch:** `main`  
-**Next Phase:** Phase 7 - Board Lock/Unlock Endpoints
+**Next Phase:** Phase 8 - Documentation & Integration Testing
 
 ---
 
@@ -11,10 +11,9 @@
 
 **Immediate Next Steps:**
 
-1. **Phase 7** - Board Lock/Unlock Endpoints (2-3 hrs)
-2. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
-3. **Phase 9** - Cloud/Hosting Deployment (1-2 days)
-4. **Phase 10** - Provider-Isolated EF Core Migrations (1-2 days, post-demo hardening)
+1. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
+2. **Phase 9** - Cloud/Hosting Deployment (1-2 days)
+3. **Phase 10** - Provider-Isolated EF Core Migrations (1-2 days, post-demo hardening)
 
 ## ✅ COMPLETED PHASES (Summary)
 
@@ -39,46 +38,196 @@
 - Milestones A/B/C delivered and manually validated
 - Production-ready: presence, cursor sync, and all mutation broadcasts
 
+### Phase 7 — Board Lock/Unlock Feature
+
+- Completed on Mar 2, 2026
+- Backend: Password-based lock/unlock endpoints with PBKDF2 hashing
+- Frontend: Lock/unlock modals with password validation and error handling
+- UI: Redesigned board header with status badges and action buttons
+- Real-time: SignalR broadcasts for lock state changes
+- Validation: All mutations blocked when board is locked (403 enforcement)
+- UX: Error banners, disabled controls, dark mode support
+- Quality: All strings externalized to constants, clean build/lint
+
 ---
 
 ## 📋 UPCOMING PHASES
 
-### PHASE 7: Board Lock/Unlock Endpoints — NEXT PRIORITY
+### PHASE 7: Board Lock/Unlock Feature — ✅ COMPLETE
 
-**Status:** Not Started  
-**Estimated Time:** 2-3 hours  
+**Status:** Complete ✅  
+**Completed:** March 2, 2026  
+**Total Time:** ~4 hours  
 **Depends On:** Phase 4, 5, 6
 **Why:** Enables board state control; provides complete workflow control alongside Finalization
 
-#### What's Different from Finalization?
+#### Core Concept: Password-Protected Lock
+
+**Password Persistence Model:** Password is a PERSISTENT board property that survives lock/unlock cycles. Once set during first lock, it remains for authentication in future lock operations.
+
+#### Design Pattern:
+
+**What's Different from Finalization?**
 
 - **Finalization:** Locks board for analysis, allows impact testing with story movement
 - **Lock:** Complete read-only lock, no changes allowed at all
 - **State:** Board can be BOTH finalized AND locked simultaneously (separate states)
 
-#### Backend Changes:
+**Lock Operation Workflow:**
 
-- `Controllers/BoardsController.cs` - Add new endpoints
-  - `PATCH /api/boards/{id}/lock` - Lock board (set IsLocked flag)
-  - `PATCH /api/boards/{id}/unlock` - Unlock board
-- `Models/Board.cs` - Add `IsLocked` property (if not exists)
-- `Services/Implementations/BoardService.cs` - Add lock/unlock methods
-- `Services/Interfaces/IBoardService.cs` - Update interface
+1. **Scenario A: Board has NO password yet**
+   - User clicks "Lock Board" button
+   - Modal: "Set password to lock this board"
+   - Input: Password + Confirm Password
+   - Action: Hash password, set `IsLocked = true`, store hash in `PasswordHash`
+   - Result: Board locked with new password
 
-#### Frontend Changes:
+2. **Scenario B: Board ALREADY has password**
+   - User clicks "Lock Board" button
+   - Modal: "Enter password to lock board"
+   - Input: Password (single field)
+   - Action: Verify password against existing `PasswordHash`
+   - If valid: Set `IsLocked = true` (keep existing password)
+   - If invalid: Show error "Invalid password"
+   - Result: Board locked with same password
 
-- Add lock/unlock buttons to board header
-- Show locked state indicator (independent from finalized banner)
-- Block all operations when board is locked
+**Unlock Operation Workflow:**
 
-#### Acceptance Criteria:
+- User clicks "Unlock Board" button
+- Modal: "Enter password to unlock board"
+- Input: Password
+- Action: Verify password against `PasswordHash`
+- If valid: Set `IsLocked = false` (KEEP password hash for future locks)
+- If invalid: Show error "Invalid password"
+- Result: Board unlocked but password persists
 
-- [ ] Lock endpoint sets IsLocked flag in database
-- [ ] Unlock endpoint clears IsLocked flag
-- [ ] UI shows locked state clearly (separate from finalized state)
-- [ ] All operations blocked when locked (add/edit/delete/move)
-- [ ] Board can be both finalized AND locked
-- [ ] Build: 0 errors
+**Board Load Workflow (View-Only):**
+
+- User loads board → No password prompt during load
+- Load preview → Show PAT modal (if needed for Azure features)
+- Load full board data
+- Display in view-only mode if `IsLocked = true`
+
+#### Backend Implementation:
+
+**TASK 7.1: Create DTOs** ✅ COMPLETE
+
+- [x] `BoardLockDto` - `{ password: string }`
+- [x] `BoardUnlockDto` - `{ password: string }`
+- [x] Response DTOs - `BoardSummaryDto` returned with success status
+
+**TASK 7.2: Implement Lock/Unlock Endpoints** ✅ COMPLETE
+
+- [x] `PATCH /api/boards/{id}/lock` in `BoardsController.cs`
+  - Scenario A (no password): Hash new password, set `IsLocked = true` ✅
+  - Scenario B (password exists): Verify password, set `IsLocked = true` ✅
+  - Broadcast SignalR event: `"BoardLockStateChanged"` with `{ boardId, isLocked: true, timestampUtc }` ✅
+- [x] `PATCH /api/boards/{id}/unlock` in `BoardsController.cs`
+  - Verify password against `PasswordHash` ✅
+  - Set `IsLocked = false` (keep `PasswordHash`) ✅
+  - Broadcast SignalR event: `"BoardLockStateChanged"` with `{ boardId, isLocked: false, timestampUtc }` ✅
+
+**TASK 7.3: Add Lock Validation** ✅ COMPLETE
+
+- [x] Create `ValidateBoardNotLocked()` method in `ValidationService.cs`
+- [x] Apply validation to all mutations:
+  - `FeatureService`: import, refresh, delete, reorder ✅
+  - `UserStoryService`: move stories ✅
+  - `TeamService`: add, update, delete members; update capacity ✅
+  - `BoardService`: finalize, restore ✅
+- [x] Return 403 Forbidden error if board is locked (via `UnauthorizedAccessException`)
+
+**TASK 7.4: Add SignalR Events** ✅ COMPLETE
+
+- [x] Create `BoardLockStateChangedDto` DTO (unified lock/unlock event)
+- [x] Broadcast `"BoardLockStateChanged"` event when board locked
+- [x] Broadcast `"BoardLockStateChanged"` event when board unlocked
+
+#### Frontend Implementation:
+
+**TASK 7.5: Create Lock/Unlock Modals** ✅ COMPLETE
+
+- [x] `LockBoardModal` component with password inputs in `board-modals` component
+  - Set password form when no password exists (password + confirm)
+  - Enter password form when password exists (single field)
+  - Password validation with mismatch checking
+  - Error messages displayed for invalid passwords
+- [x] `UnlockBoardModal` component with password input
+  - Single password field
+  - Display error on invalid password
+  - Modal-level error handling (no navigation away)
+
+**TASK 7.6: Add Lock/Unlock UI to Board Header** ✅ COMPLETE
+
+- [x] Redesigned `board-header` component with modern layout
+  - LEFT section: Dev/Test toggle + Status badges (Locked, Finalized)
+  - RIGHT section: Action buttons (Finalize/Restore, Lock/Unlock, Refresh)
+  - Lock/Unlock button toggles based on `board().isLocked` state
+  - Icons: `lock` (when unlocked) / `lock_open` (when locked)
+  - Click handlers open appropriate modals
+- [x] Button disabled states properly handled
+  - Finalize disabled when locked
+  - Restore disabled when locked OR during loading
+  - Refresh disabled during loading
+- [x] Status badges show lock/finalized states independently
+  - Red "Locked" badge with lock icon
+  - Green "Finalized" badge with check icon
+  - Both can appear simultaneously
+
+**TASK 7.7: Add Real-Time Lock State Updates** ✅ COMPLETE
+
+- [x] Subscribe to SignalR event: `"BoardLocked"`
+  - Update board state: `isLocked = true`
+  - Real-time UI update (badge appears, buttons disable)
+- [x] Subscribe to SignalR event: `"BoardUnlocked"`
+  - Update board state: `isLocked = false`
+  - Real-time UI update (badge disappears, buttons enable)
+- [x] SignalR connection ID added to request headers to exclude initiator
+
+**TASK 7.8: Add Refresh Button** ✅ COMPLETE
+
+- [x] Refresh button in `board-header` component
+  - Icon: `refresh` with spinning animation during load (CSS keyframes)
+  - Click handler: `this.boardService.loadBoard(boardId)`
+  - Disabled during loading
+  - Positioned as rightmost button in header
+
+**TASK 7.9: Block Operations on Locked Board** ✅ COMPLETE
+
+- [x] All mutation operations return 403 when board is locked
+- [x] UI controls disabled when `isLocked = true`:
+  - Add feature button disabled
+  - Add team member button disabled
+  - Edit/delete buttons disabled
+  - Drag-drop disabled via `[cdkDragDisabled]` binding
+  - Finalize/restore buttons disabled
+- [x] Error handling without navigation away:
+  - Created error banner below header for finalize/restore errors
+  - Lock/unlock errors shown in modals
+  - HTTP client extracts `error.details` for specific messages
+  - GlobalExceptionHandlingMiddleware returns 403 for UnauthorizedAccessException
+- [x] Dark mode support for all new UI elements
+
+#### Acceptance Criteria: ✅ ALL VERIFIED
+
+- [x] Lock endpoint works - Scenario A (new password) creates and locks
+- [x] Lock endpoint works - Scenario B (existing password) validates and locks
+- [x] Unlock endpoint validates password and removes lock flag
+- [x] Password persists across lock/unlock cycles
+- [x] Invalid password attempts rejected with 403 Forbidden
+- [x] All mutation operations blocked when locked (return 403)
+- [x] Locked board shows lock badge independent from finalized state
+- [x] Refresh button reloads board data without page refresh
+- [x] SignalR broadcasts lock/unlock events to all connected users
+- [x] Real-time UI updates when lock status changes via SignalR
+- [x] Board can be locked without being finalized
+- [x] Board can be finalized without being locked
+- [x] Board can be both finalized AND locked simultaneously
+- [x] Load board does NOT require password (read-only by default)
+- [x] All UI controls disabled when board is locked
+- [x] Build: 0 errors, 0 warnings (888.62 kB bundle)
+- [x] Lint: Clean (0 errors, 0 warnings)
+- [x] Manual testing: Complete and verified
 
 ---
 
@@ -89,7 +238,7 @@
 **Depends On:** All other phases complete
 **Why:** Ensure comprehensive documentation and real-world integration testing
 
-#### Workstreams:
+#### Work Items:
 
 - [ ] **Architecture docs** (ERD, service flow, component hierarchy, SignalR flow)
 - [ ] **API docs** (endpoints, request/response examples, error handling, auth notes)
@@ -251,7 +400,7 @@
 ### Risks & Mitigations
 
 - **Risk:** Existing migration history mismatch in test environments  
-  **Mitigation:** Use clean test DBs for re-baseline and preserve production DBs until controlled cutover.
+  **Mitigation:** Use clean test DBs for re-baseline and preserve production DBs until controlled clover.
 
 - **Risk:** Team accidentally uses old migration commands  
   **Mitigation:** Add command snippets in README/guide + CI guard checks.

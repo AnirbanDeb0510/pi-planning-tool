@@ -136,8 +136,13 @@ export class HttpClientService {
       };
     } else {
       // Backend error
+      // Prioritize error.details over error.message for more specific error information
+      const apiError = error.error?.error; // Handle nested error object from middleware
+      const detailedMessage =
+        apiError?.details || apiError?.message || error.error?.message || error.message;
+
       errorMessage = {
-        message: error.error?.message || error.message || 'An unexpected error occurred',
+        message: detailedMessage || 'An unexpected error occurred',
         statusCode: error.status,
         errors: error.error?.errors,
       };

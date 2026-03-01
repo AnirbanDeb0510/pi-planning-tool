@@ -4,6 +4,7 @@ import { ITeamApiService } from './board-api.interface';
 import { BoardService } from './board.service';
 import { TeamMemberResponseDto } from '../../../shared/models/board.dto';
 import { MESSAGES } from '../../../shared/constants';
+import { getErrorMessage } from '../../../core/utils/error-handler.util';
 
 /**
  * Team Service
@@ -65,17 +66,16 @@ export class TeamService {
         // Replace temp member with real member from backend
         const finalBoard = {
           ...updatedBoard,
-          teamMembers: updatedBoard.teamMembers.map((m) =>
-            m.id === nextId ? member : m
-          ),
+          teamMembers: updatedBoard.teamMembers.map((m) => (m.id === nextId ? member : m)),
         };
         this.boardService.updateBoardState(finalBoard);
       },
       error: (error) => {
+        const message = getErrorMessage(error, MESSAGES.TEAM.ADD_FAILED);
         console.error('Error adding team member:', error);
         // Rollback on error
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError(MESSAGES.TEAM.ADD_FAILED);
+        this.boardService.setError(message);
       },
     });
   }
@@ -87,7 +87,7 @@ export class TeamService {
     memberId: number,
     name: string,
     role: 'dev' | 'test',
-    devTestEnabled: boolean
+    devTestEnabled: boolean,
   ): void {
     const currentBoard = this.boardService.getBoard();
     if (!currentBoard) return;
@@ -96,9 +96,7 @@ export class TeamService {
     const isTest = devTestEnabled ? role === 'test' : false;
 
     const updatedMembers = currentBoard.teamMembers.map((member) =>
-      member.id === memberId
-        ? { ...member, name, isDev, isTest }
-        : member
+      member.id === memberId ? { ...member, name, isDev, isTest } : member,
     );
 
     const updatedBoard = { ...currentBoard, teamMembers: updatedMembers };
@@ -108,16 +106,15 @@ export class TeamService {
       next: (member) => {
         const finalBoard = {
           ...updatedBoard,
-          teamMembers: updatedBoard.teamMembers.map((m) =>
-            m.id === memberId ? member : m
-          ),
+          teamMembers: updatedBoard.teamMembers.map((m) => (m.id === memberId ? member : m)),
         };
         this.boardService.updateBoardState(finalBoard);
       },
       error: (error) => {
+        const message = getErrorMessage(error, MESSAGES.TEAM.UPDATE_FAILED);
         console.error('Error updating team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError(MESSAGES.TEAM.UPDATE_FAILED);
+        this.boardService.setError(message);
       },
     });
   }
@@ -125,7 +122,10 @@ export class TeamService {
   /**
    * Remove a team member
    */
-  public removeTeamMember(memberId: number): void {
+  public removeTeamMember(
+    memberId: number,
+    callbacks?: { next?: () => void; error?: (message: string) => void },
+  ): void {
     const currentBoard = this.boardService.getBoard();
     if (!currentBoard) return;
 
@@ -137,11 +137,18 @@ export class TeamService {
 
     this.teamApi.removeTeamMember(currentBoard.id, memberId).subscribe({
       next: () => {
+        callbacks?.next?.();
       },
       error: (error) => {
+        const message = getErrorMessage(error, MESSAGES.TEAM.REMOVE_FAILED);
         console.error('Error removing team member:', error);
         this.boardService.updateBoardState(currentBoard);
-        this.boardService.setError(MESSAGES.TEAM.REMOVE_FAILED);
+        if (callbacks?.error) {
+          callbacks.error(message);
+        } else {
+          // Fallback to board-level error if no callback provided
+          this.boardService.setError(message);
+        }
       },
     });
   }
@@ -153,7 +160,7 @@ export class TeamService {
     memberId: number,
     sprintId: number,
     capacityDev: number,
-    capacityTest: number
+    capacityTest: number,
   ): void {
     const currentBoard = this.boardService.getBoard();
     if (!currentBoard) return;
@@ -177,13 +184,13 @@ export class TeamService {
     this.teamApi
       .updateCapacity(currentBoard.id, memberId, sprintId, capacityDev, capacityTest)
       .subscribe({
-        next: () => {
-        },
+        next: () => {},
         error: (error) => {
+          const message = getErrorMessage(error, MESSAGES.TEAM.CAPACITY_FAILED);
           console.error('Error updating capacity:', error);
           // Rollback on error
           this.boardService.updateBoardState(currentBoard);
-          this.boardService.setError(MESSAGES.TEAM.CAPACITY_FAILED);
+          this.boardService.setError(message);
         },
       });
   }

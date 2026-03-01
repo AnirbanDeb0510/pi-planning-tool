@@ -9,6 +9,7 @@ import {
   BoardCreateDto,
   BoardCreatedDto,
   BoardSummaryDto,
+  BoardLockActionResponseDto,
   BoardFilters,
 } from '../../../shared/models/board-api.dto';
 
@@ -43,14 +44,14 @@ export interface IBoardApiService {
   getBoardPreview(boardId: number): Observable<BoardSummaryDto>;
 
   /**
-   * Lock a board (prevent modifications)
+   * Lock a board with password (prevent modifications)
    */
-  lockBoard(id: number): Observable<void>;
+  lockBoard(id: number, password: string): Observable<BoardLockActionResponseDto>;
 
   /**
-   * Unlock a board
+   * Unlock a board with password
    */
-  unlockBoard(id: number): Observable<void>;
+  unlockBoard(id: number, password: string): Observable<BoardLockActionResponseDto>;
 
   /**
    * Validate board for finalization (get warnings)

@@ -41,6 +41,12 @@ namespace PiPlanningBackend.Services.Interfaces
         void ValidateBoardNotFinalized(Board board, string operation);
 
         /// <summary>
+        /// Validates that a board is not locked before allowing modifications.
+        /// </summary>
+        /// <exception cref="UnauthorizedAccessException">Thrown if board is locked (403 Forbidden)</exception>
+        void ValidateBoardNotLocked(Board board, string operation);
+
+        /// <summary>
         /// Validates team member capacity for a sprint.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown if capacity is invalid</exception>

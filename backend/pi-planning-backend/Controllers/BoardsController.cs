@@ -147,5 +147,113 @@ namespace PiPlanningBackend.Controllers
                 timestamp = DateTime.UtcNow
             });
         }
+
+        [HttpPatch("{id}/lock")]
+        public async Task<IActionResult> LockBoard(int id, [FromBody] BoardLockDto dto)
+        {
+            try
+            {
+                BoardSummaryDto? board = await _boardService.LockBoardAsync(id, dto.Password);
+                if (board == null)
+                {
+                    return NotFound();
+                }
+
+                // Broadcast lock event to all users on this board
+                BoardLockStateChangedDto payload = new()
+                {
+                    BoardId = id,
+                    IsLocked = true,
+                    TimestampUtc = DateTime.UtcNow
+                };
+
+                string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+                await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, id, "BoardLockStateChanged", payload, initiatorConnectionId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Board locked successfully",
+                    board,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        message = ex.Message,
+                        timestamp = DateTime.UtcNow
+                    }
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new
+                {
+                    error = new
+                    {
+                        message = ex.Message,
+                        timestamp = DateTime.UtcNow
+                    }
+                });
+            }
+        }
+
+        [HttpPatch("{id}/unlock")]
+        public async Task<IActionResult> UnlockBoard(int id, [FromBody] BoardUnlockDto dto)
+        {
+            try
+            {
+                BoardSummaryDto? board = await _boardService.UnlockBoardAsync(id, dto.Password);
+                if (board == null)
+                {
+                    return NotFound();
+                }
+
+                // Broadcast unlock event to all users on this board
+                BoardLockStateChangedDto payload = new()
+                {
+                    BoardId = id,
+                    IsLocked = false,
+                    TimestampUtc = DateTime.UtcNow
+                };
+
+                string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+                await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, id, "BoardLockStateChanged", payload, initiatorConnectionId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Board unlocked successfully",
+                    board,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new
+                {
+                    error = new
+                    {
+                        message = ex.Message,
+                        timestamp = DateTime.UtcNow
+                    }
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new
+                {
+                    error = new
+                    {
+                        message = ex.Message,
+                        timestamp = DateTime.UtcNow
+                    }
+                });
+            }
+        }
     }
 }

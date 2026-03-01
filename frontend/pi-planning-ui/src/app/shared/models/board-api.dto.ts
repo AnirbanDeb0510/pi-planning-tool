@@ -50,6 +50,13 @@ export interface BoardSummaryDto {
   sampleFeatureAzureId?: string; // Optional: for PAT validation when features exist
 }
 
+export interface BoardLockActionResponseDto {
+  success: boolean;
+  message: string;
+  board: BoardSummaryDto;
+  timestamp: Date | string;
+}
+
 export interface PatValidationRequest {
   pat: string;
   featureId?: string; // Sample feature to validate access
