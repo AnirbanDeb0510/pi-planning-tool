@@ -282,6 +282,9 @@ namespace PiPlanningBackend.Services.Implementations
                 Board board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
                     ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
+                // Guard: Prevent finalizing if board is locked
+                _validationService.ValidateBoardNotLocked(board, "finalize board");
+
                 // Set finalization flag and timestamp
                 board.IsFinalized = true;
                 board.FinalizedAt = DateTime.UtcNow;
@@ -317,6 +320,9 @@ namespace PiPlanningBackend.Services.Implementations
             await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithFullHierarchyAsync(boardId)
                 ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            // Guard: Prevent restoring if board is locked
+            _validationService.ValidateBoardNotLocked(board, "restore board");
 
             // Clear finalization flag (keep FinalizedAt for audit trail)
             board.IsFinalized = false;

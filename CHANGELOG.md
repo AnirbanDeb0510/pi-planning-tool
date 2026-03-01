@@ -24,6 +24,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both endpoints return 401 Unauthorized for invalid passwords
   - Already-locked/unlocked states return 400 InvalidOperation
 
+- **Lock Validation Service:**
+  - Created `ValidateBoardNotLocked()` method in `ValidationService`
+  - Throws `UnauthorizedAccessException` (403 Forbidden) when board is locked
+  - Applied to all mutation operations across services:
+    - **FeatureService**: ImportFeature, RefreshUserStory, ReorderFeatures, DeleteFeature
+    - **TeamService**: AddTeamMember, UpdateTeamMember, DeleteTeamMember, UpdateCapacity
+    - **BoardService**: FinalizeBoardAsync, RestoreBoardAsync
+    - **UserStoryService**: MoveUserStoryAsync
+  - Ensures complete read-only enforcement when board is locked
+
+- **SignalR Real-Time Lock Events:**
+  - Created `BoardLockStateChangedDto` for unified lock/unlock broadcasts
+  - Lock endpoint broadcasts `"BoardLockStateChanged"` event (isLocked: true)
+  - Unlock endpoint broadcasts `"BoardLockStateChanged"` event (isLocked: false)
+  - Real-time notifications to all connected users on board
+
 - **BoardService Refactoring:**
   - Removed redundant transaction wrappers from Lock/Unlock/Restore methods
   - Transactions retained only for multi-operation methods (Create, Finalize)
@@ -35,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Centralized PBKDF2 password hashing and verification
   - Consistent password handling across BoardService
 
-- **Status:** Backend DTOs + endpoints complete ✅ | SignalR broadcasts + Frontend pending ⏳
+- **Status:** Backend complete ✅ (DTOs + endpoints + validation + SignalR) | Frontend pending ⏳
 
 ### Added - Phase 4.6: Code Quality Control (Feb 26, 2026)
 

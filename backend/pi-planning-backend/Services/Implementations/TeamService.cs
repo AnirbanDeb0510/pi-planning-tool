@@ -61,6 +61,9 @@ namespace PiPlanningBackend.Services.Implementations
                 Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
                     ?? throw new KeyNotFoundException("Board not found");
 
+                // Guard: Prevent adding team members if board is locked
+                _validationService.ValidateBoardNotLocked(board, "add team members");
+
                 // Guard: Prevent adding team members if board is finalized
                 _validationService.ValidateBoardNotFinalized(board, "add team members");
 
@@ -122,10 +125,11 @@ namespace PiPlanningBackend.Services.Implementations
             TeamMember member = await _teamRepository.GetTeamMemberAsync(memberId)
                 ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
-            // Guard: Prevent updating team members if board is finalized
+            // Guard: Prevent updating team members if board is locked or finalized
             await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
                 ?? throw new KeyNotFoundException("Board not found");
+            _validationService.ValidateBoardNotLocked(board, "update team members");
             _validationService.ValidateBoardNotFinalized(board, "update team members");
 
             // Check if role has changed
@@ -170,10 +174,11 @@ namespace PiPlanningBackend.Services.Implementations
             TeamMember member = await _teamRepository.GetTeamMemberAsync(memberId)
                 ?? throw new KeyNotFoundException($"Team member with ID {memberId} not found.");
 
-            // Guard: Prevent deleting team members if board is finalized
+            // Guard: Prevent deleting team members if board is locked or finalized
             await _validationService.ValidateBoardExists(boardId);
             Board board = await _boardRepository.GetBoardWithSprintsAsync(boardId)
                 ?? throw new KeyNotFoundException("Board not found");
+            _validationService.ValidateBoardNotLocked(board, "delete team members");
             _validationService.ValidateBoardNotFinalized(board, "delete team members");
 
             await _teamRepository.DeleteTeamMemberAsync(member);
@@ -197,6 +202,12 @@ namespace PiPlanningBackend.Services.Implementations
             await _validationService.ValidateSprintBelongsToBoard(sprintId, boardId);
             TeamMemberSprint tms = await _teamRepository.GetTeamMemberSprintAsync(sprintId, teamMemberId)
                 ?? throw new KeyNotFoundException("Team member sprint mapping not found.");
+
+            // Guard: Prevent capacity updates if board is locked
+            await _validationService.ValidateBoardExists(boardId);
+            Board board = await _boardRepository.GetByIdAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+            _validationService.ValidateBoardNotLocked(board, "update team member capacity");
 
             // Calculate max allowed capacity (working days in sprint)
             int maxCapacity = 0;

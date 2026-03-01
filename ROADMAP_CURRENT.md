@@ -1,7 +1,7 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
 **Last Updated:** March 2, 2026  
-**Current Status:** Phase 7 IN PROGRESS ⚙️ (DTOs + Backend Endpoints complete, Frontend pending)  
+**Current Status:** Phase 7 IN PROGRESS ⚙️ (Backend complete ✅, Frontend pending)  
 **Current Branch:** `main`  
 **Next Phase:** Phase 7 - Board Lock/Unlock Frontend Implementation
 
@@ -46,7 +46,7 @@
 ### PHASE 7: Board Lock/Unlock Endpoints — IN PROGRESS
 
 **Status:** Backend Complete ✅, Frontend Pending  
-**Estimated Time:** 2-3 hours (1 hour completed)  
+**Estimated Time:** 2-3 hours (1.5 hours completed, ~1-1.5 hours remaining)  
 **Depends On:** Phase 4, 5, 6
 **Why:** Enables board state control; provides complete workflow control alongside Finalization
 
@@ -105,32 +105,32 @@
 - [x] `BoardUnlockDto` - `{ password: string }`
 - [x] Response DTOs - `BoardSummaryDto` returned with success status
 
-**TASK 7.2: Implement Lock/Unlock Endpoints** ✅ COMPLETE (SignalR pending)
+**TASK 7.2: Implement Lock/Unlock Endpoints** ✅ COMPLETE
 
 - [x] `PATCH /api/boards/{id}/lock` in `BoardsController.cs`
   - Scenario A (no password): Hash new password, set `IsLocked = true` ✅
   - Scenario B (password exists): Verify password, set `IsLocked = true` ✅
-  - Broadcast SignalR event: `"BoardLocked"` with `{ boardId, timestampUtc }` ⏳
+  - Broadcast SignalR event: `"BoardLockStateChanged"` with `{ boardId, isLocked: true, timestampUtc }` ✅
 - [x] `PATCH /api/boards/{id}/unlock` in `BoardsController.cs`
   - Verify password against `PasswordHash` ✅
   - Set `IsLocked = false` (keep `PasswordHash`) ✅
-  - Broadcast SignalR event: `"BoardUnlocked"` with `{ boardId, timestampUtc }` ⏳
+  - Broadcast SignalR event: `"BoardLockStateChanged"` with `{ boardId, isLocked: false, timestampUtc }` ✅
 
-**TASK 7.3: Add Lock Validation**
+**TASK 7.3: Add Lock Validation** ✅ COMPLETE
 
-- [ ] Create `ValidateBoardNotLocked()` method in `ValidationService.cs`
-- [ ] Apply validation to all mutations:
-  - `FeatureService`: import, refresh, delete, reorder
-  - `UserStoryService`: move stories
-  - `TeamService`: add, update, delete members; update capacity
-  - `BoardService`: finalize, restore
-- [ ] Return 403 Forbidden error if board is locked
+- [x] Create `ValidateBoardNotLocked()` method in `ValidationService.cs`
+- [x] Apply validation to all mutations:
+  - `FeatureService`: import, refresh, delete, reorder ✅
+  - `UserStoryService`: move stories ✅
+  - `TeamService`: add, update, delete members; update capacity ✅
+  - `BoardService`: finalize, restore ✅
+- [x] Return 403 Forbidden error if board is locked (via `UnauthorizedAccessException`)
 
-**TASK 7.4: Add SignalR Events**
+**TASK 7.4: Add SignalR Events** ✅ COMPLETE
 
-- [ ] Create `BoardLockedDto` and `BoardUnlockedDto` DTOs
-- [ ] Broadcast `"BoardLocked"` event when board locked
-- [ ] Broadcast `"BoardUnlocked"` event when board unlocked
+- [x] Create `BoardLockStateChangedDto` DTO (unified lock/unlock event)
+- [x] Broadcast `"BoardLockStateChanged"` event when board locked
+- [x] Broadcast `"BoardLockStateChanged"` event when board unlocked
 
 #### Frontend Implementation:
 
