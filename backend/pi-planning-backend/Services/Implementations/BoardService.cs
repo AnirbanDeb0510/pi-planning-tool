@@ -330,5 +330,96 @@ namespace PiPlanningBackend.Services.Implementations
             return await GetBoardPreviewAsync(boardId);
         }
 
+        /// <summary>
+        /// Lock a board with a password.
+        /// Scenario A: If no password exists, sets a new password and locks.
+        /// Scenario B: If password already exists, verifies it and locks.
+        /// </summary>
+        public async Task<BoardSummaryDto?> LockBoardAsync(int boardId, string password)
+        {
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board lock started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
+            Board? board = await _boardRepository.GetByIdAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            // Check if already locked
+            if (board.IsLocked)
+            {
+                throw new InvalidOperationException("Board is already locked.");
+            }
+
+            // Scenario A: No password exists - SET new password
+            if (string.IsNullOrEmpty(board.PasswordHash))
+            {
+                board.PasswordHash = PasswordHelper.HashPassword(password);
+                board.IsLocked = true;
+                _logger.LogInformation(
+                    "Board locked with new password | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                    correlationId, boardId);
+            }
+            // Scenario B: Password exists - VERIFY existing password
+            else
+            {
+                if (!PasswordHelper.VerifyPassword(password, board.PasswordHash))
+                {
+                    throw new UnauthorizedAccessException("Invalid password.");
+                }
+                board.IsLocked = true;
+                _logger.LogInformation(
+                    "Board locked with existing password | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                    correlationId, boardId);
+            }
+
+            await _boardRepository.SaveChangesAsync();
+            return await GetBoardPreviewAsync(boardId);
+        }
+
+        /// <summary>
+        /// Unlock a board by verifying the password.
+        /// Password hash persists after unlock for future locks.
+        /// </summary>
+        public async Task<BoardSummaryDto?> UnlockBoardAsync(int boardId, string password)
+        {
+            string? correlationId = _correlationIdProvider.GetCorrelationId();
+            _logger.LogInformation(
+                "Board unlock started | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            await _validationService.ValidateBoardExists(boardId);
+            Board? board = await _boardRepository.GetByIdAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            // Check if actually locked
+            if (!board.IsLocked)
+            {
+                throw new InvalidOperationException("Board is not locked.");
+            }
+
+            // Verify password (should always exist if locked)
+            if (string.IsNullOrEmpty(board.PasswordHash))
+            {
+                throw new InvalidOperationException("Board is locked but no password is set. Contact administrator.");
+            }
+
+            if (!PasswordHelper.VerifyPassword(password, board.PasswordHash))
+            {
+                throw new UnauthorizedAccessException("Invalid password.");
+            }
+
+            // Unlock the board (KEEP password hash for future locks)
+            board.IsLocked = false;
+
+            await _boardRepository.SaveChangesAsync();
+            _logger.LogInformation(
+                "Board unlocked successfully | CorrelationId: {CorrelationId} | BoardId: {BoardId}",
+                correlationId, boardId);
+
+            return await GetBoardPreviewAsync(boardId);
+        }
+
     }
 }

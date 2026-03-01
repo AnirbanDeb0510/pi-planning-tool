@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Phase 7: Board Lock/Unlock (Backend) (Mar 2, 2026)
+
+- **Lock/Unlock DTOs:**
+  - Created `BoardLockDto` and `BoardUnlockDto` for password-based operations
+  - Lock/unlock operations return `BoardSummaryDto` with updated state
+
+- **Password-Protected Lock Endpoints:**
+  - `PATCH /api/boards/{id}/lock` - Lock board with password (two scenarios)
+    - Scenario A: First lock sets new password (hash stored in `PasswordHash`)
+    - Scenario B: Subsequent locks verify existing password before locking
+  - `PATCH /api/boards/{id}/unlock` - Unlock board with password verification
+    - Password hash persists after unlock for future lock operations
+  - Both endpoints return 401 Unauthorized for invalid passwords
+  - Already-locked/unlocked states return 400 InvalidOperation
+
+- **BoardService Refactoring:**
+  - Removed redundant transaction wrappers from Lock/Unlock/Restore methods
+  - Transactions retained only for multi-operation methods (Create, Finalize)
+  - Removed redundant null checks after validation (using `ArgumentNullException.ThrowIfNull`)
+  - Consistent pattern across all single-operation methods
+
+- **Code Quality - Password Utilities:**
+  - Extracted `PasswordHelper` to dedicated utility class
+  - Centralized PBKDF2 password hashing and verification
+  - Consistent password handling across BoardService
+
+- **Status:** Backend DTOs + endpoints complete ✅ | SignalR broadcasts + Frontend pending ⏳
+
 ### Added - Phase 4.6: Code Quality Control (Feb 26, 2026)
 
 - **Frontend Quality:** ESLint + Prettier setup with clean lint results and formatter alignment
