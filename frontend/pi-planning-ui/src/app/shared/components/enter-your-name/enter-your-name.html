@@ -7,7 +7,13 @@
     [(ngModel)]="userName"
     placeholder="{{ PLACEHOLDERS.USER_NAME }}"
     class="input-name"
+    (keyup.enter)="startBoard()"
+    [class.error]="errorMessage"
   />
+
+  @if (errorMessage) {
+    <p class="error-message">{{ errorMessage }}</p>
+  }
 
   <button class="btn-start" (click)="startBoard()">{{ LABELS.BUTTONS.START_BOARD }}</button>
 </div>

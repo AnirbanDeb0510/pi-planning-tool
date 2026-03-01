@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Feb 28, 2026):** Phase 5 demo scope is complete with dual database provider support (PostgreSQL + SQL Server), IIS deployment validation, and SQL Server migration flow verified on Windows. Post-demo migration hardening is tracked in [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
+**🎯 Current Status (Mar 1, 2026):** Phase 5.5 is complete (sessionStorage-based user identity + route guard + returnUrl flow). The project is ready to start Phase 6 SignalR implementation with a defined cursor-presence contract (payload, throttle strategy, privacy mode, and validation checklist) in [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
 
 ---
 
