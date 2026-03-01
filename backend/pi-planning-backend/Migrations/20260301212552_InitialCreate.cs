@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,7 +12,7 @@ namespace PiPlanningBackend.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            _ = migrationBuilder.CreateTable(
+            migrationBuilder.CreateTable(
                 name: "Boards",
                 columns: table => new
                 {
@@ -35,10 +36,10 @@ namespace PiPlanningBackend.Migrations
                 },
                 constraints: table =>
                 {
-                    _ = table.PrimaryKey("PK_Boards", x => x.Id);
+                    table.PrimaryKey("PK_Boards", x => x.Id);
                 });
 
-            _ = migrationBuilder.CreateTable(
+            migrationBuilder.CreateTable(
                 name: "Features",
                 columns: table => new
                 {
@@ -53,8 +54,8 @@ namespace PiPlanningBackend.Migrations
                 },
                 constraints: table =>
                 {
-                    _ = table.PrimaryKey("PK_Features", x => x.Id);
-                    _ = table.ForeignKey(
+                    table.PrimaryKey("PK_Features", x => x.Id);
+                    table.ForeignKey(
                         name: "FK_Features_Boards_BoardId",
                         column: x => x.BoardId,
                         principalTable: "Boards",
@@ -62,7 +63,7 @@ namespace PiPlanningBackend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            _ = migrationBuilder.CreateTable(
+            migrationBuilder.CreateTable(
                 name: "Sprints",
                 columns: table => new
                 {
@@ -75,8 +76,8 @@ namespace PiPlanningBackend.Migrations
                 },
                 constraints: table =>
                 {
-                    _ = table.PrimaryKey("PK_Sprints", x => x.Id);
-                    _ = table.ForeignKey(
+                    table.PrimaryKey("PK_Sprints", x => x.Id);
+                    table.ForeignKey(
                         name: "FK_Sprints_Boards_BoardId",
                         column: x => x.BoardId,
                         principalTable: "Boards",
@@ -84,7 +85,7 @@ namespace PiPlanningBackend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            _ = migrationBuilder.CreateTable(
+            migrationBuilder.CreateTable(
                 name: "TeamMembers",
                 columns: table => new
                 {
@@ -97,8 +98,8 @@ namespace PiPlanningBackend.Migrations
                 },
                 constraints: table =>
                 {
-                    _ = table.PrimaryKey("PK_TeamMembers", x => x.Id);
-                    _ = table.ForeignKey(
+                    table.PrimaryKey("PK_TeamMembers", x => x.Id);
+                    table.ForeignKey(
                         name: "FK_TeamMembers_Boards_BoardId",
                         column: x => x.BoardId,
                         principalTable: "Boards",
@@ -106,7 +107,7 @@ namespace PiPlanningBackend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            _ = migrationBuilder.CreateTable(
+            migrationBuilder.CreateTable(
                 name: "UserStories",
                 columns: table => new
                 {
@@ -125,21 +126,21 @@ namespace PiPlanningBackend.Migrations
                 },
                 constraints: table =>
                 {
-                    _ = table.PrimaryKey("PK_UserStories", x => x.Id);
-                    _ = table.ForeignKey(
+                    table.PrimaryKey("PK_UserStories", x => x.Id);
+                    table.ForeignKey(
                         name: "FK_UserStories_Features_FeatureId",
                         column: x => x.FeatureId,
                         principalTable: "Features",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    _ = table.ForeignKey(
+                    table.ForeignKey(
                         name: "FK_UserStories_Sprints_SprintId",
                         column: x => x.SprintId,
                         principalTable: "Sprints",
                         principalColumn: "Id");
                 });
 
-            _ = migrationBuilder.CreateTable(
+            migrationBuilder.CreateTable(
                 name: "TeamMemberSprints",
                 columns: table => new
                 {
@@ -152,61 +153,61 @@ namespace PiPlanningBackend.Migrations
                 },
                 constraints: table =>
                 {
-                    _ = table.PrimaryKey("PK_TeamMemberSprints", x => x.Id);
-                    _ = table.ForeignKey(
+                    table.PrimaryKey("PK_TeamMemberSprints", x => x.Id);
+                    table.ForeignKey(
                         name: "FK_TeamMemberSprints_Sprints_SprintId",
                         column: x => x.SprintId,
                         principalTable: "Sprints",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    _ = table.ForeignKey(
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_TeamMemberSprints_TeamMembers_TeamMemberId",
                         column: x => x.TeamMemberId,
                         principalTable: "TeamMembers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_Features_AzureId",
                 table: "Features",
                 column: "AzureId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_Features_BoardId",
                 table: "Features",
                 column: "BoardId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_Sprints_BoardId",
                 table: "Sprints",
                 column: "BoardId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_TeamMembers_BoardId",
                 table: "TeamMembers",
                 column: "BoardId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_TeamMemberSprints_SprintId",
                 table: "TeamMemberSprints",
                 column: "SprintId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_TeamMemberSprints_TeamMemberId_SprintId",
                 table: "TeamMemberSprints",
                 columns: new[] { "TeamMemberId", "SprintId" });
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_UserStories_AzureId",
                 table: "UserStories",
                 column: "AzureId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_UserStories_FeatureId",
                 table: "UserStories",
                 column: "FeatureId");
 
-            _ = migrationBuilder.CreateIndex(
+            migrationBuilder.CreateIndex(
                 name: "IX_UserStories_SprintId",
                 table: "UserStories",
                 column: "SprintId");
@@ -215,22 +216,22 @@ namespace PiPlanningBackend.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            _ = migrationBuilder.DropTable(
+            migrationBuilder.DropTable(
                 name: "TeamMemberSprints");
 
-            _ = migrationBuilder.DropTable(
+            migrationBuilder.DropTable(
                 name: "UserStories");
 
-            _ = migrationBuilder.DropTable(
+            migrationBuilder.DropTable(
                 name: "TeamMembers");
 
-            _ = migrationBuilder.DropTable(
+            migrationBuilder.DropTable(
                 name: "Features");
 
-            _ = migrationBuilder.DropTable(
+            migrationBuilder.DropTable(
                 name: "Sprints");
 
-            _ = migrationBuilder.DropTable(
+            migrationBuilder.DropTable(
                 name: "Boards");
         }
     }

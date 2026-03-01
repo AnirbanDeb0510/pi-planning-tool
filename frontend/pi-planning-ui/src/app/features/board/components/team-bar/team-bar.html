@@ -147,13 +147,28 @@
           >?
         </p>
         <p class="warning">{{ MESSAGES.TEAM.DELETE_WARNING }}</p>
+        @if (deleteMemberError()) {
+          <div class="form-error">
+            {{ deleteMemberError() }}
+          </div>
+        }
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" (click)="closeDeleteMember()">
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="closeDeleteMember()"
+          [disabled]="deleteMemberLoading()"
+        >
           {{ LABELS.BUTTONS.CANCEL }}
         </button>
-        <button class="btn-danger" type="button" (click)="confirmDeleteMember()">
-          {{ LABELS.BUTTONS.DELETE }}
+        <button
+          class="btn-danger"
+          type="button"
+          (click)="confirmDeleteMember()"
+          [disabled]="deleteMemberLoading()"
+        >
+          {{ deleteMemberLoading() ? LABELS.BUTTONS.DELETING : LABELS.BUTTONS.DELETE }}
         </button>
       </div>
     </div>

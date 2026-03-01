@@ -179,27 +179,11 @@ input:checked + .slider::before {
   border-color: var(--badge-locked-border);
 }
 
-.badge-locked:hover {
-  background: rgba(244, 67, 54, 0.12);
-}
-
-:host-context(html.dark-theme) .badge-locked:hover {
-  background: rgba(211, 47, 47, 0.18);
-}
-
 /* Finalized Badge */
 .badge-finalized {
   background-color: var(--badge-finalized-bg);
   color: var(--badge-finalized-text);
   border-color: var(--badge-finalized-border);
-}
-
-.badge-finalized:hover {
-  background: rgba(56, 142, 60, 0.12);
-}
-
-:host-context(html.dark-theme) .badge-finalized:hover {
-  background: rgba(56, 142, 60, 0.18);
 }
 
 /* ========================================
@@ -246,7 +230,9 @@ input:checked + .slider::before {
   border-radius: 50%;
   background: rgba(25, 103, 210, 0.1);
   transform: translate(-50%, -50%);
-  transition: width 0.3s, height 0.3s;
+  transition:
+    width 0.3s,
+    height 0.3s;
   pointer-events: none;
 }
 
@@ -473,9 +459,4 @@ input:checked + .slider::before {
   input:checked + .slider::before {
     transform: translateX(20px);
   }
-}
-
-.switch:focus-visible {
-  outline: 2px solid #1976d2;
-  outline-offset: 2px;
 }

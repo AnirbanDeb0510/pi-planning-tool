@@ -54,7 +54,7 @@ namespace PiPlanningBackend.Data
                 .HasMany(s => s.TeamMemberSprints)
                 .WithOne(tms => tms.Sprint!)
                 .HasForeignKey(tms => tms.SprintId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction); // NoAction: sprints aren't deleted, only team members
 
             _ = modelBuilder.Entity<Sprint>()
                 .HasMany<UserStory>()
@@ -75,7 +75,7 @@ namespace PiPlanningBackend.Data
                 .HasMany(t => t.TeamMemberSprints)
                 .WithOne(tms => tms.TeamMember!)
                 .HasForeignKey(tms => tms.TeamMemberId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Cascade); // Cascade: when team member deleted, their sprint assignments are removed
 
             // ---------------------
             // Indexes

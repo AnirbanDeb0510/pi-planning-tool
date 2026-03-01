@@ -36,6 +36,8 @@ export class TeamBar {
 
   protected showDeleteMemberModal = signal(false);
   protected memberToDelete = signal<TeamMemberResponseDto | null>(null);
+  protected deleteMemberError = signal<string | null>(null);
+  protected deleteMemberLoading = signal(false);
 
   protected readonly LABELS = LABELS;
   protected readonly MESSAGES = MESSAGES;
@@ -100,20 +102,34 @@ export class TeamBar {
 
   protected openDeleteMember(member: TeamMemberResponseDto): void {
     this.memberToDelete.set(member);
+    this.deleteMemberError.set(null);
     this.showDeleteMemberModal.set(true);
   }
 
   protected closeDeleteMember(): void {
     this.memberToDelete.set(null);
+    this.deleteMemberError.set(null);
+    this.deleteMemberLoading.set(false);
     this.showDeleteMemberModal.set(false);
   }
 
   protected confirmDeleteMember(): void {
     const member = this.memberToDelete();
     if (!member) return;
-    this.parent.boardService.clearError();
-    this.teamService.removeTeamMember(member.id);
-    this.closeDeleteMember();
+
+    this.deleteMemberError.set(null);
+    this.deleteMemberLoading.set(true);
+
+    this.teamService.removeTeamMember(member.id, {
+      next: () => {
+        this.deleteMemberLoading.set(false);
+        this.closeDeleteMember();
+      },
+      error: (errorMessage: string) => {
+        this.deleteMemberError.set(errorMessage);
+        this.deleteMemberLoading.set(false);
+      },
+    });
   }
 
   protected getMemberRoleLabel(member: TeamMemberResponseDto): string {
