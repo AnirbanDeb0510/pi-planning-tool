@@ -30,6 +30,23 @@
 
   <!-- Right Section: Action Buttons -->
   <div class="header-right">
+    <!-- Add Feature Button -->
+    <button
+      class="btn-action btn-add-feature"
+      (click)="parent.openImportFeatureModal()"
+      [disabled]="parent.isOperationBlocked()"
+      type="button"
+      [matTooltip]="
+        parent.isOperationBlocked()
+          ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_FEATURES)
+          : TOOLTIPS.TEAM.ADD_FEATURE
+      "
+      matTooltipPosition="above"
+    >
+      <mat-icon>add_circle</mat-icon>
+      <span class="btn-label">{{ LABELS.BUTTONS.ADD_FEATURE }}</span>
+    </button>
+
     <!-- Finalize/Restore Button -->
     @if (!board()?.isFinalized) {
       <button

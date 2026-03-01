@@ -30,7 +30,7 @@ export const LABELS = {
     ADD_MEMBER: '+ Add Member',
     ADD_MEMBER_PLAIN: 'Add Member',
     UPDATE_MEMBER: 'Update Member',
-    ADD_FEATURE: '+ Add Feature',
+    ADD_FEATURE: 'Add Feature',
     FINALIZE: '✓ Finalize',
     FINALIZE_PLAIN: 'Finalize',
     FINALIZE_CONFIRM: 'Yes, Finalize Board',

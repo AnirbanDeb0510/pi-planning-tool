@@ -58,19 +58,6 @@
     >
       {{ LABELS.BUTTONS.ADD_MEMBER }}
     </button>
-    <button
-      class="add-feature-button"
-      type="button"
-      (click)="parent.openImportFeatureModal()"
-      [disabled]="parent.isOperationBlocked()"
-      [title]="
-        parent.isOperationBlocked()
-          ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_FEATURES)
-          : TOOLTIPS.TEAM.ADD_FEATURE
-      "
-    >
-      {{ LABELS.BUTTONS.ADD_FEATURE }}
-    </button>
   </div>
 </div>
 
