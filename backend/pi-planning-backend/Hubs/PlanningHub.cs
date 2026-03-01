@@ -1,27 +1,187 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using PiPlanningBackend.Data;
+using PiPlanningBackend.DTOs.SignalR;
 
 namespace PiPlanningBackend.Hubs
 {
-    public class PlanningHub : Hub
+    public class PlanningHub(AppDbContext dbContext, ILogger<PlanningHub> logger) : Hub
     {
-        public async Task JoinBoard(string boardId)
+        private static readonly ConcurrentDictionary<string, ConnectionState> Connections = new();
+        private static readonly string[] CursorPalette =
+        [
+            "#3B82F6",
+            "#8B5CF6",
+            "#14B8A6",
+            "#F59E0B",
+            "#EF4444",
+            "#10B981",
+            "#6366F1",
+            "#EC4899"
+        ];
+
+        public async Task JoinBoard(int boardId, string userId, string userName)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, boardId);
+            if (boardId <= 0)
+            {
+                throw new HubException("Invalid board id.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userName))
+            {
+                throw new HubException("User id and user name are required.");
+            }
+
+            bool boardExists = await dbContext.Boards.AsNoTracking().AnyAsync(b => b.Id == boardId);
+            if (!boardExists)
+            {
+                throw new HubException($"Board {boardId} not found.");
+            }
+
+            if (Connections.TryGetValue(Context.ConnectionId, out ConnectionState? existingConnection)
+                && existingConnection.BoardId != boardId)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetBoardGroupName(existingConnection.BoardId));
+            }
+
+            ConnectionState connection = BuildConnectionState(boardId, userId, userName);
+            Connections[Context.ConnectionId] = connection;
+
+            string boardGroup = GetBoardGroupName(boardId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, boardGroup);
+
+            List<UserPresenceDto> snapshot = [.. Connections.Values
+                .Where(value => value.BoardId == boardId)
+                .GroupBy(value => value.UserId)
+                .Select(group => ToUserPresenceDto(group.First(), "joined"))];
+
+            await Clients.Caller.SendAsync("PresenceSnapshot", snapshot);
+            await Clients.OthersInGroup(boardGroup).SendAsync("UserJoinedBoard", ToUserPresenceDto(connection, "joined"));
+
+            logger.LogInformation("Connection {ConnectionId} joined board {BoardId} as {UserId}", Context.ConnectionId, boardId, userId);
         }
 
-        public async Task LeaveBoard(string boardId)
+        public async Task LeaveBoard(int boardId, string userId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, boardId);
+            if (Connections.TryRemove(Context.ConnectionId, out ConnectionState? connection))
+            {
+                string boardGroup = GetBoardGroupName(connection.BoardId);
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, boardGroup);
+                await Clients.OthersInGroup(boardGroup).SendAsync("UserLeftBoard", ToUserPresenceDto(connection, "leave"));
+
+                logger.LogInformation("Connection {ConnectionId} left board {BoardId} as {UserId}", Context.ConnectionId, boardId, userId);
+                return;
+            }
+
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetBoardGroupName(boardId));
         }
 
-        public async Task BroadcastBoardUpdate(string boardId, object update)
+        public async Task UpdateCursorPosition(int boardId, string userId, int x, int y, long sequence)
         {
-            await Clients.OthersInGroup(boardId).SendAsync("ReceiveBoardUpdate", update);
+            if (!Connections.TryGetValue(Context.ConnectionId, out ConnectionState? connection))
+            {
+                return;
+            }
+
+            if (connection.BoardId != boardId || !string.Equals(connection.UserId, userId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            CursorPresenceDto payload = new()
+            {
+                BoardId = boardId,
+                UserId = connection.UserId,
+                DisplayName = connection.DisplayName,
+                Cursor = new CursorPositionDto
+                {
+                    X = x,
+                    Y = y
+                },
+                CoordinateSpace = "board",
+                Color = connection.Color,
+                Avatar = connection.Avatar,
+                Activity = "active",
+                Sequence = sequence,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            await Clients.OthersInGroup(GetBoardGroupName(boardId)).SendAsync("CursorPresenceUpdated", payload);
         }
 
-        public async Task SendCursor(string boardId, string user, double x, double y)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            await Clients.OthersInGroup(boardId).SendAsync("ReceiveCursor", new { user, x, y });
+            if (Connections.TryRemove(Context.ConnectionId, out ConnectionState? connection))
+            {
+                string boardGroup = GetBoardGroupName(connection.BoardId);
+                await Clients.OthersInGroup(boardGroup).SendAsync("UserLeftBoard", ToUserPresenceDto(connection, "disconnect"));
+
+                logger.LogInformation("Connection {ConnectionId} disconnected from board {BoardId} as {UserId}", Context.ConnectionId, connection.BoardId, connection.UserId);
+            }
+
+            await base.OnDisconnectedAsync(exception);
+        }
+
+        public static string GetBoardGroupName(int boardId)
+        {
+            return $"board:{boardId}";
+        }
+
+        private static ConnectionState BuildConnectionState(int boardId, string userId, string userName)
+        {
+            string normalizedName = userName.Trim();
+            return new ConnectionState
+            {
+                BoardId = boardId,
+                UserId = userId,
+                DisplayName = normalizedName,
+                Color = ResolveColor(userId),
+                Avatar = ResolveAvatar(normalizedName)
+            };
+        }
+
+        private static UserPresenceDto ToUserPresenceDto(ConnectionState connection, string reason)
+        {
+            return new UserPresenceDto
+            {
+                BoardId = connection.BoardId,
+                UserId = connection.UserId,
+                DisplayName = connection.DisplayName,
+                Color = connection.Color,
+                Avatar = connection.Avatar,
+                TimestampUtc = DateTime.UtcNow,
+                Reason = reason
+            };
+        }
+
+        private static string ResolveColor(string userId)
+        {
+            int hash = 0;
+            foreach (char character in userId)
+            {
+                hash = (hash * 31) + character;
+            }
+
+            int index = Math.Abs(hash) % CursorPalette.Length;
+            return CursorPalette[index];
+        }
+
+        private static string ResolveAvatar(string displayName)
+        {
+            char firstCharacter = displayName.Trim().FirstOrDefault();
+            return char.IsLetterOrDigit(firstCharacter)
+                ? char.ToUpperInvariant(firstCharacter).ToString()
+                : "?";
+        }
+
+        private class ConnectionState
+        {
+            public int BoardId { get; set; }
+            public string UserId { get; set; } = "";
+            public string DisplayName { get; set; } = "";
+            public string Color { get; set; } = "#3B82F6";
+            public string Avatar { get; set; } = "?";
         }
     }
 }

@@ -91,7 +91,15 @@
 <!-- Board Content -->
 @if (!loading() && !error() && board() && patValidated()) {
   <div>
-    <div class="board-container" (mousemove)="onMouseMove($event)">
+    <div class="board-container" #boardContainer (mousemove)="onMouseMove($event)">
+      @if (presenceUsers().length > 0) {
+        <div class="presence-panel">
+          @for (user of presenceUsers(); track user.userId) {
+            <span class="presence-chip" [style.background]="user.color">{{ user.avatar }} {{ user.displayName }}</span>
+          }
+        </div>
+      }
+
       <!-- Board Header (Dev/Test Toggle) -->
       <app-board-header
         [board]="board"
@@ -144,6 +152,19 @@
       <div class="cursor-label" [ngStyle]="{ top: cursorY() + 'px', left: cursorX() + 'px' }">
         {{ cursorName() }}
       </div>
+
+      @for (remoteCursor of remoteCursors(); track remoteCursor.userId) {
+        <div
+          class="cursor-label remote-cursor-label"
+          [ngStyle]="{
+            top: remoteCursor.y + 'px',
+            left: remoteCursor.x + 'px',
+            background: remoteCursor.color
+          }"
+        >
+          {{ remoteCursor.displayName }}
+        </div>
+      }
     </div>
 
     <!-- Modals Component -->

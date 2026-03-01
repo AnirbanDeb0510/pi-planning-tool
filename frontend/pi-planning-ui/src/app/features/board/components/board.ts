@@ -1,4 +1,13 @@
-import { Component, inject, signal, ChangeDetectorRef, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  ChangeDetectorRef,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -17,6 +26,12 @@ import { StoryService } from '../services/story.service';
 import { FeatureService } from '../services/feature.service';
 import { TeamService } from '../services/team.service';
 import {
+  SignalrService,
+  CursorPresenceEvent,
+  UserPresenceEvent,
+  StoryMovedEvent,
+} from '../services/signalr.service';
+import {
   SprintDto,
   FeatureResponseDto,
   UserStoryDto,
@@ -30,6 +45,17 @@ import { SprintHeader } from './sprint-header/sprint-header';
 import { FeatureRow } from './feature-row/feature-row';
 import { BoardModals } from './board-modals/board-modals';
 import { BoardSummaryDto } from '../../../shared';
+import { Subscription } from 'rxjs';
+
+interface RemoteCursorViewModel {
+  userId: string;
+  displayName: string;
+  color: string;
+  x: number;
+  y: number;
+  lastSeenAt: number;
+  sequence: number;
+}
 
 @Component({
   selector: 'app-board',
@@ -51,11 +77,12 @@ import { BoardSummaryDto } from '../../../shared';
   templateUrl: './board.html',
   styleUrls: ['./board.css'],
 })
-export class Board implements OnInit {
+export class Board implements OnInit, OnDestroy {
   public boardService = inject(BoardService);
   public storyService = inject(StoryService);
   public featureService = inject(FeatureService);
   public teamService = inject(TeamService);
+  private signalrService = inject(SignalrService);
   private userService = inject(UserService);
   private route = inject(ActivatedRoute);
   protected router = inject(Router); // Make public for template
@@ -76,6 +103,8 @@ export class Board implements OnInit {
   protected cursorName = signal(this.userService.getName() || LABELS.APP.GUEST);
   protected cursorX = signal(0);
   protected cursorY = signal(0);
+  protected remoteCursors = signal<RemoteCursorViewModel[]>([]);
+  protected presenceUsers = signal<UserPresenceEvent[]>([]);
   public showDevTest = signal(false);
 
   // Board finalization state - managed here, used by board-header and board-modals
@@ -86,6 +115,16 @@ export class Board implements OnInit {
 
   @ViewChild(BoardModals)
   private boardModals?: BoardModals;
+
+  @ViewChild('boardContainer')
+  private boardContainerRef?: ElementRef<HTMLDivElement>;
+
+  private connectedBoardId: number | null = null;
+  private realtimeSubscriptions: Subscription[] = [];
+  private remoteCursorMap = new Map<string, RemoteCursorViewModel>();
+  private remoteCursorCleanupIntervalId: number | null = null;
+  private readonly cursorLabelOffset = 20;
+  private readonly remoteCursorIdleMs = 3000;
 
   // PAT modal state
   protected showPatModal = signal(false);
@@ -101,6 +140,8 @@ export class Board implements OnInit {
     this.route.params.subscribe(async (params) => {
       const boardId = Number(params['id']);
       if (boardId) {
+        await this.ensureRealtimeDisconnectedIfBoardChanged(boardId);
+
         this.currentBoardId.set(boardId);
         this.patValidated.set(false);
         this.patModalInput.set('');
@@ -117,6 +158,7 @@ export class Board implements OnInit {
           // No PAT needed, load board immediately
           this.patValidated.set(true);
           this.boardService.loadBoard(boardId);
+          await this.connectRealtime(boardId);
         }
       } else {
         console.error('No board ID provided');
@@ -161,6 +203,7 @@ export class Board implements OnInit {
 
         // Now load the board with validated PAT
         this.boardService.loadBoard(boardId);
+        await this.connectRealtime(boardId);
       } else {
         this.patValidationError.set(VALIDATIONS.PAT.INVALID);
       }
@@ -496,8 +539,17 @@ export class Board implements OnInit {
    * Mouse move handler for cursor display
    */
   onMouseMove(event: MouseEvent): void {
-    this.cursorX.set(event.clientX + 20);
-    this.cursorY.set(event.clientY + 20);
+    const position = this.getBoardRelativePosition(event);
+
+    this.cursorX.set(position.x + this.cursorLabelOffset);
+    this.cursorY.set(position.y + this.cursorLabelOffset);
+
+    void this.signalrService.sendCursorUpdate(position.x, position.y);
+  }
+
+  ngOnDestroy(): void {
+    this.teardownRealtimeState();
+    void this.signalrService.disconnect();
   }
 
   async openFinalizeConfirmation(): Promise<void> {
@@ -591,5 +643,165 @@ export class Board implements OnInit {
    */
   isBoardFinalized(): boolean {
     return this.board()?.isFinalized ?? false;
+  }
+
+  private getBoardRelativePosition(event: MouseEvent): { x: number; y: number } {
+    const boardContainer = this.boardContainerRef?.nativeElement;
+    if (!boardContainer) {
+      return {
+        x: event.clientX,
+        y: event.clientY,
+      };
+    }
+
+    const rect = boardContainer.getBoundingClientRect();
+
+    return {
+      x: Math.round(event.clientX - rect.left + boardContainer.scrollLeft),
+      y: Math.round(event.clientY - rect.top + boardContainer.scrollTop),
+    };
+  }
+
+  private async connectRealtime(boardId: number): Promise<void> {
+    if (this.connectedBoardId === boardId) {
+      return;
+    }
+
+    const rawUserName = this.userService.getName().trim();
+    const userName = rawUserName || LABELS.APP.GUEST;
+    const userId = this.userService.getOrCreateUserId();
+
+    await this.signalrService.connect(boardId, userId, userName);
+    this.connectedBoardId = boardId;
+
+    this.subscribeRealtimeStreams();
+    this.startRemoteCursorCleanup();
+  }
+
+  private subscribeRealtimeStreams(): void {
+    this.clearRealtimeSubscriptions();
+
+    const presenceSub = this.signalrService.presence$.subscribe((users) => {
+      this.presenceUsers.set(users);
+    });
+
+    const cursorSub = this.signalrService.cursor$.subscribe((event) => {
+      this.applyRemoteCursorEvent(event);
+    });
+
+    const storyMovedSub = this.signalrService.storyMoved$.subscribe((event) => {
+      this.applyStoryMovedEvent(event);
+    });
+
+    this.realtimeSubscriptions.push(presenceSub, cursorSub, storyMovedSub);
+  }
+
+  private applyStoryMovedEvent(event: StoryMovedEvent): void {
+    if (this.connectedBoardId !== event.boardId) {
+      return;
+    }
+
+    const currentBoard = this.boardService.getBoard();
+    if (!currentBoard) {
+      return;
+    }
+
+    let hasChanges = false;
+    const updatedFeatures = currentBoard.features.map((feature) => {
+      const updatedStories = feature.userStories.map((story) => {
+        if (story.id !== event.storyId) {
+          return story;
+        }
+
+        hasChanges = hasChanges || story.sprintId !== event.targetSprintId;
+        return {
+          ...story,
+          sprintId: event.targetSprintId,
+          isMoved: story.originalSprintId !== event.targetSprintId,
+        };
+      });
+
+      return {
+        ...feature,
+        userStories: updatedStories,
+      };
+    });
+
+    if (!hasChanges) {
+      return;
+    }
+
+    this.boardService.updateBoardState({
+      ...currentBoard,
+      features: updatedFeatures,
+    });
+  }
+
+  private applyRemoteCursorEvent(event: CursorPresenceEvent): void {
+    const existing = this.remoteCursorMap.get(event.userId);
+    if (existing && event.sequence <= existing.sequence) {
+      return;
+    }
+
+    this.remoteCursorMap.set(event.userId, {
+      userId: event.userId,
+      displayName: event.displayName,
+      color: event.color,
+      x: event.cursor.x + this.cursorLabelOffset,
+      y: event.cursor.y + this.cursorLabelOffset,
+      lastSeenAt: Date.now(),
+      sequence: event.sequence,
+    });
+
+    this.remoteCursors.set([...this.remoteCursorMap.values()]);
+  }
+
+  private startRemoteCursorCleanup(): void {
+    if (this.remoteCursorCleanupIntervalId !== null) {
+      window.clearInterval(this.remoteCursorCleanupIntervalId);
+    }
+
+    this.remoteCursorCleanupIntervalId = window.setInterval(() => {
+      const now = Date.now();
+      let hasChanges = false;
+
+      for (const [userId, cursor] of this.remoteCursorMap.entries()) {
+        if (now - cursor.lastSeenAt > this.remoteCursorIdleMs) {
+          this.remoteCursorMap.delete(userId);
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges) {
+        this.remoteCursors.set([...this.remoteCursorMap.values()]);
+      }
+    }, 500);
+  }
+
+  private async ensureRealtimeDisconnectedIfBoardChanged(nextBoardId: number): Promise<void> {
+    if (this.connectedBoardId === null || this.connectedBoardId === nextBoardId) {
+      return;
+    }
+
+    await this.signalrService.disconnect();
+    this.teardownRealtimeState();
+  }
+
+  private teardownRealtimeState(): void {
+    this.connectedBoardId = null;
+    this.clearRealtimeSubscriptions();
+    this.remoteCursorMap.clear();
+    this.remoteCursors.set([]);
+    this.presenceUsers.set([]);
+
+    if (this.remoteCursorCleanupIntervalId !== null) {
+      window.clearInterval(this.remoteCursorCleanupIntervalId);
+      this.remoteCursorCleanupIntervalId = null;
+    }
+  }
+
+  private clearRealtimeSubscriptions(): void {
+    this.realtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.realtimeSubscriptions = [];
   }
 }

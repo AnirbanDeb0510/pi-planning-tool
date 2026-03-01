@@ -1,9 +1,9 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
 **Last Updated:** March 1, 2026  
-**Current Status:** Phase 5.5 complete ✅ - Ready for Phase 6 (SignalR Real-time Collaboration)  
+**Current Status:** Phase 6 in progress ✅ (Milestone A + B complete; Milestone C pending)  
 **Current Branch:** `main`  
-**Next Phase:** SignalR implementation (13 broadcast events + presence tracking)
+**Next Phase:** Phase 6 Milestone C (remaining broadcasts + multi-browser validation)
 
 ---
 
@@ -12,7 +12,7 @@
 **Immediate Next Steps:**
 
 1. ✅ **Phase 5.5** - User Name Persistence & Route Guard - **COMPLETE** (sessionStorage + guard implemented)
-2. **Phase 6** - SignalR Real-time Collaboration (6-8 hrs) - 13 broadcast events + presence tracking
+2. **Phase 6** - SignalR Real-time Collaboration (6-8 hrs) - **IN PROGRESS** (Milestone A + B done)
 3. **Phase 7** - Board Lock/Unlock Endpoints (2-3 hrs)
 4. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
 
@@ -382,7 +382,7 @@ _No code changes needed, just verification:_
 
 ### PHASE 6: Real-time Collaboration (SignalR) — HIGH PRIORITY
 
-**Status:** Not Started  
+**Status:** In Progress (Milestone A + B complete)  
 **Estimated Time:** 6-8 hours (increased from 4-6 due to detailed requirements)  
 **Depends On:** Phase 4, 4.5, 4.6, 5, **5.5** (all complete)  
 **Why:** Enables multi-user concurrent editing; core differentiator feature  
@@ -427,8 +427,8 @@ Based on controller analysis, the following REST endpoints require SignalR broad
 
 **Ephemeral Events (Hub Methods Only - No REST):**
 
-- ✅ Cursor/Mouse Movement → Hub: `UpdateCursorPosition(boardId, userId, x, y)`
-- ✅ User Presence → Hub: `JoinBoard(boardId, userName)` / `LeaveBoard(boardId, userName)`
+- ✅ Cursor/Mouse Movement → Hub: `UpdateCursorPosition(boardId, userId, x, y, sequence)`
+- ✅ User Presence → Hub: `JoinBoard(boardId, userId, userName)` / `LeaveBoard(boardId, userId)`
 
 **Total: 13 REST-triggered broadcasts + 2 ephemeral hub methods**
 
@@ -449,12 +449,12 @@ Create `DTOs/SignalR/` folder with event payload classes:
   }
   ```
 
-- [ ] **StoryMovedEventDto.cs** - Story movement payload
+- [x] **StoryMovedEventDto.cs** - Story movement payload
 - [ ] **TeamMemberEventDto.cs** - Team member CRUD payloads
 - [ ] **FeatureEventDto.cs** - Feature CRUD payloads
 - [ ] **CapacityUpdatedEventDto.cs** - Capacity change payload
-- [ ] **CursorPresenceDto.cs** - Ephemeral cursor position
-- [ ] **UserPresenceDto.cs** - User join/leave board
+- [x] **CursorPresenceDto.cs** - Ephemeral cursor position
+- [x] **UserPresenceDto.cs** - User join/leave board
 
 #### **TASK 6.2A: Cursor Presence Contract (Define Before Coding)**
 
@@ -465,12 +465,12 @@ Create `DTOs/SignalR/` folder with event payload classes:
 ```json
 {
   "boardId": 123,
-  "userId": "u-42",
+  "userId": "2f6f0f2a-5c8a-4f1d-8a4f-12b6ac11a2c1",
   "displayName": "Anirban",
   "cursor": { "x": 1240, "y": 380 },
+  "coordinateSpace": "board",
   "color": "#3B82F6",
   "avatar": "A",
-  "isAnonymous": false,
   "activity": "active",
   "sequence": 57,
   "timestampUtc": "2026-03-01T12:30:45.123Z"
@@ -482,16 +482,20 @@ Create `DTOs/SignalR/` folder with event payload classes:
 ```json
 {
   "boardId": 123,
+  "userId": "2f6f0f2a-5c8a-4f1d-8a4f-12b6ac11a2c1",
   "x": 1240,
   "y": 380,
+  "coordinateSpace": "board",
   "sequence": 57,
   "timestampUtc": "2026-03-01T12:30:45.123Z"
 }
 ```
 
+`userId` source for Phase 6: client-generated UUID stored in sessionStorage and mapped to display name.
+
 **Presence Lifecycle Events:**
 
-- `UserJoinedBoard`: `boardId`, `userId`, `displayName`, `color`, `avatar`, `isAnonymous`, `joinedAtUtc`
+- `UserJoinedBoard`: `boardId`, `userId`, `displayName`, `color`, `avatar`, `joinedAtUtc`
 - `UserLeftBoard`: `boardId`, `userId`, `leftAtUtc`, `reason` (`disconnect` | `leave` | `timeout`)
 
 **Throttle + Delivery Strategy:**
@@ -506,7 +510,7 @@ Create `DTOs/SignalR/` folder with event payload classes:
 - Render **remote user cursors via SignalR** (not only local cursor label).
 - Auto-hide remote cursor label after **2.5-3s idle**; keep user in presence list.
 - Assign distinct color/avatar per user (stable within session).
-- Add privacy mode: show initials/anonymous alias instead of full name when enabled.
+- Phase 6 uses full display names only (privacy mode deferred to later phase).
 
 **Validation Checklist (Pre-merge for Phase 6):**
 
@@ -514,7 +518,7 @@ Create `DTOs/SignalR/` folder with event payload classes:
 - [ ] Send rate stays within configured throttle range under continuous mouse movement.
 - [ ] Idle cursor labels auto-hide and reappear on activity.
 - [ ] Distinct color/avatar mapping remains stable after reconnect.
-- [ ] Privacy mode masks identity correctly while preserving collaboration.
+- [ ] Coordinate mapping remains accurate in board-relative space while scrolling.
 - [ ] No DB writes for cursor updates (ephemeral transport only).
 
 ---
@@ -523,19 +527,19 @@ Create `DTOs/SignalR/` folder with event payload classes:
 
 Update `Hubs/PlanningHub.cs`:
 
-- [ ] Add hub methods for ephemeral state:
-  - `Task JoinBoard(int boardId, string userName)`
-  - `Task LeaveBoard(int boardId, string userName)`
-  - `Task UpdateCursorPosition(int boardId, string userName, int x, int y)`
+- [x] Add hub methods for ephemeral state:
+  - `Task JoinBoard(int boardId, string userId, string userName)`
+  - `Task LeaveBoard(int boardId, string userId)`
+  - `Task UpdateCursorPosition(int boardId, string userId, int x, int y, long sequence)`
 
-- [ ] Add SignalR group management:
+- [x] Add SignalR group management:
   - Groups named: `board:{boardId}` (e.g., `board:123`)
   - Join group on `JoinBoard()`, remove on `LeaveBoard()` or disconnect
 
-- [ ] Add disconnect cleanup:
+- [x] Add disconnect cleanup:
   - Override `OnDisconnectedAsync()` to broadcast user left
 
-- [ ] Add authorization check:
+- [x] Add authorization check:
   - Validate board exists before joining group
   - Future: Check user has permission to access board
 
@@ -550,7 +554,7 @@ Inject `IHubContext<PlanningHub>` in each controller:
   - In `RestoreBoard()`: After DB commit → Broadcast `BoardRestored`
 
 - [ ] **UserStoriesController**
-  - In `MoveStory()`: After DB commit → Broadcast `StoryMoved`
+  - [x] In `MoveStory()`: After DB commit → Broadcast `StoryMoved`
   - In `RefreshStory()`: After Azure refresh → Broadcast `StoryRefreshed`
 
 - [ ] **TeamController**
@@ -573,8 +577,8 @@ Inject `IHubContext<PlanningHub>` in each controller:
 
 Create `features/board/services/signalr.service.ts`:
 
-- [ ] Install SignalR client: `npm install @microsoft/signalr`
-- [ ] Create service with connection management:
+- [x] Install SignalR client: `npm install @microsoft/signalr`
+- [x] Create service with connection management:
   - `connect(boardId: number, userName: string): Promise<void>`
   - `disconnect(): Promise<void>`
   - Handle reconnection logic with exponential backoff
@@ -582,15 +586,15 @@ Create `features/board/services/signalr.service.ts`:
 
 - [ ] Add event listeners (13 events):
   - Map SignalR events to typed Observables
-  - Example: `onStoryMoved$: Observable<StoryMovedEvent>`
+  - [x] Example: `onStoryMoved$: Observable<StoryMovedEvent>`
 
 - [ ] Add cursor/presence methods:
-  - `sendCursorUpdate(x: number, y: number, sequence: number): Promise<void>`
+  - `sendCursorUpdate(x: number, y: number, sequence: number, userId: string): Promise<void>`
   - Listen to cursor updates from other users
   - Track connected users list
   - Apply throttle strategy (default 15 Hz; configurable 10-20 Hz)
   - Handle idle auto-hide timers for remote cursor labels
-  - Support privacy mode display (`fullName` vs `initials/anonymous`)
+  - Use board-relative coordinate mapping for send/receive
 
 ---
 
@@ -598,12 +602,12 @@ Create `features/board/services/signalr.service.ts`:
 
 Update `features/board/components/board.ts`:
 
-- [ ] **On board load:**
-  - Connect to SignalR hub: `await signalrService.connect(boardId, userName)`
+- [x] **On board load:**
+  - [x] Connect to SignalR hub: `await signalrService.connect(boardId, userName)`
   - Subscribe to all relevant events for current board
 
 - [ ] **Event handlers:**
-  - `StoryMoved` → Update UI without API refetch (move story in local state)
+  - [x] `StoryMoved` → Update UI without API refetch (move story in local state)
   - `TeamMemberAdded/Updated/Deleted` → Refresh team bar
   - `CapacityUpdated` → Update capacity row
   - `FeatureImported/Refreshed/Deleted` → Refresh feature list
@@ -616,9 +620,18 @@ Update `features/board/components/board.ts`:
   - Render **remote users' cursors via SignalR** (not local-only label)
   - Auto-hide labels after 2.5-3s idle, show again on movement
   - Show distinct color/avatar per user
-  - Honor privacy mode (initials/anonymous alias)
+  - Show full display names in Phase 6 (privacy mode deferred)
 
-- [ ] **Cleanup:**
+---
+
+#### **TASK 6.7: Implementation Sequence (Incremental by Decision)**
+
+- [x] **Milestone A (Presence Core):** Join/leave, presence list, remote cursor stream
+- [x] **Milestone B (Story Move):** `StoryMoved` broadcast end-to-end
+- [ ] **Milestone C (Remaining Broadcasts):** Team, feature, board finalize/restore
+- [ ] Validate each milestone with manual multi-browser checks before next milestone
+
+- [x] **Cleanup:**
   - Disconnect on component destroy: `ngOnDestroy()`
   - Leave board group on route change
 
@@ -633,7 +646,8 @@ Update `features/board/components/board.ts`:
 - ✅ Cursor update stream is throttled to 10-20 Hz (default 15 Hz)
 - ✅ Cursor labels auto-hide after idle timeout and reappear on activity
 - ✅ Distinct color/avatar is visible per user and stable within a session
-- ✅ Optional privacy mode shows initials/anonymous instead of full names
+- ✅ Cursor positions are consistent in board-relative coordinate space
+- ✅ Full display names shown in Phase 6
 - ✅ Story moves broadcast to all connected clients (< 500ms)
 - ✅ Team member CRUD operations sync across clients
 - ✅ Feature CRUD operations sync across clients
@@ -654,7 +668,7 @@ Update `features/board/components/board.ts`:
 3. **Throttle Validation:** Continuous movement for 10s → outbound updates stay within 10-20 Hz
 4. **Idle Auto-hide:** Stop moving in Browser A → Browser B/C hide A label after idle timeout
 5. **Distinct Identity:** Browser A/B/C show different colors/avatars consistently
-6. **Privacy Mode:** Enable privacy in Browser A → Browser B/C see initials/anonymous for A
+6. **Board-relative Accuracy:** Scroll board in Browser B → A’s cursor stays aligned to board position
 7. **Story Move:** Browser A moves story → Browser B/C see move instantly
 8. **Team Capacity:** Browser A updates capacity → Browser B/C see update
 9. **Feature Import:** Browser A imports feature → Browser B/C see new feature
@@ -830,10 +844,12 @@ Update `features/board/components/board.ts`:
 **✅ Testing approach:** Manual testing (concurrent multi-user scenarios)
 **✅ Broadcast count:** 13 REST-triggered events + 2 ephemeral hub methods (cursor, presence)
 **✅ Event delivery:** Broadcast AFTER database commit (inside transaction success path)
-**✅ Cursor payload contract:** Include `userId`, `displayName`, `x/y`, `sequence`, `timestampUtc`, `color/avatar`, `isAnonymous`
+**✅ Cursor payload contract:** Include `userId` (client UUID), `displayName`, `x/y`, `sequence`, `timestampUtc`, `color/avatar`
 **✅ Cursor rate limit:** Throttle 10-20 Hz (default 15 Hz) + movement delta filtering
+**✅ Cursor coordinate mode:** Board-relative coordinates
 **✅ Cursor UX:** Remote cursors, idle auto-hide, distinct identity colors/avatars
-**✅ Privacy:** Optional anonymous/initials mode for name masking
+**✅ Name display:** Full display names in Phase 6 (privacy mode deferred)
+**✅ Delivery sequence:** Incremental milestones (Presence → Story move → Remaining broadcasts)
 
 ### Phase 7 (Board Lock/Unlock) - Decisions
 

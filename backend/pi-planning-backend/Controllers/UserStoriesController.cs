@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using PiPlanningBackend.DTOs;
+using PiPlanningBackend.DTOs.SignalR;
+using PiPlanningBackend.Hubs;
 using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/boards/{boardId}/stories")]
-    public class UserStoriesController(IFeatureService featureService) : ControllerBase
+    public class UserStoriesController(IFeatureService featureService, IHubContext<PlanningHub> hubContext) : ControllerBase
     {
         private readonly IFeatureService _featureService = featureService;
+        private readonly IHubContext<PlanningHub> _hubContext = hubContext;
 
         // PATCH api/boards/{boardId}/stories/{storyId}/move
         [HttpPatch("{storyId}/move")]
@@ -16,6 +20,19 @@ namespace PiPlanningBackend.Controllers
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             await _featureService.MoveUserStoryAsync(boardId, storyId, dto.TargetSprintId);
+
+            StoryMovedDto payload = new()
+            {
+                BoardId = boardId,
+                StoryId = storyId,
+                TargetSprintId = dto.TargetSprintId,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            await _hubContext.Clients
+                .Group(PlanningHub.GetBoardGroupName(boardId))
+                .SendAsync("StoryMoved", payload);
+
             return NoContent();
         }
 
