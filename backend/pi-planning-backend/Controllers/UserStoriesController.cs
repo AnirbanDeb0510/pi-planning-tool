@@ -41,7 +41,16 @@ namespace PiPlanningBackend.Controllers
         public async Task<IActionResult> RefreshStory(int boardId, int storyId, [FromQuery] string organization, [FromQuery] string project, [FromQuery] string pat)
         {
             UserStoryDto? s = await _featureService.RefreshUserStoryFromAzureAsync(boardId, storyId, organization, project, pat);
-            return s == null ? NotFound() : Ok(s);
+            if (s == null)
+            {
+                return NotFound();
+            }
+
+            await _hubContext.Clients
+                .Group(PlanningHub.GetBoardGroupName(boardId))
+                .SendAsync("StoryRefreshed", s);
+
+            return Ok(s);
         }
     }
 }
