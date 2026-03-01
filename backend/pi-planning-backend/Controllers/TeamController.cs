@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using PiPlanningBackend.DTOs;
+using PiPlanningBackend.DTOs.SignalR;
+using PiPlanningBackend.Hubs;
 using PiPlanningBackend.Models;
 using PiPlanningBackend.Services.Interfaces;
 
@@ -7,9 +10,10 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/boards/{boardId}/team")]
-    public class TeamController(ITeamService service) : ControllerBase
+    public class TeamController(ITeamService service, IHubContext<PlanningHub> hubContext) : ControllerBase
     {
         private readonly ITeamService _service = service;
+        private readonly IHubContext<PlanningHub> _hubContext = hubContext;
 
         [HttpGet]
         public async Task<IActionResult> GetTeam(int boardId)
@@ -23,6 +27,17 @@ namespace PiPlanningBackend.Controllers
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             TeamMemberResponseDto created = await _service.AddTeamMemberAsync(boardId, member);
+
+            TeamMemberAddedDto payload = new()
+            {
+                BoardId = boardId,
+                TeamMember = created,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "TeamMemberAdded", payload, initiatorConnectionId);
+
             return Ok(created);
         }
 
@@ -31,14 +46,44 @@ namespace PiPlanningBackend.Controllers
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             TeamMemberResponseDto? updated = await _service.UpdateTeamMemberAsync(boardId, teamMemberId, member);
-            return updated == null ? NotFound() : Ok(updated);
+            if (updated == null)
+            {
+                return NotFound();
+            }
+
+            TeamMemberUpdatedDto payload = new()
+            {
+                BoardId = boardId,
+                TeamMember = updated,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "TeamMemberUpdated", payload, initiatorConnectionId);
+
+            return Ok(updated);
         }
 
         [HttpDelete("{teamMemberId}")]
         public async Task<IActionResult> DeleteTeamMember(int boardId, int teamMemberId)
         {
             bool deleted = await _service.DeleteTeamMemberAsync(boardId, teamMemberId);
-            return !deleted ? NotFound() : NoContent();
+            if (!deleted)
+            {
+                return NotFound();
+            }
+
+            TeamMemberDeletedDto payload = new()
+            {
+                BoardId = boardId,
+                TeamMemberId = teamMemberId,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "TeamMemberDeleted", payload, initiatorConnectionId);
+
+            return NoContent();
         }
 
         [HttpPatch("{teamMemberId}/sprints/{sprintId}")]
@@ -58,6 +103,19 @@ namespace PiPlanningBackend.Controllers
                 CapacityDev = updated.CapacityDev,
                 CapacityTest = updated.CapacityTest
             };
+
+            CapacityUpdatedDto payload = new()
+            {
+                BoardId = boardId,
+                TeamMemberId = teamMemberId,
+                SprintId = sprintId,
+                CapacityDev = responseDto.CapacityDev,
+                CapacityTest = responseDto.CapacityTest,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, boardId, "CapacityUpdated", payload, initiatorConnectionId);
 
             return Ok(responseDto);
         }

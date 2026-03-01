@@ -10,6 +10,33 @@ using PiPlanningBackend.Repositories.Implementations;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+string[] configuredCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+bool allowAllOrigins = configuredCorsOrigins.Contains("*");
+
+bool IsCorsOriginAllowed(string origin)
+{
+    if (allowAllOrigins)
+    {
+        return true;
+    }
+
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out Uri? originUri))
+    {
+        return false;
+    }
+
+    if (!originUri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase)
+        && !originUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    // Allow any localhost port in all environments
+    return originUri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+        || originUri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || originUri.Host.Equals("::1", StringComparison.OrdinalIgnoreCase) || configuredCorsOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+}
+
 // Add services
 builder.Services.AddControllers(options =>
 {
@@ -58,11 +85,15 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ICorrelationIdProvider, CorrelationIdProvider>();
 
 
-// CORS (dev convenience)
+// CORS (config-driven for local/dev/prod)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+    options.AddPolicy("Frontend", policy =>
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(IsCorsOriginAllowed)
+            .AllowCredentials());
 });
 
 WebApplication app = builder.Build();
@@ -70,6 +101,11 @@ WebApplication app = builder.Build();
 app.Logger.LogInformation(
     "Active database provider: {DatabaseProvider}",
     databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase) ? "SqlServer" : "PostgreSQL");
+
+app.Logger.LogInformation(
+    "CORS policy loaded | AllowAll: {AllowAll} | Origins: {Origins}",
+    allowAllOrigins,
+    allowAllOrigins ? "*" : string.Join(", ", configuredCorsOrigins));
 
 // Apply migrations at startup (optional for Dev & safe if you control migrations)
 // Note: EF Core automatically detects the active provider and applies only compatible migrations
@@ -92,7 +128,7 @@ if (app.Environment.IsDevelopment())
     _ = app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
+app.UseCors("Frontend");
 // app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHub<PlanningHub>("/hub/planning");

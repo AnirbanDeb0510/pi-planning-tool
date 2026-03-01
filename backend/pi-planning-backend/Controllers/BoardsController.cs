@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.SignalR;
 using PiPlanningBackend.DTOs;
+using PiPlanningBackend.DTOs.SignalR;
+using PiPlanningBackend.Hubs;
 using PiPlanningBackend.Models;
 using PiPlanningBackend.Services.Interfaces;
 
@@ -8,9 +11,10 @@ namespace PiPlanningBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class BoardsController(IBoardService boardService) : ControllerBase
+    public class BoardsController(IBoardService boardService, IHubContext<PlanningHub> hubContext) : ControllerBase
     {
         private readonly IBoardService _boardService = boardService;
+        private readonly IHubContext<PlanningHub> _hubContext = hubContext;
 
         [HttpPost]
         public async Task<IActionResult> CreateBoard(BoardCreateDto dto)
@@ -90,32 +94,58 @@ namespace PiPlanningBackend.Controllers
 
             // Attempt to finalize
             BoardSummaryDto? board = await _boardService.FinalizeBoardAsync(id);
-            return board == null
-                ? NotFound()
-                : Ok(new
-                {
-                    success = true,
-                    message = warnings.Count != 0 ? $"Board finalized with {warnings.Count} warning(s)" : "Board finalized successfully",
-                    board,
-                    warnings,
-                    finalizedAt = DateTime.UtcNow,
-                    timestamp = DateTime.UtcNow
-                });
+            if (board == null)
+            {
+                return NotFound();
+            }
+
+            BoardFinalizedDto payload = new()
+            {
+                BoardId = id,
+                IsFinalized = true,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, id, "BoardFinalized", payload, initiatorConnectionId);
+
+            return Ok(new
+            {
+                success = true,
+                message = warnings.Count != 0 ? $"Board finalized with {warnings.Count} warning(s)" : "Board finalized successfully",
+                board,
+                warnings,
+                finalizedAt = DateTime.UtcNow,
+                timestamp = DateTime.UtcNow
+            });
         }
 
         [HttpPatch("{id}/restore")]
         public async Task<IActionResult> RestoreBoard(int id)
         {
             BoardSummaryDto? board = await _boardService.RestoreBoardAsync(id);
-            return board == null
-                ? NotFound()
-                : Ok(new
-                {
-                    success = true,
-                    message = "Board restored - editing is now allowed",
-                    board,
-                    timestamp = DateTime.UtcNow
-                });
+            if (board == null)
+            {
+                return NotFound();
+            }
+
+            BoardRestoredDto payload = new()
+            {
+                BoardId = id,
+                IsFinalized = false,
+                TimestampUtc = DateTime.UtcNow
+            };
+
+            string? initiatorConnectionId = Request.Headers["X-SignalR-ConnectionId"].FirstOrDefault();
+            await PlanningHub.BroadcastToBoardAsync(_hubContext.Clients, id, "BoardRestored", payload, initiatorConnectionId);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Board restored - editing is now allowed",
+                board,
+                timestamp = DateTime.UtcNow
+            });
         }
     }
 }
