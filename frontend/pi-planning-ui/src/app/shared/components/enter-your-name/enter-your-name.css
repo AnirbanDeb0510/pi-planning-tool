@@ -12,6 +12,17 @@
   background: #1e40af;
 }
 
+.input-name.error {
+  border-color: #dc2626;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0.5rem 0;
+  font-weight: 500;
+}
+
 /* ===== DARK MODE ===== */
 :host-context(.dark-theme) .btn-start {
   background: #3d5a8c;
@@ -19,4 +30,12 @@
 
 :host-context(.dark-theme) .btn-start:hover {
   background: #4d6aac;
+}
+
+:host-context(.dark-theme) .input-name.error {
+  border-color: #ef4444;
+}
+
+:host-context(.dark-theme) .error-message {
+  color: #f87171;
 }
