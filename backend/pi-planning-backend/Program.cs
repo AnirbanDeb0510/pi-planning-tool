@@ -139,7 +139,17 @@ app.Logger.LogInformation(
 using (IServiceScope scope = app.Services.CreateScope())
 {
     AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    app.Logger.LogInformation("Starting database migration check...");
+    try
+    {
+        db.Database.Migrate();
+        app.Logger.LogInformation("Database migrations completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Error applying database migrations: {Message}", ex.Message);
+        throw;
+    }
 }
 
 // Global exception handling (MUST be early in pipeline)

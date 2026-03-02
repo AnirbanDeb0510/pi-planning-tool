@@ -16,7 +16,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 
         // Use a dummy connection string for design-time operations
         // The actual connection string will be used at runtime
-        optionsBuilder.UseSqlServer("Server=localhost;Database=piplanningdb;User Id=sa;Password=YourPassword123;TrustServerCertificate=True;",
+        optionsBuilder.UseSqlServer("Server=localhost;Database=PIPlanningDB;User Id=sa;Password=YourPassword123;TrustServerCertificate=True;",
             sqlServerOptions => sqlServerOptions.MigrationsAssembly("pi-planning-backend.migrations.sqlserver"));
 
         return new AppDbContext(optionsBuilder.Options);
