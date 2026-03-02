@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("pi-planning-backend.migrations.sqlserver")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98484c74ef573230afd33e8d80e6c4eff1eabfb7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57a49042c3125cc998e8930336424baa27581469")]
 [assembly: System.Reflection.AssemblyProductAttribute("pi-planning-backend.migrations.sqlserver")]
 [assembly: System.Reflection.AssemblyTitleAttribute("pi-planning-backend.migrations.sqlserver")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

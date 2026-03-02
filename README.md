@@ -125,25 +125,40 @@ From here, you can run SQL queries, check tables, etc.
 
 ### 3. Run EF Core Migrations
 
-> For SQL Server/IIS deployments, use the dedicated Windows runbook in [IIS_DEPLOYMENT_GUIDE.md](IIS_DEPLOYMENT_GUIDE.md).
-
-1. Navigate to backend:
+#### PostgreSQL (Local Docker Development)
 
 ```bash
-cd backend/pi-planning-backend
+cd backend/pi-planning-backend.migrations.postgres
+
+# Add migration (if not already done)
+dotnet ef migrations add InitialCreate \
+  --context AppDbContext \
+  --startup-project ../pi-planning-backend/pi-planning-backend.csproj
+
+# Apply migration (backend auto-applies at startup via db.Database.Migrate())
 ```
 
-2. Add migration (if not already done):
+#### SQL Server (Windows IIS Deployment)
+
+> For detailed SQL Server/IIS deployment, see [IIS_DEPLOYMENT_GUIDE.md](IIS_DEPLOYMENT_GUIDE.md).
 
 ```bash
-dotnet ef migrations add InitialCreate
+cd backend/pi-planning-backend.migrations.sqlserver
+
+# Add migration (if not already done)
+dotnet ef migrations add InitialCreate \
+  --context AppDbContext \
+  --startup-project ../pi-planning-backend/pi-planning-backend.csproj
+
+# Apply migration (backend auto-applies at startup via db.Database.Migrate())
 ```
 
-3. Apply migration:
+#### Key Notes
 
-```bash
-dotnet ef database update
-```
+- Each provider (PostgreSQL/SQL Server) has its own isolated migration project
+- Migrations are provider-specific and auto-applied at app startup
+- No manual `dotnet ef database update` needed in Docker (app does it automatically)
+- For IIS deployments, configure SQL Server connection string before building
 
 ### 4. Backend
 

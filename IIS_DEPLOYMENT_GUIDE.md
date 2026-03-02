@@ -1,6 +1,6 @@
 # Windows IIS + SQL Server Deployment Guide
 
-**Last Updated:** February 28, 2026  
+**Last Updated:** March 3, 2026  
 **Target:** Windows Server 2019/2022 or Windows 10/11 with IIS  
 **Database:** SQL Server 2016+ (local or remote)  
 **Deployment Model:** IIS Applications under single website (port 80)
@@ -74,8 +74,11 @@ cd backend/pi-planning-backend
 #   - Set "DatabaseProvider": "SqlServer"
 #   - Update "DefaultConnection" with your SQL Server connection string
 
-# 4. Generate SQL Server migrations
-dotnet ef migrations add InitialCreate_SqlServer -o Migrations_SqlServer
+# 4. Generate SQL Server migrations (provider-isolated)
+cd ../pi-planning-backend.migrations.sqlserver
+dotnet ef migrations add InitialCreate \
+  --context AppDbContext \
+  --startup-project ../pi-planning-backend/pi-planning-backend.csproj
 
 # 5. Build and publish backend
 dotnet publish -c Release -o ./publish
