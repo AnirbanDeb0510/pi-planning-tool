@@ -28,4 +28,22 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <!-- Post-build event to copy migration assemblies to output directory -->
+  <!-- This ensures EF Core can load them at runtime via MigrationsAssembly -->
+  <Target Name="CopyMigrationAssemblies" AfterTargets="Build">
+    <Copy SourceFiles="../pi-planning-backend.migrations.postgres/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.postgres.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="../pi-planning-backend.migrations.sqlserver/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.sqlserver.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Ensure migration assemblies are included in publish output -->
+  <Target Name="IncludeMigrationAssembliesInPublish" AfterTargets="Publish" DependsOnTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_MigrationFiles Include="../pi-planning-backend.migrations.postgres/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.postgres.dll" />
+      <_MigrationFiles Include="../pi-planning-backend.migrations.postgres/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.postgres.pdb" />
+      <_MigrationFiles Include="../pi-planning-backend.migrations.sqlserver/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.sqlserver.dll" />
+      <_MigrationFiles Include="../pi-planning-backend.migrations.sqlserver/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.sqlserver.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_MigrationFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

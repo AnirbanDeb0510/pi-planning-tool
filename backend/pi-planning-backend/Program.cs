@@ -7,6 +7,23 @@ using PiPlanningBackend.Services.Interfaces;
 using PiPlanningBackend.Services.Implementations;
 using PiPlanningBackend.Repositories.Interfaces;
 using PiPlanningBackend.Repositories.Implementations;
+using System.Runtime.Loader;
+
+// Register assembly resolver for migration assemblies
+// This allows EF Core to load migration assemblies from the application directory
+AssemblyLoadContext.Default.Resolving += (context, assemblyName) =>
+{
+    if (assemblyName.Name != null &&
+        assemblyName.Name.StartsWith("pi-planning-backend.migrations."))
+    {
+        string assemblyPath = Path.Combine(AppContext.BaseDirectory, $"{assemblyName.Name}.dll");
+        if (File.Exists(assemblyPath))
+        {
+            return AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+        }
+    }
+    return null;
+};
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -58,11 +75,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     if (databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
     {
-        _ = options.UseSqlServer(connectionString);
+        _ = options.UseSqlServer(
+            connectionString,
+            sqlOptions => sqlOptions.MigrationsAssembly("pi-planning-backend.migrations.sqlserver")
+        );
         return;
     }
 
-    _ = options.UseNpgsql(connectionString);
+    _ = options.UseNpgsql(
+        connectionString,
+        npgsqlOptions => npgsqlOptions.MigrationsAssembly("pi-planning-backend.migrations.postgres")
+    );
 });
 
 // SignalR

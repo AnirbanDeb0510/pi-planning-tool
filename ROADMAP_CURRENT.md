@@ -1,9 +1,9 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
-**Last Updated:** March 2, 2026  
+**Last Updated:** March 3, 2026  
 **Current Status:** Phase 7 COMPLETE ✅  
 **Current Branch:** `main`  
-**Next Phase:** Phase 8 - Documentation & Integration Testing
+**Next Phase:** Phase 10 - Provider-Isolated EF Core Migrations
 
 ---
 
@@ -11,9 +11,9 @@
 
 **Immediate Next Steps:**
 
-1. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
-2. **Phase 9** - Cloud/Hosting Deployment (1-2 days)
-3. **Phase 10** - Provider-Isolated EF Core Migrations (1-2 days, post-demo hardening)
+1. **Phase 10** - Provider-Isolated EF Core Migrations (1-2 days) - MOVED UP FOR ARCHITECTURAL CLARITY
+2. **Phase 8** - Documentation & Integration Testing (3-4 hrs) - After Phase 10 for accurate docs
+3. **Phase 9** - Cloud/Hosting Deployment (1-2 days) - Uses final migration architecture
 
 ## ✅ COMPLETED PHASES (Summary)
 
@@ -314,23 +314,23 @@
 
 ## 🔄 Current Dependency Chain
 
-`7 → 8 → 9 → 10`
+`7 → 10 → 8 → 9`
 
-- Phase 7: Board lock/unlock endpoints
-- Phase 8: Documentation and integration validation
-- Phase 9: Cloud/hosting deployment
-- Phase 10: Migration hardening (post-demo)
+- Phase 7: Board lock/unlock endpoints ✅
+- Phase 10: Provider-isolated migrations (architectural foundation)
+- Phase 8: Documentation and integration validation (reflects final architecture)
+- Phase 9: Cloud/hosting deployment (uses correct migration setup)
 
 ---
 
-## 🛡️ FUTURE SCOPE: Multi-Provider Migration Hardening
+## 🎯 CURRENT FOCUS: Multi-Provider Migration Hardening
 
 ### PHASE 10: Provider-Isolated EF Core Migrations (Industry Standard)
 
-**Status:** Planned (post-demo)  
+**Status:** IN PROGRESS 🔄  
 **Priority:** High (stability + maintainability)  
 **Estimated Time:** 1-2 days  
-**Why now:** Demo path works, but current dual-provider migration setup can still cause provider cross-over risks when migrations are generated/applied in mixed environments.
+**Why now (moved up from post-demo):** Doing this BEFORE documentation ensures Phase 8 documents the final production architecture, and Phase 9 deployment uses the correct setup from day one.
 
 ### Problem Context (Current Limitation)
 

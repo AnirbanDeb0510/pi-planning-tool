@@ -1,0 +1,293 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>pi-planning-backend</name>
+    </assembly>
+    <members>
+        <member name="T:PiPlanningBackend.DTOs.SignalR.BoardLockStateChangedDto">
+            <summary>
+            Unified DTO for board lock state changes via SignalR
+            </summary>
+        </member>
+        <member name="T:PiPlanningBackend.Filters.ValidateModelStateFilter">
+            <summary>
+            Automatically validates ModelState for all API requests with [FromBody] parameters.
+            Returns 400 BadRequest with field-level validation errors without requiring
+            explicit "if (!ModelState.IsValid)" checks in every controller method.
+            
+            Applied via [ValidateModelState] attribute on controller or method.
+            Or register globally in Program.cs to apply to all controllers.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Hubs.PlanningHub.BroadcastToBoardAsync(Microsoft.AspNetCore.SignalR.IHubClients,System.Int32,System.String,System.Object,System.String)">
+            <summary>
+            Broadcast an event to all clients in a board group, optionally excluding the initiator.
+            </summary>
+            <param name="clients">The IHubClients from IHubContext</param>
+            <param name="boardId">The board ID to broadcast to</param>
+            <param name="eventName">The event name to send (e.g., "FeatureImported")</param>
+            <param name="payload">The payload to send with the event</param>
+            <param name="initiatorConnectionId">Optional connection ID of the initiator to exclude from broadcast</param>
+        </member>
+        <member name="T:PiPlanningBackend.Middleware.RequestCorrelationMiddleware">
+            <summary>
+            Middleware for adding and tracking correlation IDs across requests.
+            Extracts correlation ID from X-Correlation-ID header or generates a new one.
+            Stores it in HttpContext.Items for access throughout the request lifecycle.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Middleware.RequestCorrelationMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Microsoft.Extensions.Logging.ILogger{PiPlanningBackend.Middleware.RequestCorrelationMiddleware})">
+            <summary>
+            Middleware for adding and tracking correlation IDs across requests.
+            Extracts correlation ID from X-Correlation-ID header or generates a new one.
+            Stores it in HttpContext.Items for access throughout the request lifecycle.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Middleware.RequestCorrelationMiddleware.GetCorrelationId(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Helper method to retrieve correlation ID from HttpContext.
+            Useful in services/controllers that have access to IHttpContextAccessor.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.BoardService.LockBoardAsync(System.Int32,System.String)">
+            <summary>
+            Lock a board with a password.
+            Scenario A: If no password exists, sets a new password and locks.
+            Scenario B: If password already exists, verifies it and locks.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.BoardService.UnlockBoardAsync(System.Int32,System.String)">
+            <summary>
+            Unlock a board by verifying the password.
+            Password hash persists after unlock for future locks.
+            </summary>
+        </member>
+        <member name="T:PiPlanningBackend.Services.Implementations.CorrelationIdProvider">
+            <summary>
+            Provides access to the current request's correlation ID from HttpContext.
+            Encapsulates the logic for retrieving the correlation ID set by RequestCorrelationMiddleware.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.CorrelationIdProvider.#ctor(Microsoft.AspNetCore.Http.IHttpContextAccessor)">
+            <summary>
+            Provides access to the current request's correlation ID from HttpContext.
+            Encapsulates the logic for retrieving the correlation ID set by RequestCorrelationMiddleware.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.CorrelationIdProvider.GetCorrelationId">
+            <summary>
+            Gets the correlation ID for the current request.
+            Retrieved from HttpContext.Items by RequestCorrelationMiddleware.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.SprintService.GenerateSprintsForBoard(PiPlanningBackend.Models.Board,System.Int32,System.Int32)">
+            <summary>
+            Generates sprints for a board with auto-calculated dates.
+            Sprint 0 is a placeholder/parking lot (no real dates).
+            Sprints 1-N have actual date ranges based on sprintDurationDays.
+            </summary>
+        </member>
+        <member name="T:PiPlanningBackend.Services.Implementations.TransactionService">
+            <summary>
+            Implementation of ITransactionService for managing database transactions.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.TransactionService.#ctor(PiPlanningBackend.Data.AppDbContext)">
+            <summary>
+            Implementation of ITransactionService for managing database transactions.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.TransactionService.ExecuteInTransactionAsync(System.Func{System.Threading.Tasks.Task})">
+            <summary>
+            Execute an async operation within a database transaction.
+            Automatically commits on success or rolls back on exception.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.TransactionService.ExecuteInTransactionAsync``1(System.Func{System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Execute an async operation within a database transaction and return result.
+            Automatically commits on success or rolls back on exception.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateBoardExists(System.Int32)">
+            <summary>
+            Validates that a board exists.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateStoryBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a user story belongs to a specific board.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateTeamMemberBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a team member belongs to a specific board.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateSprintBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a sprint belongs to a specific board.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateFeatureBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a feature belongs to a specific board.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateBoardNotFinalized(PiPlanningBackend.Models.Board,System.String)">
+            <summary>
+            Validates that a board is not finalized before allowing modifications.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateBoardNotLocked(PiPlanningBackend.Models.Board,System.String)">
+            <summary>
+            Validates that a board is not locked before allowing modifications.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Implementations.ValidationService.ValidateTeamMemberCapacity(System.Int32,System.Int32)">
+            <summary>
+            Validates team member capacity for a sprint.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IAzureBoardsService.GetFeatureWithChildrenAsync(System.String,System.String,System.Int32,System.String)">
+            <summary>
+            Get a Feature work item along with its child User Stories from Azure Boards.
+            </summary>
+            <param name="organization"></param>
+            <param name="project"></param>
+            <param name="featureId"></param>
+            <param name="pat"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IAzureBoardsService.GetUserStoryAsync(System.String,System.String,System.Int32,System.String)">
+            <summary>
+            Get a User Story work item from Azure Boards.
+            </summary>
+            <param name="organization"></param>
+            <param name="project"></param>
+            <param name="userStoryId"></param>
+            <param name="pat"></param>
+            <returns></returns>
+        </member>
+        <member name="T:PiPlanningBackend.Services.Interfaces.ICorrelationIdProvider">
+            <summary>
+            Provides access to the current request's correlation ID.
+            Abstracts the correlation ID from the request context.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.ICorrelationIdProvider.GetCorrelationId">
+            <summary>
+            Gets the correlation ID for the current request.
+            Returns a GUID string that uniquely identifies the request for tracing.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.ISprintService.GenerateSprintsForBoard(PiPlanningBackend.Models.Board,System.Int32,System.Int32)">
+            <summary>
+            Generates sprints for a board with auto-calculated dates.
+            Sprint 0 is a placeholder, sprints 1-N have actual date ranges.
+            </summary>
+        </member>
+        <member name="T:PiPlanningBackend.Services.Interfaces.ITransactionService">
+            <summary>
+            Service for managing database transactions.
+            Ensures multi-step operations either complete fully or rollback entirely.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.ITransactionService.ExecuteInTransactionAsync(System.Func{System.Threading.Tasks.Task})">
+            <summary>
+            Execute an async operation within a database transaction.
+            Automatically commits on success or rolls back on exception.
+            </summary>
+            <param name="operation">Async operation to execute within transaction</param>
+            <exception cref="T:System.Exception">Rethrows any exception from the operation after rollback</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.ITransactionService.ExecuteInTransactionAsync``1(System.Func{System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Execute an async operation within a database transaction and return result.
+            Automatically commits on success or rolls back on exception.
+            </summary>
+            <typeparam name="T">Return type of the operation</typeparam>
+            <param name="operation">Async operation to execute within transaction</param>
+            <returns>Result from the operation</returns>
+            <exception cref="T:System.Exception">Rethrows any exception from the operation after rollback</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateBoardExists(System.Int32)">
+            <summary>
+            Validates that a board exists.
+            </summary>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if board is not found</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateStoryBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a user story belongs to a specific board.
+            </summary>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if story doesn't exist or doesn't belong to board</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateTeamMemberBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a team member belongs to a specific board.
+            </summary>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if member doesn't exist or doesn't belong to board</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateSprintBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a sprint belongs to a specific board.
+            </summary>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if sprint doesn't exist or doesn't belong to board</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateFeatureBelongsToBoard(System.Int32,System.Int32)">
+            <summary>
+            Validates that a feature belongs to a specific board.
+            </summary>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if feature doesn't exist or doesn't belong to board</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateBoardNotFinalized(PiPlanningBackend.Models.Board,System.String)">
+            <summary>
+            Validates that a board is not finalized before allowing modifications.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">Thrown if board is finalized</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateBoardNotLocked(PiPlanningBackend.Models.Board,System.String)">
+            <summary>
+            Validates that a board is not locked before allowing modifications.
+            </summary>
+            <exception cref="T:System.UnauthorizedAccessException">Thrown if board is locked (403 Forbidden)</exception>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Interfaces.IValidationService.ValidateTeamMemberCapacity(System.Int32,System.Int32)">
+            <summary>
+            Validates team member capacity for a sprint.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown if capacity is invalid</exception>
+        </member>
+        <member name="T:PiPlanningBackend.Services.Utilities.PasswordHelper">
+            <summary>
+            Utility class for password hashing and verification using PBKDF2.
+            Implements industry-standard password hashing with salt and configurable iterations.
+            </summary>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Utilities.PasswordHelper.HashPassword(System.String)">
+            <summary>
+            Hashes a password using PBKDF2 with a cryptographically random salt.
+            Each call generates a unique hash even for the same password.
+            </summary>
+            <param name="password">The plain-text password to hash</param>
+            <returns>Base64-encoded string in format "salt:hash" separated by colon</returns>
+            <remarks>
+            The returned string contains both salt and hash. The salt is stored with the hash
+            to enable verification later. Do not attempt to decrypt or reverse this value.
+            </remarks>
+        </member>
+        <member name="M:PiPlanningBackend.Services.Utilities.PasswordHelper.VerifyPassword(System.String,System.String)">
+            <summary>
+            Verifies a plain-text password against a stored PBKDF2 hash.
+            </summary>
+            <param name="password">The plain-text password to verify</param>
+            <param name="storedHash">The base64-encoded "salt:hash" string stored in database</param>
+            <returns>True if the password matches the stored hash; otherwise false</returns>
+            <remarks>
+            Uses constant-time comparison (FixedTimeEquals) to prevent timing attacks.
+            Returns false if the stored hash format is invalid.
+            </remarks>
+        </member>
+    </members>
+</doc>
