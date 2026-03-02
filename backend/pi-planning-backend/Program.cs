@@ -121,6 +121,9 @@ builder.Services.AddCors(options =>
 
 WebApplication app = builder.Build();
 
+bool swaggerEnabled = builder.Configuration.GetValue<bool?>("Swagger:Enabled")
+    ?? app.Environment.IsDevelopment();
+
 app.Logger.LogInformation(
     "Active database provider: {DatabaseProvider}",
     databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase) ? "SqlServer" : "PostgreSQL");
@@ -145,7 +148,7 @@ app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 // Request correlation tracking (for tracing requests across logs)
 app.UseMiddleware<RequestCorrelationMiddleware>();
 
-if (app.Environment.IsDevelopment())
+if (swaggerEnabled)
 {
     _ = app.UseSwagger();
     _ = app.UseSwaggerUI();
