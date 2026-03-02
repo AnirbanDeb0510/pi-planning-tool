@@ -33,6 +33,10 @@ yarn-error.log*
 /backend/pi-planning-backend/bin/
 /backend/pi-planning-backend/obj/
 /backend/pi-planning-backend/Properties/launchSettings.json
+/backend/pi-planning-backend.migrations.sqlserver/bin/
+/backend/pi-planning-backend.migrations.sqlserver/obj/
+/backend/pi-planning-backend.migrations.postgres/bin/
+/backend/pi-planning-backend.migrations.postgres/obj/
 
 # Docker / DB data
 db/pg-data/
