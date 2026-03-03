@@ -9,10 +9,10 @@ using PiPlanningBackend.Data;
 
 #nullable disable
 
-namespace PiPlanningBackend.Migrations
+namespace PiPlanningBackend.Migrations.Postgres.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260301212552_InitialCreate")]
+    [Migration("20260302202415_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

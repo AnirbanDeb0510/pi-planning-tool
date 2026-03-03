@@ -125,70 +125,194 @@ From here, you can run SQL queries, check tables, etc.
 
 ### 3. Run EF Core Migrations
 
-> For SQL Server/IIS deployments, use the dedicated Windows runbook in [IIS_DEPLOYMENT_GUIDE.md](IIS_DEPLOYMENT_GUIDE.md).
-
-1. Navigate to backend:
+#### PostgreSQL (Local Docker Development)
 
 ```bash
+cd backend/pi-planning-backend.migrations.postgres
+
+# Add migration (if not already done)
+dotnet ef migrations add InitialCreate \
+  --context AppDbContext \
+  --startup-project ../pi-planning-backend/pi-planning-backend.csproj
+
+# Apply migration (backend auto-applies at startup via db.Database.Migrate())
+```
+
+#### SQL Server (Windows IIS Deployment)
+
+> For detailed SQL Server/IIS deployment, see [IIS_DEPLOYMENT_GUIDE.md](IIS_DEPLOYMENT_GUIDE.md).
+
+```bash
+cd backend/pi-planning-backend.migrations.sqlserver
+
+# Add migration (if not already done)
+dotnet ef migrations add InitialCreate \
+  --context AppDbContext \
+  --startup-project ../pi-planning-backend/pi-planning-backend.csproj
+
+# Apply migration (backend auto-applies at startup via db.Database.Migrate())
+```
+
+#### Key Notes
+
+- Each provider (PostgreSQL/SQL Server) has its own isolated migration project
+- Migrations are provider-specific and auto-applied at app startup
+- No manual `dotnet ef database update` needed in Docker (app does it automatically)
+- For IIS deployments, configure SQL Server connection string before building
+
+### 4. Backend (Local Development)
+
+**Important:** Always build the solution first to ensure migration projects are compiled.
+
+```bash
+# Step 1: Build entire solution (includes backend + migration projects)
+cd /path/to/pi-planning-tool
+dotnet build
+
+# Step 2: Run backend
 cd backend/pi-planning-backend
+dotnet run --launch-profile http
 ```
 
-2. Add migration (if not already done):
+**Result:** Backend runs on `http://localhost:5262` with Swagger UI at `http://localhost:5262/swagger`
 
-```bash
-dotnet ef migrations add InitialCreate
-```
+---
 
-3. Apply migration:
-
-```bash
-dotnet ef database update
-```
-
-### 4. Backend
-
-```bash
-cd backend/pi-planning-backend
-dotnet restore
-dotnet run
-```
-
-**OR** with Docker:
-
-```bash
-docker build -f docker/backend.Dockerfile -t pi-planning-backend .
-docker run -p 5000:5000 pi-planning-backend
-```
-
-### 5. Frontend
+### 5. Frontend (Local Development)
 
 ```bash
 cd frontend/pi-planning-ui
 npm install
-ng serve
+ng serve --open
 ```
 
-**OR** with Docker:
+**Result:** Frontend serves on `http://localhost:4200` and auto-opens in browser
+
+---
+
+### 6. Docker Compose (Full Stack - Recommended for Integrated Testing)
+
+#### Start All Services (Backend + Frontend + PostgreSQL)
 
 ```bash
-docker build -f docker/frontend.Dockerfile -t pi-planning-frontend .
-docker run -p 4200:4200 pi-planning-frontend
+# From repo root
+docker-compose up -d
 ```
 
-### 6. Docker Compose (Full Stack)
+Services will be available at:
+
+- **Frontend:** `http://localhost:4200`
+- **Backend API:** `http://localhost:8080`
+- **Database:** `localhost:5432` (PostgreSQL)
+
+#### Stop All Services
 
 ```bash
-docker-compose -f docker/docker-compose.yml up
+docker-compose down
 ```
 
-This will start DB + backend + frontend together.
+#### Stop Only Backend & Frontend (Keep Database Running)
 
-### 7. Inspect Running Containers
+```bash
+docker-compose stop backend frontend
+```
+
+#### Remove Stopped Containers
+
+```bash
+docker-compose rm -f backend frontend
+```
+
+---
+
+### 7. Docker Commands Reference
+
+#### View Running Containers
+
+```bash
+docker ps
+```
+
+#### View All Containers (including stopped)
+
+```bash
+docker ps -a
+```
+
+#### View Container Logs
+
+```bash
+# Follow backend logs in real-time
+docker logs -f pi-backend
+
+# View frontend logs
+docker logs pi-frontend
+
+# View last 50 lines
+docker logs --tail 50 pi-backend
+```
+
+#### Stop Individual Containers
+
+```bash
+docker stop pi-backend
+docker stop pi-frontend
+docker stop pi-postgres
+```
+
+#### Remove Container
+
+```bash
+docker rm pi-backend
+docker rm pi-frontend
+```
+
+#### Rebuild Docker Image (after code changes)
+
+```bash
+# Rebuild backend image
+docker-compose build backend
+
+# Rebuild frontend image
+docker-compose build frontend
+
+# Rebuild all images
+docker-compose build
+```
+
+#### Enter Container Shell
+
+```bash
+# Backend container
+docker exec -it pi-backend /bin/sh
+
+# Frontend container
+docker exec -it pi-frontend /bin/sh
+
+# Database container
+docker exec -it pi-postgres /bin/bash
+```
+
+---
+
+### 8. Inspect Running Containers
 
 - List running containers:
 
 ```bash
 docker ps
+```
+
+- Check container resource usage:
+
+```bash
+docker stats
+```
+
+- View container details:
+
+```bash
+docker inspect pi-backend
 ```
 
 - Enter backend container:

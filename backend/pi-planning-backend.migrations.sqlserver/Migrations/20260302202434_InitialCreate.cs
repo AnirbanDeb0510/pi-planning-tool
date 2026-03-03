@@ -1,10 +1,9 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace PiPlanningBackend.Migrations
+namespace PiPlanningBackend.Migrations.SqlServer.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -16,23 +15,23 @@ namespace PiPlanningBackend.Migrations
                 name: "Boards",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Organization = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Project = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    AzureStoryPointField = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    AzureDevStoryPointField = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    AzureTestStoryPointField = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    NumSprints = table.Column<int>(type: "integer", nullable: false),
-                    SprintDuration = table.Column<int>(type: "integer", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsLocked = table.Column<bool>(type: "boolean", nullable: false),
-                    PasswordHash = table.Column<string>(type: "text", nullable: true),
-                    IsFinalized = table.Column<bool>(type: "boolean", nullable: false),
-                    FinalizedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    DevTestToggle = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Organization = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Project = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    AzureStoryPointField = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    AzureDevStoryPointField = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    AzureTestStoryPointField = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    NumSprints = table.Column<int>(type: "int", nullable: false),
+                    SprintDuration = table.Column<int>(type: "int", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsLocked = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsFinalized = table.Column<bool>(type: "bit", nullable: false),
+                    FinalizedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DevTestToggle = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -43,14 +42,14 @@ namespace PiPlanningBackend.Migrations
                 name: "Features",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    BoardId = table.Column<int>(type: "integer", nullable: false),
-                    AzureId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Priority = table.Column<int>(type: "integer", nullable: true),
-                    ValueArea = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    IsFinalized = table.Column<bool>(type: "boolean", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BoardId = table.Column<int>(type: "int", nullable: false),
+                    AzureId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Priority = table.Column<int>(type: "int", nullable: true),
+                    ValueArea = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsFinalized = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -67,12 +66,12 @@ namespace PiPlanningBackend.Migrations
                 name: "Sprints",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    BoardId = table.Column<int>(type: "integer", nullable: false),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BoardId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -89,12 +88,12 @@ namespace PiPlanningBackend.Migrations
                 name: "TeamMembers",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    IsDev = table.Column<bool>(type: "boolean", nullable: false),
-                    IsTest = table.Column<bool>(type: "boolean", nullable: false),
-                    BoardId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IsDev = table.Column<bool>(type: "bit", nullable: false),
+                    IsTest = table.Column<bool>(type: "bit", nullable: false),
+                    BoardId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -111,18 +110,18 @@ namespace PiPlanningBackend.Migrations
                 name: "UserStories",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FeatureId = table.Column<int>(type: "integer", nullable: false),
-                    AzureId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    StoryPoints = table.Column<double>(type: "double precision", nullable: true),
-                    DevStoryPoints = table.Column<double>(type: "double precision", nullable: true),
-                    TestStoryPoints = table.Column<double>(type: "double precision", nullable: true),
-                    OriginalSprintId = table.Column<int>(type: "integer", nullable: true),
-                    SprintId = table.Column<int>(type: "integer", nullable: false),
-                    IsMoved = table.Column<bool>(type: "boolean", nullable: false),
-                    Notes = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FeatureId = table.Column<int>(type: "int", nullable: false),
+                    AzureId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    StoryPoints = table.Column<double>(type: "float", nullable: true),
+                    DevStoryPoints = table.Column<double>(type: "float", nullable: true),
+                    TestStoryPoints = table.Column<double>(type: "float", nullable: true),
+                    OriginalSprintId = table.Column<int>(type: "int", nullable: true),
+                    SprintId = table.Column<int>(type: "int", nullable: false),
+                    IsMoved = table.Column<bool>(type: "bit", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -144,12 +143,12 @@ namespace PiPlanningBackend.Migrations
                 name: "TeamMemberSprints",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    TeamMemberId = table.Column<int>(type: "integer", nullable: false),
-                    SprintId = table.Column<int>(type: "integer", nullable: false),
-                    CapacityDev = table.Column<int>(type: "integer", nullable: false),
-                    CapacityTest = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TeamMemberId = table.Column<int>(type: "int", nullable: false),
+                    SprintId = table.Column<int>(type: "int", nullable: false),
+                    CapacityDev = table.Column<int>(type: "int", nullable: false),
+                    CapacityTest = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {

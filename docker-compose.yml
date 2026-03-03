@@ -15,13 +15,16 @@ services:
       - pi-net
 
   backend:
-    build: ./backend/pi-planning-backend
+    build:
+      context: ./backend
+      dockerfile: pi-planning-backend/Dockerfile
     container_name: pi-backend
     depends_on:
       - db
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       ASPNETCORE_URLS: "http://+:8080"
+      DatabaseProvider: "PostgreSQL"
       ConnectionStrings__DefaultConnection: "Host=pi-postgres;Database=PIPlanningDB;Username=postgres;Password=YourStrong!Passw0rd"
     ports:
       - "8080:8080"
@@ -35,7 +38,8 @@ services:
     depends_on:
       - backend
     environment:
-      API_BASE_URL: "http://pi-backend:8080"
+      API_BASE_URL: "http://localhost:8080"
+      PAT_TTL_MINUTES: "10"
     ports:
       - "4200:80"
     restart: always

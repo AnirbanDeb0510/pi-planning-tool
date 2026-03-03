@@ -8,7 +8,7 @@ using PiPlanningBackend.Data;
 
 #nullable disable
 
-namespace PiPlanningBackend.Migrations
+namespace PiPlanningBackend.Migrations.Postgres.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
