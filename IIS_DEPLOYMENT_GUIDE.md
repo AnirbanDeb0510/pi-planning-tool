@@ -15,12 +15,11 @@
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Quick Start (6 Steps)](#quick-start)
-3. [Detailed Backend Deployment](#detailed-backend-deployment)
-4. [Detailed Frontend Deployment](#detailed-frontend-deployment)
-5. [IIS Configuration](#iis-configuration)
-6. [Troubleshooting](#troubleshooting)
-7. [Accessing via IP/Hostname](#accessing-via-iphostname)
+2. [Setup Steps](#setup-steps)
+3. [Backend Deployment](#backend-deployment)
+4. [Database Permissions (Critical)](#database-permissions-critical)
+5. [Frontend Deployment](#frontend-deployment)
+6. [Troubleshooting & Common Issues](#troubleshooting--common-issues)
 
 ---
 
@@ -30,501 +29,378 @@
 
 - **Windows Server 2019/2022** (or Windows 10/11 Professional with IIS enabled)
 - **IIS (Internet Information Services)** installed and running
-- **.NET 8 Hosting Bundle** - [Download here](https://dotnet.microsoft.com/download/dotnet/8.0)
-- **SQL Server 2016+** (local installation or remote connection)
-  - **SQL Server Management Studio (SSMS)** recommended for database setup
-  - Or **sqlcmd** command-line tool
-- **Git** for cloning repository
+- **.NET 8 Hosting Bundle** - [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **SQL Server 2016+** (local or remote) + SSMS or sqlcmd
 - **Node.js 20+** (for building Angular frontend)
 
-### Enable IIS (if not already enabled)
+### Enable IIS on Windows
 
 **Windows 10/11:**
 
 1. Control Panel → Programs → Turn Windows features on or off
 2. Check: Internet Information Services
-3. Expand IIS → World Wide Web Services → Application Development Features
+3. Expand: IIS → Web Services → Application Development Features
 4. Check: ASP.NET 4.8, WebSocket Protocol
-5. Click OK and restart
+5. Restart
 
 **Windows Server:**
 
 1. Server Manager → Add Roles and Features
-2. Select: Web Server (IIS)
-3. Include: ASP.NET 4.8, WebSockets
-4. Complete installation and restart
+2. Select: Web Server (IIS), ASP.NET 4.8, WebSockets
+3. Complete and restart
 
 ---
 
-## Quick Start (6 Steps)
+## Setup Steps
+
+### 1. Create SQL Server Database
+
+Run this script via SSMS or sqlcmd:
 
 ```powershell
-# 1. Clone repository
-git clone <repository-url>
-cd pi-planning-tool
-
-# 2. Create SQL Server database
-# Open SQL Server Management Studio (SSMS) or use sqlcmd:
-# Run the script: db/init-sqlserver.sql
-# This creates the PIPlanningDB database
-
-# 3. Configure backend for SQL Server
-cd backend/pi-planning-backend
-# Edit appsettings.json:
-#   - Set "DatabaseProvider": "SqlServer"
-#   - Update "DefaultConnection" with your SQL Server connection string
-
-# 4. Generate SQL Server migrations (provider-isolated)
-cd ../pi-planning-backend.migrations.sqlserver
-dotnet ef migrations add InitialCreate \
-  --context AppDbContext \
-  --startup-project ../pi-planning-backend/pi-planning-backend.csproj
-
-# 5. Build and publish backend
-dotnet publish -c Release -o ./publish
-
-# 6. Build frontend
-cd ../../frontend/pi-planning-ui
-# Edit public/env.js with your backend URL
-npm install
-npm run build -- --base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/
+sqlcmd -S localhost\SQLEXPRESS -i db\init-sqlserver.sql
 ```
 
-Then deploy `publish/` folder to IIS (see detailed steps below).
-
----
-
-## Detailed Backend Deployment
-
-### Step 1: Create SQL Server Database
-
-Before deploying the application, create the database in SQL Server.
-
-**Option A: Using SQL Server Management Studio (SSMS)**
-
-1. Open SSMS and connect to your SQL Server instance
-2. Open the file: `db/init-sqlserver.sql`
-3. Click **Execute** (or press F5)
-4. Verify output: "Database PIPlanningDB created successfully"
-
-**Option B: Using sqlcmd**
-
-```powershell
-cd pi-planning-tool
-sqlcmd -S localhost\SQLEXPRESS -i db/init-sqlserver.sql
-```
-
-**What this does:**
-
-- Creates database `PIPlanningDB` if it doesn't exist
-- Creates a test `VersionInfo` table to verify connectivity
-- EF Core migrations will create the actual application tables on first run
-
-**Verify:**
+Verify:
 
 ```sql
--- In SSMS, run this query:
 SELECT name FROM sys.databases WHERE name = 'PIPlanningDB'
--- Should return: PIPlanningDB
 ```
 
-### Step 2: Configure appsettings.json
+**IMPORTANT:** Database name must be **`PIPlanningDB`** (camelcase, not lowercase).
 
-Navigate to: `backend/pi-planning-backend/appsettings.json`
+### 2. Create IIS Application Pools
 
-Update these values:
+Create two application pools via IIS Manager:
+
+- Name: `PIPlanningBackend`, .NET CLR: **No Managed Code**, Pipeline: Integrated
+- Name: `PIPlanningUI`, .NET CLR: **No Managed Code**
+
+These must exist before deploying applications.
+
+---
+
+## Backend Deployment
+
+### Step 1: Configure appsettings.json
+
+Edit: `backend/pi-planning-backend/appsettings.json`
 
 ```json
 {
   "DatabaseProvider": "SqlServer",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=YOUR_SERVER\\SQLEXPRESS;Database=PIPlanningDB;User Id=sa;Password=YOUR_PASSWORD;Encrypt=false;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=PIPlanningDB;User Id=sa;Password=YOUR_PASSWORD;Encrypt=false;TrustServerCertificate=true;"
+  },
+  "Swagger": {
+    "Enabled": false
   }
 }
 ```
 
-**Connection String Examples:**
+**Connection String Variants:**
+| Scenario | Connection String |
+|----------|---|
+| Local SQL Server | `Server=localhost\\SQLEXPRESS;Database=PIPlanningDB;...` |
+| Named Instance | `Server=COMPUTER_NAME\\SQLEXPRESS;Database=PIPlanningDB;...` |
+| Windows Auth | `Server=localhost;Database=PIPlanningDB;Integrated Security=true;` |
 
-| Scenario         | Connection String                                                  |
-| ---------------- | ------------------------------------------------------------------ |
-| Local SQL Server | `Server=localhost\\SQLEXPRESS;Database=PIPlanningDB;...`           |
-| Named Instance   | `Server=COMPUTER_NAME\\SQLEXPRESS;Database=PIPlanningDB;...`       |
-| Default Instance | `Server=localhost;Database=PIPlanningDB;...`                       |
-| Remote Server    | `Server=192.168.1.100;Database=PIPlanningDB;...`                   |
-| Windows Auth     | `Server=localhost;Database=PIPlanningDB;Integrated Security=true;` |
-
-**Note:** Make sure the database `PIPlanningDB` exists before proceeding (see Step 1).
-
-### Step 3: Generate SQL Server Migrations
+### Step 2: Restore Dependencies
 
 ```powershell
-cd backend/pi-planning-backend
-dotnet ef migrations add InitialCreate_SqlServer -o Migrations_SqlServer
+cd backend\pi-planning-backend
+dotnet restore pi-planning-tool.sln
 ```
 
-This creates:
-
-- `Migrations_SqlServer/TIMESTAMP_InitialCreate_SqlServer.cs`
-- `Migrations_SqlServer/TIMESTAMP_InitialCreate_SqlServer.Designer.cs`
-- `Migrations_SqlServer/AppDbContextModelSnapshot.cs`
-
-**Verify:** Files should contain SQL Server-specific types (e.g., `nvarchar`, `IDENTITY`)
-
-### Step 4: Test Build Locally
+### Step 3: Publish Backend
 
 ```powershell
-dotnet build
-dotnet run
+dotnet publish -c Release -o .\publish
 ```
 
-**Expected output:**
-
-```
-Active database provider: SqlServer
-Now listening on: http://localhost:5000
-```
-
-Navigate to: `http://localhost:5000/swagger` (should show API documentation)
-
-Press Ctrl+C to stop.
-
-### Step 5: Publish Release Build
+### Step 4: Deploy to IIS
 
 ```powershell
-dotnet publish -c Release -o ./publish
+# Copy to IIS folder
+robocopy .\publish C:\inetpub\wwwroot\PIPlanningBackend /MIR /R:2 /W:2
 ```
 
-This creates a self-contained deployment in `./publish/` folder containing:
+### Step 5: Create IIS Application
 
-- `pi-planning-backend.dll`
-- `appsettings.json`
-- `web.config` (auto-generated)
-- All dependencies
+In IIS Manager:
 
-### Step 6: Deploy to IIS
+1. Sites → Default Web Site → Add Application
+2. **Alias:** `PIPlanningBackend`
+3. **Application pool:** `PIPlanningBackend`
+4. **Physical path:** `C:\inetpub\wwwroot\PIPlanningBackend`
+5. Click OK
 
-1. **Copy publish folder** to IIS directory:
+### Step 6: Verify Backend
 
-   ```powershell
-   xcopy /E /I ./publish C:\inetpub\wwwroot\PIPlanningBackend
-   ```
+```
+http://localhost/PIPlanningBackend/api/boards
+```
 
-2. **Create Application Pool:**
-   - Open IIS Manager
-   - Right-click "Application Pools" → Add Application Pool
-   - Name: `PIPlanningBackend`
-   - .NET CLR version: **No Managed Code**
-   - Managed pipeline mode: Integrated
-   - Click OK
-
-3. **Create IIS Application** (under Default Web Site):
-   - Expand "Sites" → "Default Web Site"
-   - Right-click "Default Web Site" → Add Application
-   - Alias: `PIPlanningBackend` (this becomes the URL path)
-   - Application pool: `PIPlanningBackend`
-   - Physical path: `C:\inetpub\wwwroot\PIPlanningBackend`
-   - Click OK
-
-4. **Set Folder Permissions:**
-   - Right-click `C:\inetpub\wwwroot\PIPlanningBackend` → Properties → Security
-   - Add: `IIS AppPool\PIPlanningBackend`
-   - Permissions: Read & Execute, List folder contents, Read
-   - Click OK
-
-5. **Test Backend:**
-   - Open browser: `http://localhost/PIPlanningBackend/swagger`
-   - Should show API documentation
-   - Check logs in: `C:\inetpub\logs\LogFiles\`
-
-**Note:** Default Web Site runs on port 80. If you need a different port or custom site name, create a new website first, then add applications under it.
+Should return empty array: `[]` (no CORS error) ✅
 
 ---
 
-## Detailed Frontend Deployment
+## Database Permissions (Critical)
 
-### Step 1: Configure API URL
+**This is the most common deployment issue.** The IIS AppPool identity needs DDL (CREATE TABLE) rights for migrations to apply on startup.
 
-Navigate to: `frontend/pi-planning-ui/public/env.js`
+### Grant Permissions to AppPool
 
-Update with your backend URL:
+Run this SQL as Administrator in SSMS:
+
+```sql
+-- Create Windows login for AppPool
+USE [master]
+CREATE LOGIN [IIS APPPOOL\PIPlanningBackend] FROM WINDOWS;
+
+-- Create database user and grant db_owner role
+USE [PIPlanningDB]
+CREATE USER [IIS APPPOOL\PIPlanningBackend] FOR LOGIN [IIS APPPOOL\PIPlanningBackend];
+ALTER ROLE db_owner ADD MEMBER [IIS APPPOOL\PIPlanningBackend];
+
+-- Verify
+SELECT * FROM sys.database_role_members
+WHERE role_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'IIS APPPOOL\PIPlanningBackend')
+```
+
+**If this returns empty, migrations will NOT apply on startup.**
+
+### Backup: Manual Migration Apply
+
+If AppPool permissions aren't set yet, manually apply migrations using one of these approaches:
+
+#### Option A: Run from Backend Project (Recommended)
+
+1. **Update appsettings.Development.json:**
+
+```json
+{
+  "DatabaseProvider": "SqlServer",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=PIPlanningDB;User Id=sa;Password=YOUR_PASSWORD;Encrypt=false;TrustServerCertificate=true;"
+  }
+}
+```
+
+2. **Run from backend project:**
+
+```powershell
+cd backend\pi-planning-backend
+dotnet ef database update --context AppDbContext
+```
+
+#### Option B: Run from SQL Server Migrations Project
+
+This approach is useful if you're working directly with the migration project:
+
+1. **Update DesignTimeDbContextFactory.cs temporarily:**
+
+In `backend/pi-planning-backend.migrations.sqlserver/DesignTimeDbContextFactory.cs`, update the hardcoded fallback connection string to target SQL Server:
+
+```csharp
+// Around line 30 in the fallback section
+string connectionString = "Server=localhost\\SQLEXPRESS;Database=PIPlanningDB;User Id=sa;Password=YOUR_PASSWORD;Encrypt=false;TrustServerCertificate=true;";
+```
+
+2. **Run from migrations project:**
+
+```powershell
+cd backend\pi-planning-backend.migrations.sqlserver
+dotnet ef database update --context AppDbContext
+```
+
+#### Verify Migrations Applied
+
+After applying migrations, verify in SQL Server:
+
+```sql
+SELECT MigrationId FROM __EFMigrationsHistory;
+SELECT name FROM sys.tables WHERE name IN ('Boards', 'Features', 'UserStories');
+```
+
+Restart the backend app pool and test the API again.
+
+---
+
+## Frontend Deployment
+
+### Step 1: Configure env.js
+
+Edit: `frontend/pi-planning-ui/public/env.js`
 
 ```javascript
 window["__env"] = window["__env"] || {};
-window["__env"]["apiBaseUrl"] = "http://localhost/PIPlanningBackend"; // Update this
+window["__env"]["apiBaseUrl"] = "http://localhost/PIPlanningBackend";
 window["__env"]["patTtlMinutes"] = "10";
 ```
 
-**Examples:**
+**Important:** The script tag in `src/index.html` must be relative:
 
-| Deployment | apiBaseUrl                                           |
-| ---------- | ---------------------------------------------------- |
-| Localhost  | `http://localhost/PIPlanningBackend`                 |
-| IP Address | `http://192.168.1.100/PIPlanningBackend`             |
-| Hostname   | `http://server-name/PIPlanningBackend`               |
-| Domain     | `http://planning.your-company.com/PIPlanningBackend` |
+```html
+<script src="env.js"></script>
+<!-- NOT /env.js -->
+```
 
 ### Step 2: Build Angular App
 
+**Critical:** Use the `--` separator before passing arguments to Angular build:
+
 ```powershell
-cd frontend/pi-planning-ui
+cd frontend\pi-planning-ui
 npm install
 npm run build -- --base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/
 ```
 
-This creates production build in: `dist/pi-planning-ui/browser/`
-
-**Validation:** Open `dist/pi-planning-ui/browser/index.html` and verify:
-
-```html
-<base href="/PIPlanningUI/" />
-```
+Without `--`, npm will reject the arguments.
 
 ### Step 3: Deploy to IIS
 
-1. **Copy dist folder** to IIS directory:
+```powershell
+# Copy dist folder to IIS
+robocopy dist\pi-planning-ui\browser C:\inetpub\wwwroot\PIPlanningUI /MIR /R:2 /W:2
 
-   ```powershell
-   xcopy /E /I dist\pi-planning-ui\browser C:\inetpub\wwwroot\PIPlanningUI
-   ```
+# Ensure env.js is deployed
+copy dist\pi-planning-ui\browser\env.js C:\inetpub\wwwroot\PIPlanningUI\env.js
+```
 
-2. **Create Application Pool:**
-   - Open IIS Manager
-   - Right-click "Application Pools" → Add Application Pool
-   - Name: `PIPlanningUI`
-   - .NET CLR version: **No Managed Code**
-   - Click OK
+### Step 4: Create IIS Application
 
-3. **Create IIS Application** (under Default Web Site):
-   - Expand "Sites" → "Default Web Site"
-   - Right-click "Default Web Site" → Add Application
-   - Alias: `PIPlanningUI` (this becomes the URL path)
-   - Application pool: `PIPlanningUI`
-   - Physical path: `C:\inetpub\wwwroot\PIPlanningUI`
-   - Click OK
-   - Click OK
+In IIS Manager:
 
-4. **Add URL Rewrite Rule** (for Angular routing):
+1. Sites → Default Web Site → Add Application
+2. **Alias:** `PIPlanningUI`
+3. **Application pool:** `PIPlanningUI`
+4. **Physical path:** `C:\inetpub\wwwroot\PIPlanningUI`
+5. Click OK
 
-   Install URL Rewrite module if not present: [Download here](https://www.iis.net/downloads/microsoft/url-rewrite)
+### Step 5: Add URL Rewrite (for Angular routing)
 
-   Create `web.config` in `C:\inetpub\wwwroot\PIPlanningUI\` (if not exists):
+Create: `C:\inetpub\wwwroot\PIPlanningUI\web.config`
 
-   ```xml
-   <?xml version="1.0" encoding="utf-8"?>
-   <configuration>
-     <system.webServer>
-       <rewrite>
-         <rules>
-           <rule name="Angular Routes" stopProcessing="true">
-             <match url=".*" />
-             <conditions logicalGrouping="MatchAll">
-               <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-               <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-             </conditions>
-             <action type="Rewrite" url="/PIPlanningUI/" />
-           </rule>
-         </rules>
-       </rewrite>
-     </system.webServer>
-   </configuration>
-   ```
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <rule name="Angular Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/PIPlanningUI/" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
+</configuration>
+```
 
-5. **Test Frontend:**
-   - Open browser: `http://localhost/PIPlanningUI`
-   - Should load PI Planning Tool UI
-   - Try creating a board to verify backend connection
+### Step 6: Test Frontend
+
+```
+http://localhost/PIPlanningUI
+```
+
+Should load the PI Planning Tool UI and connect to the backend.
 
 ---
 
-## IIS Configuration
+## Troubleshooting & Common Issues
 
-### Application Pool Settings
+### Backend API Loads but Returns 404 on Endpoints
 
-**Recommended for both API and UI:**
+**Cause:** Migrations didn't apply to database.
 
-- .NET CLR version: **No Managed Code**
-- Managed pipeline mode: **Integrated**
-- Start mode: **AlwaysRunning** (optional, for faster cold starts)
-- Identity: **ApplicationPoolIdentity** (default, works for most scenarios)
+**Fix:**
 
-### Firewall Rules
+1. Verify AppPool has database permissions (see [Database Permissions](#database-permissions-critical) section)
+2. Manually apply migrations (see [Backup: Manual Migration Apply](#backup-manual-migration-apply))
+3. Restart `PIPlanningBackend` app pool
 
-If accessing from other machines, open port 80 (both applications share this port):
+### Frontend Loads but Shows Blank Page
+
+**Check 1: env.js is not loading (404 in Network tab)**
+
+- Verify `env.js` exists in `C:\inetpub\wwwroot\PIPlanningUI\env.js`
+- Verify `src/index.html` has: `<script src="env.js"></script>` (not `/env.js`)
+- Copy manually if needed: `copy dist\pi-planning-ui\browser\env.js C:\inetpub\wwwroot\PIPlanningUI\env.js`
+
+**Check 2: API calls fail (CORS or 404 errors)**
+
+- Verify `env.js` has correct `apiBaseUrl`: `http://localhost/PIPlanningBackend`
+- Verify backend is running: `http://localhost/PIPlanningBackend/api/boards` returns `[]`
+
+**Check 3: Angular routing broken (404 on page refresh)**
+
+- Verify `web.config` is deployed with correct URL Rewrite rule
+- Verify rule points to: `/PIPlanningUI/` (not `/PIPlanningUI`)
+
+### Database Login Failed (SQL Auth)
+
+**Symptom:** "Login failed for user 'sa'" during startup
+
+**Cause:** SQL Server may use Windows Auth only or `sa` is disabled.
+
+**Fix 1: Use Windows Authentication** (Recommended)
+
+```json
+"DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=PIPlanningDB;Integrated Security=true;Encrypt=false;TrustServerCertificate=true;"
+```
+
+Then grant Windows login to AppPool (see Database Permissions section).
+
+**Fix 2: Enable SQL Auth**
+
+- In SQL Server Management Studio
+- Right-click Server → Properties → Security
+- Enable "SQL Server and Windows Authentication mode"
+- Enable `sa` login and reset password
+- Restart SQL Server service
+
+### npm build fails with "Unknown argument" error
+
+**Symptom:** `npm run build --base-href /PIPlanningUI/` fails
+
+**Cause:** Missing `--` separator before arguments
+
+**Fix:**
 
 ```powershell
-# PI Planning Tool (Frontend + Backend)
-netsh advfirewall firewall add rule name="PI Planning Tool" dir=in action=allow protocol=TCP localport=80
+npm run build -- --base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/
 ```
 
-**Note:** Since both `/PIPlanningUI` and `/PIPlanningBackend` run under the same website on port 80, you only need to open one port.
+The `--` tells npm to pass all following arguments to the Angular build script.
 
 ---
 
-## Troubleshooting
+## Summary Checklist
 
-### Backend Issues
+Before declaring deployment complete:
 
-#### 500.19 - Configuration Error
-
-**Symptom:** White page with "HTTP Error 500.19"
-
-**Cause:** Missing .NET 8 Hosting Bundle
-
-**Fix:**
-
-1. Download: [.NET 8 Hosting Bundle](https://dotnet.microsoft.com/download/dotnet/8.0)
-2. Install and restart IIS:
-   ```powershell
-   iisreset
-   ```
-
-#### 500.30 - ANCM In-Process Start Failure
-
-**Symptom:** Error 500.30 in browser
-
-**Cause:** Application startup failure
-
-**Fix:**
-
-1. Check Event Viewer:
-   - Windows Logs → Application
-   - Look for errors from "IIS AspNetCore Module"
-2. Common causes:
-   - Missing appsettings.json
-   - Invalid connection string
-   - Database connection failure
-   - Missing dependencies
-
-#### Database Connection Failures
-
-**Symptom:** Error 500, logs show "Cannot open database"
-
-**Fix:**
-
-1. Verify SQL Server is running:
-   ```powershell
-   Get-Service MSSQLSERVER
-   ```
-2. Test connection string with `sqlcmd`:
-   ```powershell
-   sqlcmd -S localhost\SQLEXPRESS -U sa -P YourPassword
-   ```
-3. Check firewall allows SQL Server port (1433)
-4. Verify SQL Server login credentials
-
-### Frontend Issues
-
-#### Angular Routes Not Working (404 on refresh)
-
-**Symptom:** Direct URL navigation returns 404
-
-**Fix:** Install URL Rewrite module and add `web.config` (see Frontend Deployment Step 4)
-
-#### API Calls Failing (CORS errors)
-
-**Symptom:** Browser console shows CORS errors
-
-**Fix:**
-
-1. Verify `env.js` has correct backend URL
-2. Check backend `appsettings.json` CORS settings
-3. Ensure backend is running and accessible
-
-#### Blank Page After Deployment
-
-**Symptom:** White page, no content
-
-**Fix:**
-
-1. Check browser console for JavaScript errors
-2. Verify `env.js` is being loaded (check Network tab)
-3. Verify `base href="/PIPlanningUI/"` in `index.html` (build with `--base-href /PIPlanningUI/ --deploy-url /PIPlanningUI/`)
-4. Clear browser cache
-
----
-
-## Accessing via IP/Hostname
-
-### Configure Website Binding
-
-Since both `/PIPlanningBackend` and `/PIPlanningUI` are applications under Default Web Site, configure binding on the parent website:
-
-1. Open IIS Manager → Sites → Default Web Site
-2. Right-click → Edit Bindings
-3. Verify or add binding:
-   - Type: http
-   - IP address: **Your server IP** (e.g., 192.168.1.100) or **All Unassigned**
-   - Port: 80
-   - Host name: (leave blank for IP access, or enter hostname like `planning.company.com`)
-
-**Note:** Both applications inherit the binding from Default Web Site. No separate port configuration needed.
-
-### Update Frontend env.js
-
-If using IP or hostname access, update `env.js` in deployed folder:
-
-```javascript
-// For IP access:
-window["__env"]["apiBaseUrl"] = "http://192.168.1.100/PIPlanningBackend";
-
-// For hostname access:
-window["__env"]["apiBaseUrl"] = "http://server-name/PIPlanningBackend";
-```
-
-### Test from Remote Machine
-
-```powershell
-# From another computer on the network:
-# Frontend
-http://192.168.1.100/PIPlanningUI
-
-# Backend API
-http://192.168.1.100/PIPlanningBackend/swagger
-```
-
----
-
-## Common Deployment Scenarios
-
-### Scenario 1: Single Server (Backend + Frontend + SQL Server)
-
-- Backend: `http://localhost/PIPlanningBackend`
-- Frontend: `http://localhost/PIPlanningUI`
-- SQL Server: `localhost\SQLEXPRESS`
-- env.js: `apiBaseUrl: 'http://localhost/PIPlanningBackend'`
-- **Single port 80** - simplest deployment
-
-### Scenario 2: Separate Backend/Frontend Servers
-
-- Backend server: `http://192.168.1.100/PIPlanningBackend`
-- Frontend server: `http://192.168.1.101/PIPlanningUI`
-- env.js: `apiBaseUrl: 'http://192.168.1.100/PIPlanningBackend'`
-- Each server uses port 80
-
-### Scenario 3: Remote SQL Server
-
-- Backend: `http://192.168.1.100/PIPlanningBackend`
-- SQL Server: `192.168.1.200`
-- Connection string: `Server=192.168.1.200;Database=PIPlanningDB;...`
-- Frontend: `http://192.168.1.100/PIPlanningUI`
-
----
-
-## Next Steps
-
-1. **Test all features:** Create board, add team members, import features
-2. **Configure SSL/HTTPS:** For production, add SSL certificates
-3. **Set up backups:** Regular SQL Server database backups
-4. **Monitor logs:** Check IIS logs and Event Viewer regularly
-5. **Performance tuning:** Adjust IIS application pool settings for load
+- [ ] Database `PIPlanningDB` created
+- [ ] IIS AppPool `PIPlanningBackend` and `PIPlanningUI` created
+- [ ] Backend deployed to `C:\inetpub\wwwroot\PIPlanningBackend`
+- [ ] AppPool identity granted `db_owner` role on database
+- [ ] Backend API responds: `http://localhost/PIPlanningBackend/api/boards` → `[]`
+- [ ] Frontend deployed to `C:\inetpub\wwwroot\PIPlanningUI`
+- [ ] `env.js` deployed with relative path in `index.html`
+- [ ] Frontend loads: `http://localhost/PIPlanningUI`
+- [ ] Frontend connects to backend (Network tab shows `/api/boards` success)
+- [ ] Create board, add team members, import features all work
 
 ---
 
 ## Support
 
-For issues, check:
+For issues:
 
-- IIS Logs: `C:\inetpub\logs\LogFiles\`
-- Event Viewer: Windows Logs → Application
-- Backend logs: Check console output or configured log files
-- Project README: Additional configuration options
+- Check SQL logs: SQL Server Management Studio error messages
+- Check IIS logs: `C:\inetpub\logs\LogFiles\W3SVC1\`
+- Check Event Viewer: Windows Logs → Application → IIS AspNetCore Module errors
