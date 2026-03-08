@@ -15,15 +15,33 @@ namespace PiPlanningBackend.Controllers
         private readonly ITeamService _service = service;
         private readonly IHubContext<PlanningHub> _hubContext = hubContext;
 
+        /// <summary>
+        /// Retrieves all team members with sprint capacity allocations.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <returns>List of team members with capacities.</returns>
+        /// <response code="200">Team members retrieved successfully.</response>
         [HttpGet]
-        public async Task<IActionResult> GetTeam(int boardId)
+        [ProducesResponseType(typeof(List<TeamMemberDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTeam([FromRoute] int boardId)
         {
             List<TeamMemberDto> team = await _service.GetTeamAsync(boardId);
             return Ok(team);
         }
 
+        /// <summary>
+        /// Adds a new team member to the board with default capacities for all sprints.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="member">Team member details (name, isDev, isTest).</param>
+        /// <returns>Created team member with capacities.</returns>
+        /// <response code="200">Team member added successfully.</response>
+        /// <response code="403">Board is locked.</response>
         [HttpPost]
-        public async Task<IActionResult> AddTeamMember(int boardId, [FromBody] TeamMemberDto member)
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(TeamMemberResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> AddTeamMember([FromRoute] int boardId, [FromBody] TeamMemberDto member)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             TeamMemberResponseDto created = await _service.AddTeamMemberAsync(boardId, member);
@@ -41,8 +59,22 @@ namespace PiPlanningBackend.Controllers
             return Ok(created);
         }
 
+        /// <summary>
+        /// Updates team member details (name, isDev, isTest). Re-calculates default capacities.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="teamMemberId">Team member ID.</param>
+        /// <param name="member">Updated team member details.</param>
+        /// <returns>Updated team member.</returns>
+        /// <response code="200">Team member updated successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Team member not found.</response>
         [HttpPut("{teamMemberId}")]
-        public async Task<IActionResult> UpdateTeamMember(int boardId, int teamMemberId, [FromBody] TeamMemberDto member)
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(TeamMemberResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateTeamMember([FromRoute] int boardId, [FromRoute] int teamMemberId, [FromBody] TeamMemberDto member)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             TeamMemberResponseDto? updated = await _service.UpdateTeamMemberAsync(boardId, teamMemberId, member);
@@ -64,8 +96,20 @@ namespace PiPlanningBackend.Controllers
             return Ok(updated);
         }
 
+        /// <summary>
+        /// Removes team member and all associated sprint capacity records.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="teamMemberId">Team member ID.</param>
+        /// <returns>No content on success.</returns>
+        /// <response code="204">Team member deleted successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Team member not found.</response>
         [HttpDelete("{teamMemberId}")]
-        public async Task<IActionResult> DeleteTeamMember(int boardId, int teamMemberId)
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteTeamMember([FromRoute] int boardId, [FromRoute] int teamMemberId)
         {
             bool deleted = await _service.DeleteTeamMemberAsync(boardId, teamMemberId);
             if (!deleted)
@@ -86,8 +130,23 @@ namespace PiPlanningBackend.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Adjusts a team member's capacity for a specific sprint.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="teamMemberId">Team member ID.</param>
+        /// <param name="sprintId">Sprint ID.</param>
+        /// <param name="dto">New capacity values (Dev and Test).</param>
+        /// <returns>Updated capacity.</returns>
+        /// <response code="200">Capacity updated successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Team member or sprint not found.</response>
         [HttpPatch("{teamMemberId}/sprints/{sprintId}")]
-        public async Task<IActionResult> UpdateCapacity(int boardId, int teamMemberId, int sprintId, [FromBody] UpdateTeamMemberCapacityDto dto)
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(TeamMemberSprintDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateCapacity([FromRoute] int boardId, [FromRoute] int teamMemberId, [FromRoute] int sprintId, [FromBody] UpdateTeamMemberCapacityDto dto)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             TeamMemberSprint? updated = await _service.UpdateCapacityAsync(boardId, sprintId, teamMemberId, dto);

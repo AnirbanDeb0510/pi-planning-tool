@@ -12,16 +12,16 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                        CLIENT (Angular)                         │
 │                                                                 │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐  │
-│  │  Board Component │  │  Team Component  │  │ Azure Modal  │  │
-│  └────────┬─────────┘  └────────┬─────────┘  └──────┬───────┘  │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐   │
+│  │  Board Component │  │  Team Component  │  │ Azure Modal  │   │
+│  └────────┬─────────┘  └────────┬─────────┘  └──────┬───────┘   │
 │           │                     │                   │           │
 │           └─────────────────────┼───────────────────┘           │
 │                                 │                               │
-│                    ┌────────────▼─────────────┐                │
-│                    │   HTTP Client Service   │                │
-│                    │   SignalR Hub Client    │                │
-│                    └────────────┬─────────────┘                │
+│                    ┌────────────▼─────────────┐                 │
+│                    │   HTTP Client Service    │                 │
+│                    │   SignalR Hub Client     │                 │
+│                    └────────────┬─────────────┘                 │
 │                                 │ REST + WebSocket              │
 └─────────────────────────────────┼───────────────────────────────┘
                                   │
@@ -32,64 +32,64 @@
 ┌─────────────────────────────────┼───────────────────────────────┐
 │                        SERVER (.NET 8)                          │
 │                                 │                               │
-│  ┌──────────────────────────────▼──────────────────────┐       │
-│  │              Controller Layer                       │       │
-│  │                                                     │       │
-│  │  - BoardsController    (GET, POST, PATCH)         │       │
-│  │  - FeaturesController  (POST import, PATCH)       │       │
-│  │  - UserStoriesController (PATCH move/refresh)     │       │
-│  │  - TeamController      (GET, POST, PATCH)         │       │
-│  │  - AzureController     (GET feature from Azure)   │       │
-│  └──────────────────────────────┬──────────────────────┘       │
+│  ┌──────────────────────────────▼──────────────────────┐        │
+│  │              Controller Layer                       │        │
+│  │                                                     │        │
+│  │  - BoardsController    (GET, POST, PATCH)           │        │
+│  │  - FeaturesController  (POST import, PATCH)         │        │
+│  │  - UserStoriesController (PATCH move/refresh)       │        │
+│  │  - TeamController      (GET, POST, PATCH)           │        │
+│  │  - AzureController     (GET feature from Azure)     │        │
+│  └──────────────────────────────┬──────────────────────┘        │
 │                                 │                               │
-│  ┌──────────────────────────────▼──────────────────────┐       │
-│  │              Service Layer (Business Logic)        │       │
-│  │                                                     │       │
-│  │  - IBoardService         (create, fetch, lock)    │       │
-│  │  - IFeatureService       (import, move, refresh)  │       │
-│  │  - ITeamService          (capacity management)    │       │
-│  │  - IAzureBoardsService   (Azure DevOps client)    │       │
-│  └──────────────────────────────┬──────────────────────┘       │
+│  ┌──────────────────────────────▼──────────────────────┐        │
+│  │              Service Layer (Business Logic)         │        │
+│  │                                                     │        │
+│  │  - IBoardService         (create, fetch, lock)      │        │
+│  │  - IFeatureService       (import, move, refresh)    │        │
+│  │  - ITeamService          (capacity management)      │        │
+│  │  - IAzureBoardsService   (Azure DevOps client)      │        │
+│  └──────────────────────────────┬──────────────────────┘        │
 │                                 │                               │
-│  ┌──────────────────────────────▼──────────────────────┐       │
-│  │              Repository Layer (Data Access)        │       │
-│  │                                                     │       │
-│  │  - IBoardRepository                               │       │
-│  │  - IFeatureRepository                             │       │
-│  │  - IUserStoryRepository                           │       │
-│  │  - ITeamRepository                                │       │
-│  └──────────────────────────────┬──────────────────────┘       │
+│  ┌──────────────────────────────▼──────────────────────┐        │
+│  │              Repository Layer (Data Access)         │        │
+│  │                                                     │        │
+│  │  - IBoardRepository                                 │        │
+│  │  - IFeatureRepository                               │        │
+│  │  - IUserStoryRepository                             │        │
+│  │  - ITeamRepository                                  │        │
+│  └──────────────────────────────┬──────────────────────┘        │
 │                                 │                               │
-│  ┌──────────────────────────────▼──────────────────────┐       │
-│  │              EF Core DbContext                     │       │
-│  │  AppDbContext                                      │       │
-│  │  ├── DbSet<Board>                                 │       │
-│  │  ├── DbSet<Sprint>                                │       │
-│  │  ├── DbSet<Feature>                               │       │
-│  │  ├── DbSet<UserStory>                             │       │
-│  │  ├── DbSet<TeamMember>                            │       │
-│  │  ├── DbSet<TeamMemberSprint>                      │       │
-│  │  └── DbSet<CursorPresence> (Ignored)             │       │
-│  └──────────────────────────────┬──────────────────────┘       │
+│  ┌──────────────────────────────▼──────────────────────┐        │
+│  │              EF Core DbContext                      │        │
+│  │  AppDbContext                                       │        │
+│  │  ├── DbSet<Board>                                   │        │
+│  │  ├── DbSet<Sprint>                                  │        │
+│  │  ├── DbSet<Feature>                                 │        │
+│  │  ├── DbSet<UserStory>                               │        │
+│  │  ├── DbSet<TeamMember>                              │        │
+│  │  ├── DbSet<TeamMemberSprint>                        │        │
+│  │  └── DbSet<CursorPresence> (Ignored)                │        │
+│  └──────────────────────────────┬──────────────────────┘        │
 │                                 │                               │
-│  ┌──────────────────────────────▼──────────────────────┐       │
-│  │            SignalR Hub (Real-time)                 │       │
-│  │  PlanningHub                                       │       │
-│  │  - HandleFeatureMoved()                           │       │
-│  │  - HandleStoryMoved()                             │       │
-│  │  - HandleCursorUpdate()                           │       │
-│  └──────────────────────────────┬──────────────────────┘       │
+│  ┌──────────────────────────────▼──────────────────────┐        │
+│  │            SignalR Hub (Real-time)                  │        │
+│  │  PlanningHub                                        │        │
+│  │  - HandleFeatureMoved()                             │        │
+│  │  - HandleStoryMoved()                               │        │
+│  │  - HandleCursorUpdate()                             │        │
+│  └──────────────────────────────┬──────────────────────┘        │
 │                                 │                               │
 └─────────────────────────────────┼───────────────────────────────┘
                                   │
 ┌─────────────────────────────────▼───────────────────────────────┐
 │                    Database (PostgreSQL)                        │
 │                                                                 │
-│  ┌────────┬────────┬────────┬──────────┬──────────┬──────────┐  │
-│  │ Boards │ Sprints│Features│UserStories│TeamMember│TMSprints│  │
-│  └────────┴────────┴────────┴──────────┴──────────┴──────────┘  │
+│ ┌────────┬────────┬────────┬────────────┬──────────┬──────────┐ │
+│ │ Boards │Sprints │Features│UserStories │TeamMember│TMSprints │ │
+│ └────────┴────────┴────────┴────────────┴──────────┴──────────┘ │
 │                                                                 │
-│  Persistence Layer: Docker volume (./db/pg-data)              │
+│  Persistence Layer: Docker volume (./db/pg-data)                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -429,7 +429,7 @@ Returns: {
   - `SprintId` (current assignment, FK)
   - `OriginalSprintId` (baseline before moves, nullable)
   - `IsMoved` (boolean, computed: OriginalSprintId != SprintId)
-  - `Notes` (user-added risks/dependencies)
+  - `Notes` (nullable, reserved for future use)
 - **Relationships:**
   - Belongs to Feature
   - Belongs to Sprint (current)
@@ -469,88 +469,28 @@ Returns: {
 
 ---
 
-## 🎯 API Contract Reference
+## 🎯 API Documentation
 
-### Boards
+For comprehensive API documentation including all endpoints, request/response examples, error handling, and SignalR events, see:
 
-```
-POST /api/boards
-  Request: BoardCreateDto { name, org, project, numSprints, sprintDuration, startDate, devTestToggle, password? }
-  Response: Board { id, name, sprints: [...], ... }
+**→ [API_REFERENCE.md](API_REFERENCE.md)**
 
-GET /api/boards/{id}
-  Response: BoardResponseDto { id, name, sprints, features, teamMembers, isLocked, isFinalized, ... }
+Key resources:
 
-PATCH /api/boards/{id}/lock
-  Request: BoardLockDto { password: string }
-  Response: BoardLockActionResponseDto { success: bool, message: string, board: BoardSummaryDto, timestamp: DateTime }
-  Errors: 400 (already locked), 403 (invalid password)
+- **Boards API**: CRUD operations, search, lock/unlock, finalize/restore
+- **Features API**: Import from Azure, refresh, reorder, delete
+- **User Stories API**: Move, refresh
+- **Team API**: Member management, capacity allocation
+- **Azure DevOps Integration**: Fetch features directly from Azure Boards
+- **Real-Time Events**: SignalR WebSocket connection and broadcast events
 
-PATCH /api/boards/{id}/unlock
-  Request: BoardUnlockDto { password: string }
-  Response: BoardLockActionResponseDto { success: bool, message: string, board: BoardSummaryDto, timestamp: DateTime }
-  Errors: 400 (not locked), 403 (invalid password)
+The API Reference includes:
 
-PATCH /api/boards/{id}/finalize
-  Request: {}
-  Response: { success: bool, message: string, board: BoardSummaryDto, warnings: string[], finalizedAt: DateTime }
-  Errors: 403 (board is locked)
-
-PATCH /api/boards/{id}/restore
-  Request: {}
-  Response: { success: bool, message: string, board: BoardSummaryDto }
-  Errors: 403 (board is locked)
-```
-
-### Features
-
-```
-GET /api/v1/azure/feature/{org}/{project}/{featureId} (from Azure)
-  Query: ?pat={personalAccessToken}
-  Response: FeatureDto { azureId, title, priority, children: [UserStoryDto, ...] }
-
-POST /api/v1/boards/{boardId}/features/import
-  Request: FeatureDto { ... }
-  Response: 201 Created FeatureDto { id, title, children: [...] }
-
-PATCH /api/v1/boards/{boardId}/features/{id}/refresh
-  Query: ?org=&project=&pat=
-  Response: FeatureDto { ... }
-
-PATCH /api/v1/boards/{boardId}/features/reorder
-   Request: ReorderFeatureDto { features: [{ featureId, newPriority }, ...] }
-  Response: 204 No Content
-
-DELETE /api/v1/boards/{boardId}/features/{id}
-   Response: 204 No Content
-```
-
-### User Stories
-
-```
-PATCH /api/boards/{boardId}/stories/{storyId}/move
-  Request: MoveStoryDto { targetSprintId: int }
-  Response: 204 No Content
-
-PATCH /api/boards/{boardId}/stories/{storyId}/refresh
-  Query: ?org=&project=&pat=
-  Response: UserStoryDto { ... }
-```
-
-### Team
-
-```
-POST /api/boards/{boardId}/team
-  Request: List<TeamMemberDto> { name, isDev, isTest }
-  Response: 200 OK
-
-GET /api/boards/{boardId}/team
-  Response: List<TeamMemberDto> { ... }
-
-PATCH /api/boards/{boardId}/team/sprints/{sprintId}/team/{teamMemberId}
-  Request: { capacityDev: double, capacityTest: double }
-  Response: TeamMemberSprintDto { ... }
-```
+- Complete endpoint documentation with examples
+- Authentication and authorization details
+- Error response formats and status codes
+- SignalR event schemas
+- Rate limiting and versioning information
 
 ---
 
@@ -831,7 +771,50 @@ Board (Main Container)
 
 Migrated from flat folder structure to **domain-driven architecture** for improved scalability and maintainability:
 
-**New Folder Structure:**
+**Backend Folder Structure:**
+
+```
+backend/
+├── pi-planning-backend/                      # Main .NET 8 Web API
+│   ├── Controllers/                         # API endpoints (5 controllers)
+│   │   ├── BoardsController.cs
+│   │   ├── FeaturesController.cs
+│   │   ├── UserStoriesController.cs
+│   │   ├── TeamController.cs
+│   │   └── AzureController.cs
+│   ├── Services/
+│   │   ├── Interfaces/
+│   │   └── Implementations/
+│   ├── Repositories/
+│   │   ├── Interfaces/
+│   │   └── Implementations/
+│   ├── Models/                              # EF Core entities
+│   ├── DTOs/                                # Data transfer objects
+│   ├── Data/                                # DbContext
+│   ├── Hubs/                                # SignalR hubs
+│   ├── Middleware/                          # Global exception, CORS
+│   ├── Filters/                             # Model validation
+│   ├── Program.cs
+│   └── appsettings.json
+│
+├── pi-planning-backend.migrations.postgres/  # PostgreSQL Migrations (Provider-Isolated)
+│   ├── Migrations/
+│   │   ├── 20260302202415_InitialCreate.cs
+│   │   ├── 20260302202415_InitialCreate.Designer.cs
+│   │   └── AppDbContextModelSnapshot.cs
+│   ├── DesignTimeDbContextFactory.cs        # Design-time DbContext for EF CLI
+│   └── pi-planning-backend.migrations.postgres.csproj
+│
+└── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations (Provider-Isolated)
+    ├── Migrations/
+    │   ├── 20260302202434_InitialCreate.cs
+    │   ├── 20260302202434_InitialCreate.Designer.cs
+    │   └── AppDbContextModelSnapshot.cs
+    ├── DesignTimeDbContextFactory.cs        # Design-time DbContext for EF CLI
+    └── pi-planning-backend.migrations.sqlserver.csproj
+```
+
+**Frontend Folder Structure:**
 
 ```
 frontend/pi-planning-ui/src/
@@ -1079,4 +1062,4 @@ Before marking a feature "done":
 
 ---
 
-**Keep this as your reference. Update as you build!**
+**This document serves as a reference and should be updated as the project evolves.**
