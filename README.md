@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Mar 2, 2026):** ✅ **Phase 7 - Board Lock/Unlock Feature COMPLETE**. Password-protected board locking with PBKDF2 security, real-time SignalR updates, redesigned header UI with status badges, and complete validation enforcement. Manual testing verified. Ready for Phase 8 (Documentation). See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
+**🎯 Current Status (Mar 7, 2026):** ✅ **Phase 8 - Documentation COMPLETE**. Comprehensive documentation suite includes API reference, user guide, deployment guides (Docker/IIS), security guide, architecture documentation, and configuration guide. Phase 10 (Provider-Isolated Migrations) also complete. Ready for Phase 9 (Cloud Deployment). See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
 
 ---
 
@@ -42,23 +42,63 @@ A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boa
   - Add/update team members per board.
   - Automatic assignment of Dev/Test capacities per sprint based on `DevTestToggle` and `SprintDuration`.
   - Modify capacity per sprint via API.
-- **Notes**: Free-text notes per feature or story for risks or additional info.
 - **Dev/Test Toggle**: Switch between total story points and split points.
 - **Persistence**: Store board configuration, assignments, and state in SQL Server/PostgreSQL.
 
 ---
 
-## 📦 Project Structure
+## � Documentation
+
+Comprehensive guides for users, developers, and operators:
+
+### For End Users
+
+- **[User Guide](USER_GUIDE.md)**: Complete end-user documentation covering board creation, Azure integration, team management, real-time collaboration, and common workflows
+
+### For Developers
+
+- **[API Reference](API_REFERENCE.md)**: Complete REST API documentation with request/response examples for all 23 endpoints, SignalR WebSocket events, authentication patterns, and troubleshooting
+- **[Architecture Guide](ARCHITECTURE.md)**: System architecture, data models, design patterns, validation strategy, and real-time collaboration architecture
+
+### For Operations
+
+- **[Docker Deployment Guide](DOCKER_DEPLOYMENT_GUIDE.md)**: Container deployment with Docker Compose, production configuration, SSL/HTTPS setup, backup/restore, monitoring, and troubleshooting
+- **[IIS Deployment Guide](IIS_DEPLOYMENT_GUIDE.md)**: Windows deployment with IIS and SQL Server, complete setup instructions, and production configuration
+- **[Configuration Guide](CONFIGURATION.md)**: Environment variables, runtime configuration, CORS setup, database provider selection, and PAT TTL configuration
+- **[Security Guide](SECURITY.md)**: Security architecture, PBKDF2 password hashing, input validation, CORS configuration, Azure PAT handling, audit logging, and OWASP Top 10 compliance
+
+### Project Management
+
+- **[Roadmap](ROADMAP_CURRENT.md)**: Current phase status, completed features, and upcoming priorities
+
+---
+
+## �📦 Project Structure
 
 ```
 
 pi-planning-tool/
-├── backend/pi-planning-backend               # .NET 8 Web API
-│   ├── Controllers/
-│   ├── Models/
-│   ├── Services/
-│   ├── Dockerfile
-│   └── Program.cs
+├── backend/
+│   ├── pi-planning-backend/                  # .NET 8 Web API
+│   │   ├── Controllers/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   ├── Repositories/
+│   │   ├── DTOs/
+│   │   ├── Data/
+│   │   ├── Hubs/
+│   │   ├── Middleware/
+│   │   ├── Filters/
+│   │   ├── Dockerfile
+│   │   └── Program.cs
+│   ├── pi-planning-backend.migrations.postgres/  # PostgreSQL Migrations
+│   │   ├── Migrations/
+│   │   ├── DesignTimeDbContextFactory.cs
+│   │   └── *.csproj
+│   └── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations
+│       ├── Migrations/
+│       ├── DesignTimeDbContextFactory.cs
+│       └── *.csproj
 ├── frontend/pi-planning-ui/                   # Angular 20 app
 │   ├── src/
 │   │   ├── app/
@@ -75,7 +115,13 @@ pi-planning-tool/
 │   └── init-sqlserver.sql
 ├── docker-compose.yml
 ├── README.md
+├── API_REFERENCE.md
+├── ARCHITECTURE.md
+├── CONFIGURATION.md
+├── DOCKER_DEPLOYMENT_GUIDE.md
 ├── IIS_DEPLOYMENT_GUIDE.md
+├── SECURITY.md
+├── USER_GUIDE.md
 ├── ROADMAP_CURRENT.md
 └── pi-planning-tool.sln
 
@@ -121,7 +167,7 @@ docker-compose up -d db
 docker exec -it pi-postgres psql -U postgres -d PIPlanningDB
 ```
 
-From here, you can run SQL queries, check tables, etc.
+From here, run SQL queries, check tables, etc.
 
 ### 3. Run EF Core Migrations
 

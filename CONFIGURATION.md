@@ -16,9 +16,9 @@ The frontend application supports runtime configuration for the API base URL, al
 For local development, the default API URL is `http://localhost:5000`. This is configured in `/public/env.js`:
 
 ```javascript
-window['__env'] = window['__env'] || {};
-window['__env']['apiBaseUrl'] = 'http://localhost:5000';
-window['__env']['patTtlMinutes'] = '10';
+window["__env"] = window["__env"] || {};
+window["__env"]["apiBaseUrl"] = "http://localhost:5000";
+window["__env"]["patTtlMinutes"] = "10";
 ```
 
 To change the API URL locally, edit this file before running `npm start`.
@@ -65,7 +65,7 @@ services:
 #### Files Changed
 
 1. **Runtime Configuration**
-   - `/src/app/core/config/runtime-config.ts` - Service to read window.__env
+   - `/src/app/core/config/runtime-config.ts` - Service to read window.\_\_env
    - `/public/env.js` - Default configuration file
    - `/src/index.html` - Loads env.js before app
 
@@ -82,7 +82,7 @@ services:
 ### PAT Time-to-Live (TTL)
 
 The Personal Access Token (PAT) is stored in memory for a limited time to avoid repeated prompts.
-You can configure the TTL in minutes using `patTtlMinutes` in env.js or via the Docker environment
+The TTL can be configured in minutes using `patTtlMinutes` in env.js or via the Docker environment
 variable `PAT_TTL_MINUTES`.
 
 **Defaults:** 10 minutes (if not configured)

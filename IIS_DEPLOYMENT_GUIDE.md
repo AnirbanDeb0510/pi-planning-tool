@@ -196,7 +196,7 @@ dotnet ef database update --context AppDbContext
 
 #### Option B: Run from SQL Server Migrations Project
 
-This approach is useful if you're working directly with the migration project:
+This approach is useful when working directly with the migration project:
 
 1. **Update DesignTimeDbContextFactory.cs temporarily:**
 

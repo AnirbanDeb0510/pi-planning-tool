@@ -14,9 +14,21 @@ namespace PiPlanningBackend.Controllers
         private readonly IFeatureService _featureService = featureService;
         private readonly IHubContext<PlanningHub> _hubContext = hubContext;
 
-        // POST api/v1/boards/{boardId}/features/import
+        /// <summary>
+        /// Imports a Feature (with child User Stories) from Azure DevOps into the board.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="dto">Feature data with children stories.</param>
+        /// <returns>Created feature with assigned ID.</returns>
+        /// <response code="201">Feature imported successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Board not found.</response>
         [HttpPost("import")]
-        public async Task<IActionResult> ImportFeature(int boardId, [FromBody] FeatureDto dto)
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(FeatureDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ImportFeature([FromRoute] int boardId, [FromBody] FeatureDto dto)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             FeatureDto created = await _featureService.ImportFeatureToBoardAsync(boardId, dto);
@@ -34,16 +46,34 @@ namespace PiPlanningBackend.Controllers
             return CreatedAtAction(nameof(GetFeature), new { boardId, id = created.Id }, created);
         }
 
+        /// <summary>
+        /// Placeholder endpoint for retrieving a single feature.
+        /// </summary>
         [HttpGet("{id}")]
-        public IActionResult GetFeature(int boardId, int id)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetFeature([FromRoute] int boardId, [FromRoute] int id)
         {
             // optional: implement retrieval controller or use other endpoint
             return Ok($"GetFeature endpoint hit for BoardId: {boardId}, FeatureId: {id}");
         }
 
-        // PATCH api/boards/{boardId}/features/{id}/refresh?org=&project=&pat=
+        /// <summary>
+        /// Re-fetches Feature and children from Azure DevOps, updating local data.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="id">Feature ID.</param>
+        /// <param name="organization">Azure DevOps organization.</param>
+        /// <param name="project">Azure DevOps project.</param>
+        /// <param name="pat">Personal Access Token.</param>
+        /// <returns>Updated feature data.</returns>
+        /// <response code="200">Feature refreshed successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Feature not found.</response>
         [HttpPatch("{id}/refresh")]
-        public async Task<IActionResult> RefreshFeature(int boardId, int id, [FromQuery] string organization, [FromQuery] string project, [FromQuery] string pat)
+        [ProducesResponseType(typeof(FeatureDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RefreshFeature([FromRoute] int boardId, [FromRoute] int id, [FromQuery] string organization, [FromQuery] string project, [FromQuery] string pat)
         {
             FeatureDto? featureDto = await _featureService.RefreshFeatureFromAzureAsync(boardId, id, organization, project, pat);
             if (featureDto == null)
@@ -64,9 +94,21 @@ namespace PiPlanningBackend.Controllers
             return Ok(featureDto);
         }
 
-        // PATCH api/boards/{boardId}/features/reorder
+        /// <summary>
+        /// Updates priority order for multiple features atomically.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="dto">List of feature IDs with new priorities.</param>
+        /// <returns>No content on success.</returns>
+        /// <response code="204">Features reordered successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Board not found.</response>
         [HttpPatch("reorder")]
-        public async Task<IActionResult> ReorderFeatures(int boardId, [FromBody] ReorderFeatureDto dto)
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ReorderFeatures([FromRoute] int boardId, [FromBody] ReorderFeatureDto dto)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             await _featureService.ReorderFeaturesAsync(boardId, dto.Features);
@@ -84,9 +126,20 @@ namespace PiPlanningBackend.Controllers
             return NoContent();
         }
 
-        // DELETE api/boards/{boardId}/features/{id}
+        /// <summary>
+        /// Deletes a feature and all its child User Stories from the board.
+        /// </summary>
+        /// <param name="boardId">Board ID.</param>
+        /// <param name="id">Feature ID.</param>
+        /// <returns>No content on success.</returns>
+        /// <response code="204">Feature deleted successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Feature not found.</response>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFeature(int boardId, int id)
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteFeature([FromRoute] int boardId, [FromRoute] int id)
         {
             bool deleted = await _featureService.DeleteFeatureAsync(boardId, id);
             if (!deleted)

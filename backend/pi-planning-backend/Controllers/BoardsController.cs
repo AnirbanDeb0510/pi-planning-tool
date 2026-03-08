@@ -16,8 +16,18 @@ namespace PiPlanningBackend.Controllers
         private readonly IBoardService _boardService = boardService;
         private readonly IHubContext<PlanningHub> _hubContext = hubContext;
 
+        /// <summary>
+        /// Creates a new PI planning board with auto-generated sprints.
+        /// </summary>
+        /// <param name="dto">Board creation details including name, organization, project, and sprint configuration.</param>
+        /// <returns>Created board with ID and metadata.</returns>
+        /// <response code="201">Board created successfully.</response>
+        /// <response code="400">Validation error (invalid field values).</response>
         [HttpPost]
-        public async Task<IActionResult> CreateBoard(BoardCreateDto dto)
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(BoardCreatedDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateBoard([FromBody] BoardCreateDto dto)
         {
             // ModelState validation handled globally by ValidateModelStateFilter
             Board board = await _boardService.CreateBoardAsync(dto);
@@ -40,14 +50,34 @@ namespace PiPlanningBackend.Controllers
             return CreatedAtAction(nameof(GetBoard), new { id = board.Id }, response);
         }
 
+        /// <summary>
+        /// Retrieves complete board data including sprints, features, user stories, and team members.
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <returns>Full board hierarchy.</returns>
+        /// <response code="200">Board found and returned.</response>
+        /// <response code="404">Board not found.</response>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetBoard(int id)
+        [ProducesResponseType(typeof(BoardResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetBoard([FromRoute] int id)
         {
             BoardResponseDto? board = await _boardService.GetBoardWithHierarchyAsync(id);
             return board == null ? NotFound() : Ok(board);
         }
 
+        /// <summary>
+        /// Searches and filters boards by organization, project, and optional criteria.
+        /// </summary>
+        /// <param name="search">Optional board name filter (case-insensitive partial match).</param>
+        /// <param name="organization">Azure DevOps organization (required).</param>
+        /// <param name="project">Azure DevOps project (required).</param>
+        /// <param name="isLocked">Optional filter by lock status.</param>
+        /// <param name="isFinalized">Optional filter by finalization status.</param>
+        /// <returns>List of matching boards.</returns>
+        /// <response code="200">Boards retrieved successfully.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<BoardSummaryDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchBoards(
             [FromQuery] string? search,
             [FromQuery][BindRequired] string organization,
@@ -59,22 +89,51 @@ namespace PiPlanningBackend.Controllers
             return Ok(boards);
         }
 
+        /// <summary>
+        /// Retrieves lightweight board metadata without loading full hierarchy (features, stories, team).
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <returns>Board summary with lock/finalization status.</returns>
+        /// <response code="200">Board preview retrieved.</response>
+        /// <response code="404">Board not found.</response>
         [HttpGet("{id}/preview")]
-        public async Task<IActionResult> GetBoardPreview(int id)
+        [ProducesResponseType(typeof(BoardSummaryDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetBoardPreview([FromRoute] int id)
         {
             BoardSummaryDto? preview = await _boardService.GetBoardPreviewAsync(id);
             return preview == null ? NotFound() : Ok(preview);
         }
 
+        /// <summary>
+        /// Returns warnings if board has unassigned stories or capacity issues.
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <returns>List of warning messages (empty if ready for finalization).</returns>
+        /// <response code="200">Validation complete.</response>
         [HttpGet("{id}/validate-finalization")]
-        public async Task<IActionResult> ValidateBoardForFinalization(int id)
+        [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ValidateBoardForFinalization([FromRoute] int id)
         {
             (_, List<string> warnings) = await _boardService.ValidateBoardForFinalizationAsync(id);
             return Ok(warnings);
         }
 
+        /// <summary>
+        /// Marks board as finalized. Stories can still be reassigned but UI shows 'moved after finalization' badge.
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <returns>Finalization result with warnings and board summary.</returns>
+        /// <response code="200">Board finalized successfully.</response>
+        /// <response code="400">Validation failed, cannot finalize.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Board not found.</response>
         [HttpPatch("{id}/finalize")]
-        public async Task<IActionResult> FinalizeBoard(int id)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> FinalizeBoard([FromRoute] int id)
         {
             // Validate board can be finalized
             (bool canFinalize, List<string> warnings) = await _boardService.ValidateBoardForFinalizationAsync(id);
@@ -120,8 +179,19 @@ namespace PiPlanningBackend.Controllers
             });
         }
 
+        /// <summary>
+        /// Reverts finalization status. Clears 'moved after finalization' flags on stories.
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <returns>Restoration result with board summary.</returns>
+        /// <response code="200">Board restored successfully.</response>
+        /// <response code="403">Board is locked.</response>
+        /// <response code="404">Board not found.</response>
         [HttpPatch("{id}/restore")]
-        public async Task<IActionResult> RestoreBoard(int id)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RestoreBoard([FromRoute] int id)
         {
             BoardSummaryDto? board = await _boardService.RestoreBoardAsync(id);
             if (board == null)
@@ -148,8 +218,23 @@ namespace PiPlanningBackend.Controllers
             });
         }
 
+        /// <summary>
+        /// Locks board with password protection. Prevents all mutation operations (403 Forbidden) until unlocked.
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <param name="dto">Lock request with password.</param>
+        /// <returns>Lock success result and board summary.</returns>
+        /// <response code="200">Board locked successfully.</response>
+        /// <response code="400">Board is already locked.</response>
+        /// <response code="401">Invalid password.</response>
+        /// <response code="404">Board not found.</response>
         [HttpPatch("{id}/lock")]
-        public async Task<IActionResult> LockBoard(int id, [FromBody] BoardLockDto dto)
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> LockBoard([FromRoute] int id, [FromBody] BoardLockDto dto)
         {
             try
             {
@@ -202,8 +287,23 @@ namespace PiPlanningBackend.Controllers
             }
         }
 
+        /// <summary>
+        /// Unlocks board with password verification. Restores mutation capabilities.
+        /// </summary>
+        /// <param name="id">Board ID.</param>
+        /// <param name="dto">Unlock request with password.</param>
+        /// <returns>Unlock success result and board summary.</returns>
+        /// <response code="200">Board unlocked successfully.</response>
+        /// <response code="400">Board is not locked.</response>
+        /// <response code="401">Invalid password.</response>
+        /// <response code="404">Board not found.</response>
         [HttpPatch("{id}/unlock")]
-        public async Task<IActionResult> UnlockBoard(int id, [FromBody] BoardUnlockDto dto)
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UnlockBoard([FromRoute] int id, [FromBody] BoardUnlockDto dto)
         {
             try
             {
