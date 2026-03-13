@@ -350,6 +350,40 @@ docker-compose build frontend
 docker-compose build
 ```
 
+#### Rebuild and Restart a Service After Code Changes (Day-to-Day)
+
+Always use `--build` when restarting after code changes — otherwise Docker Compose reuses the cached image and your changes won't be picked up:
+
+```bash
+# Rebuild image and restart backend
+docker-compose up -d --build backend
+
+# Rebuild image and restart frontend
+docker-compose up -d --build frontend
+```
+
+#### Force a Clean Rebuild (When Cached Image Is Stale)
+
+If `--build` still serves stale code (e.g. after removing a container with `docker-compose rm`), delete the old image first so Docker Compose is forced to build from scratch:
+
+```bash
+# Backend
+docker-compose stop backend
+docker-compose rm -f backend
+docker rmi pi-planning-tool-backend:latest
+docker-compose build --no-cache backend
+docker-compose up -d backend
+
+# Frontend
+docker-compose stop frontend
+docker-compose rm -f frontend
+docker rmi pi-planning-tool-frontend:latest
+docker-compose build --no-cache frontend
+docker-compose up -d frontend
+```
+
+> **Why this happens:** `docker-compose rm -f` removes the _container_ but leaves the _image_ intact. A plain `docker-compose up -d` will reuse that old image rather than rebuilding. Using `--build` normally avoids this, but if the image tag is identical Docker may still skip the build. Deleting the image with `docker rmi` guarantees a clean rebuild.
+
 #### Enter Container Shell
 
 ```bash
