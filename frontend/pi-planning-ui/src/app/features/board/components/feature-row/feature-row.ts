@@ -61,11 +61,11 @@ export class FeatureRow {
     this.parent.openDeleteFeatureModal(feature);
   }
 
-  protected isOperationBlocked(): boolean {
-    return this.parent.isOperationBlocked();
+  protected isRefreshFeatureBlocked(): boolean {
+    return this.parent.isOperationBlockedFor('refresh-feature');
   }
 
-  protected getOperationBlockedMessage(action: string): string {
-    return this.parent.getOperationBlockedMessage(action);
+  protected isDeleteFeatureBlocked(): boolean {
+    return this.parent.isOperationBlockedFor('delete-feature');
   }
 }

@@ -34,7 +34,7 @@
         <button
           mat-menu-item
           (click)="openRefreshFeatureModal(feature)"
-          [disabled]="isOperationBlocked()"
+          [disabled]="isRefreshFeatureBlocked()"
         >
           <mat-icon>refresh</mat-icon>
           <span>{{ LABELS.BUTTONS.REFRESH_FROM_AZURE }}</span>
@@ -42,7 +42,7 @@
         <button
           mat-menu-item
           (click)="openDeleteFeatureModal(feature)"
-          [disabled]="isOperationBlocked()"
+          [disabled]="isDeleteFeatureBlocked()"
         >
           <mat-icon>delete</mat-icon>
           <span>{{ LABELS.BUTTONS.DELETE_FEATURE }}</span>

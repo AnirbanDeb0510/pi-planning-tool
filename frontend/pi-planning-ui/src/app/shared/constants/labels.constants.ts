@@ -143,8 +143,8 @@ export const LABELS = {
     remember: (minutes: number) => `Remember PAT for ${minutes} minutes`,
   },
   FINALIZE: {
-    RESTRICTION_FEATURES: '❌ Add new features',
-    RESTRICTION_MEMBERS: '❌ Add new team members',
+    RESTRICTION_FEATURES: '❌ Add or delete features',
+    RESTRICTION_MEMBERS: '❌ Add, edit, or delete team members',
     RESTRICTION_STORIES: '❌ Add new user stories (except via refresh to Sprint 0)',
   },
 };

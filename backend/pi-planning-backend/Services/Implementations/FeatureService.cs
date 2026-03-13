@@ -328,6 +328,9 @@ namespace PiPlanningBackend.Services.Implementations
                 // Guard: Prevent deletion if board is locked
                 _validationService.ValidateBoardNotLocked(board, "delete feature");
 
+                // Guard: Prevent deletion if board is finalized
+                _validationService.ValidateBoardNotFinalized(board, "delete feature");
+
                 int storyCount = feature.UserStories?.Count ?? 0;
                 // Delete feature - EF Core will cascade delete user stories
                 await _featureRepo.DeleteAsync(feature);

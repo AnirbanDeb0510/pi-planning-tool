@@ -34,11 +34,11 @@
     <button
       class="btn-action btn-add-feature"
       (click)="parent.openImportFeatureModal()"
-      [disabled]="parent.isOperationBlocked()"
+      [disabled]="parent.isOperationBlockedFor('add-feature')"
       type="button"
       [matTooltip]="
-        parent.isOperationBlocked()
-          ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_FEATURES)
+        parent.isOperationBlockedFor('add-feature')
+          ? parent.getOperationBlockedMessageFor('add-feature', LABELS.OPERATIONS.ADD_FEATURES)
           : TOOLTIPS.TEAM.ADD_FEATURE
       "
       matTooltipPosition="above"

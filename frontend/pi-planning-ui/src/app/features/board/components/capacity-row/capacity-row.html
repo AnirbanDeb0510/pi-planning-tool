@@ -10,10 +10,13 @@
           class="capacity-edit"
           type="button"
           (click)="openCapacityEditor(sprint.id)"
-          [disabled]="parent.isOperationBlocked()"
+          [disabled]="parent.isOperationBlockedFor('edit-capacity')"
           [title]="
-            parent.isOperationBlocked()
-              ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.EDIT_CAPACITY)
+            parent.isOperationBlockedFor('edit-capacity')
+              ? parent.getOperationBlockedMessageFor(
+                  'edit-capacity',
+                  LABELS.OPERATIONS.EDIT_CAPACITY
+                )
               : TOOLTIPS.TEAM.EDIT_CAPACITY
           "
         >
@@ -62,7 +65,14 @@
     <div class="modal modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ LABELS.HEADERS.EDIT_TEAM_CAPACITY }}</h3>
-        <button type="button" class="modal-close" (click)="closeCapacityEditor()" aria-label="close"><mat-icon>close</mat-icon></button>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeCapacityEditor()"
+          aria-label="close"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="modal-body">
         @for (member of getTeamMembers(); track member.id) {

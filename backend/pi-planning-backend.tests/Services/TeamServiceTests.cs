@@ -198,5 +198,84 @@ namespace PiPlanningBackend.Tests.Services
 
             Assert.True(result);
         }
+
+        [Fact]
+        public async Task UpdateCapacityAsync_WhenBoardLocked_ThrowsUnauthorizedAccessException()
+        {
+            Sprint sprint = new()
+            {
+                Id = 2,
+                StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2026, 3, 14, 0, 0, 0, DateTimeKind.Utc)
+            };
+            Board board = new() { Id = 1, Name = "PI Board", IsLocked = true, IsFinalized = false };
+            TeamMember member = new() { Id = 5, BoardId = 1, Name = "Alice", IsDev = true, IsTest = false };
+            TeamMemberSprint tms = new()
+            {
+                TeamMemberId = 5,
+                TeamMember = member,
+                SprintId = 2,
+                Sprint = sprint,
+                CapacityDev = 5,
+                CapacityTest = 0
+            };
+
+            sprint.Board = board;
+
+            UpdateTeamMemberCapacityDto dto = new() { CapacityDev = 6, CapacityTest = 0 };
+
+            _validationService.Setup(v => v.ValidateTeamMemberBelongsToBoard(5, 1)).Returns(Task.CompletedTask);
+            _validationService.Setup(v => v.ValidateSprintBelongsToBoard(2, 1)).Returns(Task.CompletedTask);
+            _teamRepository.Setup(r => r.GetTeamMemberSprintAsync(2, 5)).ReturnsAsync(tms);
+            _validationService.Setup(v => v.ValidateBoardExists(1)).Returns(Task.CompletedTask);
+            _boardRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _validationService
+                .Setup(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()))
+                .Throws<UnauthorizedAccessException>();
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _service.UpdateCapacityAsync(1, 2, 5, dto));
+        }
+
+        [Fact]
+        public async Task UpdateCapacityAsync_WhenBoardFinalized_AllowsCapacityUpdate()
+        {
+            Sprint sprint = new()
+            {
+                Id = 2,
+                StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2026, 3, 14, 0, 0, 0, DateTimeKind.Utc)
+            };
+            Board board = new() { Id = 1, Name = "PI Board", IsLocked = false, IsFinalized = true, DevTestToggle = true };
+            TeamMember member = new() { Id = 5, BoardId = 1, Name = "Alice", IsDev = true, IsTest = false };
+            TeamMemberSprint tms = new()
+            {
+                TeamMemberId = 5,
+                TeamMember = member,
+                SprintId = 2,
+                Sprint = sprint,
+                CapacityDev = 5,
+                CapacityTest = 0
+            };
+
+            sprint.Board = board;
+
+            UpdateTeamMemberCapacityDto dto = new() { CapacityDev = 8, CapacityTest = 0 };
+
+            _validationService.Setup(v => v.ValidateTeamMemberBelongsToBoard(5, 1)).Returns(Task.CompletedTask);
+            _validationService.Setup(v => v.ValidateSprintBelongsToBoard(2, 1)).Returns(Task.CompletedTask);
+            _teamRepository.Setup(r => r.GetTeamMemberSprintAsync(2, 5)).ReturnsAsync(tms);
+            _validationService.Setup(v => v.ValidateBoardExists(1)).Returns(Task.CompletedTask);
+            _boardRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _teamRepository.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+            TeamMemberSprint? result = await _service.UpdateCapacityAsync(1, 2, 5, dto);
+
+            Assert.NotNull(result);
+            Assert.Equal(8, result!.CapacityDev);
+            Assert.Equal(0, result.CapacityTest);
+            _validationService.Verify(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()), Times.Once);
+            _validationService.Verify(v => v.ValidateBoardNotFinalized(It.IsAny<Board>(), It.IsAny<string>()), Times.Never);
+        }
     }
 }

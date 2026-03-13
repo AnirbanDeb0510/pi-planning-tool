@@ -365,6 +365,23 @@ namespace PiPlanningBackend.Tests.Services
                 () => _service.DeleteFeatureAsync(1, 10));
         }
 
+        [Fact]
+        public async Task DeleteFeatureAsync_WhenBoardFinalized_ThrowsInvalidOperationException()
+        {
+            Feature feature = new() { Id = 10, Title = "F1", BoardId = 1 };
+            Board board = new() { Id = 1, Name = "PI Board", IsFinalized = true };
+
+            _validationService.Setup(v => v.ValidateFeatureBelongsToBoard(10, 1)).Returns(Task.CompletedTask);
+            _featureRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(feature);
+            _boardRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _validationService
+                .Setup(v => v.ValidateBoardNotFinalized(board, It.IsAny<string>()))
+                .Throws<InvalidOperationException>();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _service.DeleteFeatureAsync(1, 10));
+        }
+
         // ── RefreshFeatureFromAzureAsync ──────────────────────────────────────────
 
         [Fact]
@@ -375,6 +392,166 @@ namespace PiPlanningBackend.Tests.Services
 
             await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _service.RefreshFeatureFromAzureAsync(1, 99, "Contoso", "Alpha", "pat-token"));
+        }
+
+        [Fact]
+        public async Task RefreshFeatureFromAzureAsync_WhenBoardLocked_ThrowsUnauthorizedAccessException()
+        {
+            Feature feature = new() { Id = 10, AzureId = "101" };
+            Board board = CreateBoard(isLocked: true, isFinalized: false);
+
+            _validationService.Setup(v => v.ValidateFeatureBelongsToBoard(10, 1)).Returns(Task.CompletedTask);
+            _featureRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(feature);
+            _boardRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _boardRepo.Setup(r => r.GetBoardWithSprintsAsync(1)).ReturnsAsync(board);
+            _azureService
+                .Setup(a => a.GetFeatureWithChildrenAsync(
+                    "Contoso",
+                    "Alpha",
+                    101,
+                    "pat-token",
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>()))
+                .ReturnsAsync(CreateFeatureDto("101"));
+            _validationService
+                .Setup(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()))
+                .Throws<UnauthorizedAccessException>();
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _service.RefreshFeatureFromAzureAsync(1, 10, "Contoso", "Alpha", "pat-token"));
+        }
+
+        [Fact]
+        public async Task RefreshUserStoryFromAzureAsync_WhenBoardLocked_ThrowsUnauthorizedAccessException()
+        {
+            Board board = CreateBoard(isLocked: true, isFinalized: false);
+            Feature feature = new() { Id = 20, Title = "Feature", BoardId = 1 };
+            UserStory story = new()
+            {
+                Id = 10,
+                FeatureId = 20,
+                Feature = feature,
+                AzureId = "201",
+                SprintId = 1,
+                Title = "Story"
+            };
+
+            _validationService.Setup(v => v.ValidateStoryBelongsToBoard(10, 1)).Returns(Task.CompletedTask);
+            _storyRepo.Setup(r => r.GetByIdWithDetailsAsync(10)).ReturnsAsync(story);
+            _boardRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _validationService
+                .Setup(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()))
+                .Throws<UnauthorizedAccessException>();
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _service.RefreshUserStoryFromAzureAsync(1, 10, "Contoso", "Alpha", "pat-token"));
+        }
+
+        [Fact]
+        public async Task RefreshUserStoryFromAzureAsync_WhenBoardFinalized_AllowsRefresh()
+        {
+            Board board = CreateBoard(isLocked: false, isFinalized: true);
+            Feature feature = new() { Id = 20, Title = "Feature", BoardId = 1 };
+            UserStory story = new()
+            {
+                Id = 10,
+                FeatureId = 20,
+                Feature = feature,
+                AzureId = "201",
+                SprintId = 1,
+                Title = "Old Title",
+                StoryPoints = 1
+            };
+            UserStoryDto refreshed = new()
+            {
+                Id = 201,
+                AzureId = "201",
+                Title = "Updated Title",
+                StoryPoints = 5,
+                DevStoryPoints = 3,
+                TestStoryPoints = 2
+            };
+
+            _validationService.Setup(v => v.ValidateStoryBelongsToBoard(10, 1)).Returns(Task.CompletedTask);
+            _storyRepo.Setup(r => r.GetByIdWithDetailsAsync(10)).ReturnsAsync(story);
+            _boardRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _azureService
+                .Setup(a => a.GetUserStoryAsync(
+                    "Contoso",
+                    "Alpha",
+                    201,
+                    "pat-token",
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>()))
+                .ReturnsAsync(refreshed);
+            _storyRepo.Setup(r => r.UpdateAsync(story)).Returns(Task.CompletedTask);
+            _storyRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+            UserStoryDto? result = await _service.RefreshUserStoryFromAzureAsync(1, 10, "Contoso", "Alpha", "pat-token");
+
+            Assert.NotNull(result);
+            Assert.Equal("Updated Title", result!.Title);
+            Assert.Equal(5, result.StoryPoints);
+            _validationService.Verify(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()), Times.Once);
+            _validationService.Verify(v => v.ValidateBoardNotFinalized(It.IsAny<Board>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ReorderFeaturesAsync_WhenBoardFinalized_AllowsReorder()
+        {
+            Board board = CreateBoard(isLocked: false, isFinalized: true);
+            Feature f1 = new() { Id = 10, Title = "F1", Priority = 1, BoardId = 1 };
+            Feature f2 = new() { Id = 20, Title = "F2", Priority = 2, BoardId = 1 };
+            List<ReorderFeatureItemDto> items =
+            [
+                new() { FeatureId = 10, NewPriority = 2 },
+                new() { FeatureId = 20, NewPriority = 1 }
+            ];
+
+            _validationService.Setup(v => v.ValidateBoardExists(1)).Returns(Task.CompletedTask);
+            _boardRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _validationService.Setup(v => v.ValidateFeatureBelongsToBoard(10, 1)).Returns(Task.CompletedTask);
+            _validationService.Setup(v => v.ValidateFeatureBelongsToBoard(20, 1)).Returns(Task.CompletedTask);
+            _featureRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(f1);
+            _featureRepo.Setup(r => r.GetByIdAsync(20)).ReturnsAsync(f2);
+            _featureRepo.Setup(r => r.UpdateAsync(It.IsAny<Feature>())).Returns(Task.CompletedTask);
+            _featureRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+            await _service.ReorderFeaturesAsync(1, items);
+
+            Assert.Equal(2, f1.Priority);
+            Assert.Equal(1, f2.Priority);
+            _validationService.Verify(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()), Times.Once);
+            _validationService.Verify(v => v.ValidateBoardNotFinalized(It.IsAny<Board>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task MoveUserStoryAsync_WhenBoardFinalized_AllowsMove()
+        {
+            UserStory story = new()
+            {
+                Id = 10,
+                SprintId = 1,
+                OriginalSprintId = 1,
+                Feature = new Feature { BoardId = 1, Title = "F" }
+            };
+            Board board = CreateBoard(isLocked: false, isFinalized: true);
+
+            _validationService.Setup(v => v.ValidateStoryBelongsToBoard(10, 1)).Returns(Task.CompletedTask);
+            _validationService.Setup(v => v.ValidateSprintBelongsToBoard(2, 1)).Returns(Task.CompletedTask);
+            _storyRepo.Setup(r => r.GetByIdWithDetailsAsync(10)).ReturnsAsync(story);
+            _boardRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(board);
+            _storyRepo.Setup(r => r.UpdateAsync(story)).Returns(Task.CompletedTask);
+            _storyRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+            await _service.MoveUserStoryAsync(1, 10, 2);
+
+            Assert.Equal(2, story.SprintId);
+            Assert.True(story.IsMoved);
+            _validationService.Verify(v => v.ValidateBoardNotLocked(board, It.IsAny<string>()), Times.Once);
+            _validationService.Verify(v => v.ValidateBoardNotFinalized(It.IsAny<Board>(), It.IsAny<string>()), Times.Never);
         }
     }
 }
