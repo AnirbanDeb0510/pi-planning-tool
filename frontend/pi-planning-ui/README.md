@@ -10,7 +10,6 @@ For current project-level guidance, use:
 
 - [../../README.md](../../README.md)
 - [../../IIS_DEPLOYMENT_GUIDE.md](../../IIS_DEPLOYMENT_GUIDE.md)
-- [../../ROADMAP_CURRENT.md](../../ROADMAP_CURRENT.md)
 
 ## Component Architecture (Phase 3A)
 

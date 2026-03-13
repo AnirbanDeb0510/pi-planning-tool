@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Mar 7, 2026):** ✅ **Phase 8 - Documentation COMPLETE**. Comprehensive documentation suite includes API reference, user guide, deployment guides (Docker/IIS), security guide, architecture documentation, and configuration guide. Phase 10 (Provider-Isolated Migrations) also complete. Ready for Phase 9 (Cloud Deployment). See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
+**🎯 Current Status (Mar 13, 2026):** Documentation, provider-isolated migrations, and automated unit testing are complete. The next major milestone is cloud/hosting deployment.
 
 ---
 
@@ -67,12 +67,6 @@ Comprehensive guides for users, developers, and operators:
 - **[Configuration Guide](CONFIGURATION.md)**: Environment variables, runtime configuration, CORS setup, database provider selection, and PAT TTL configuration
 - **[Security Guide](SECURITY.md)**: Security architecture, PBKDF2 password hashing, input validation, CORS configuration, Azure PAT handling, audit logging, and OWASP Top 10 compliance
 
-### Project Management
-
-- **[Roadmap](ROADMAP_CURRENT.md)**: Current phase status, completed features, and upcoming priorities
-
----
-
 ## �📦 Project Structure
 
 ```
@@ -127,7 +121,6 @@ pi-planning-tool/
 ├── IIS_DEPLOYMENT_GUIDE.md
 ├── SECURITY.md
 ├── USER_GUIDE.md
-├── ROADMAP_CURRENT.md
 └── pi-planning-tool.sln
 
 ```
