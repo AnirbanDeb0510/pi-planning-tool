@@ -28,9 +28,14 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
-  <!-- Post-build event to copy migration assemblies to output directory -->
+  <!-- Post-build event to build migration projects then copy their assemblies to output directory -->
   <!-- This ensures EF Core can load them at runtime via MigrationsAssembly -->
+  <!-- BuildProjectReferences=false prevents circular rebuild of this project -->
   <Target Name="CopyMigrationAssemblies" AfterTargets="Build">
+    <MSBuild Projects="../pi-planning-backend.migrations.postgres/pi-planning-backend.migrations.postgres.csproj"
+             Properties="Configuration=$(Configuration);BuildProjectReferences=false" />
+    <MSBuild Projects="../pi-planning-backend.migrations.sqlserver/pi-planning-backend.migrations.sqlserver.csproj"
+             Properties="Configuration=$(Configuration);BuildProjectReferences=false" />
     <Copy SourceFiles="../pi-planning-backend.migrations.postgres/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.postgres.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="../pi-planning-backend.migrations.sqlserver/bin/$(Configuration)/$(TargetFramework)/pi-planning-backend.migrations.sqlserver.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>

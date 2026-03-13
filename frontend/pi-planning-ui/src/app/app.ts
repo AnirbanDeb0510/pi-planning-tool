@@ -5,6 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 import { ThemeService } from './core/services/theme.service';
 import { BoardService } from './features/board/services/board.service';
+import { HealthService } from './core/services/health.service';
 import { LABELS, TOOLTIPS } from './shared/constants';
 
 @Component({
@@ -19,13 +20,18 @@ export class App {
   protected readonly title = signal(LABELS.APP.TITLE);
   private readonly themeService = inject(ThemeService);
   private readonly boardService = inject(BoardService);
+  private readonly healthService = inject(HealthService);
   private readonly router = inject(Router);
   private readonly titleService = inject(Title);
 
   // Expose theme service to template
   protected readonly currentTheme = this.themeService.theme;
+  protected readonly serverStatus = this.healthService.status;
 
   constructor() {
+    // Ping backend on startup to warm the server
+    this.healthService.ping();
+
     // Update title when board changes
     effect(() => {
       const board = this.boardService.board();
