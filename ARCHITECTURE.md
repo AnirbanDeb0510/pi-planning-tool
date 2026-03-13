@@ -1,7 +1,7 @@
 # PI Planning Tool - Architecture & Development Guide
 
 **Version:** 1.0  
-**Last Updated:** February 6, 2026  
+**Last Updated:** March 13, 2026  
 **Team:** Full-stack development
 
 ---
@@ -738,11 +738,7 @@ public async Task<Board?> GetBoardAsync(int boardId)
 
 ---
 
-## 🎨 Frontend UI Component Architecture (Phase 3A+3B - Feb 20, 2026)
-
-### Phase 3A: Board Component Refactoring
-
-The board component has been modernized using Angular 15+ standalone component architecture. The monolithic board component is now decomposed into 6 focused subcomponents, each with scoped styling and clear responsibilities.
+## 🎨 Frontend UI Component Architecture
 
 ### Component Hierarchy
 
@@ -756,7 +752,7 @@ Board (Main Container)
 └── BoardModals (Import, Finalize, Delete Dialogs)
 ```
 
-### Subcomponent Details
+### Sub-component Details
 
 | Component        | Purpose                     | Key Features                                  | Files                     |
 | ---------------- | --------------------------- | --------------------------------------------- | ------------------------- |
@@ -767,51 +763,27 @@ Board (Main Container)
 | **FeatureRow**   | Feature & story container   | Drag-drop zones, story cards, dev/test split  | feature-row.ts/html/css   |
 | **BoardModals**  | Dialog overlays             | Feature import, finalization warnings, delete | board-modals.ts/html/css  |
 
-### Phase 3B: Application Architecture Restructuring
-
-Migrated from flat folder structure to **domain-driven architecture** for improved scalability and maintainability:
+### Application Architecture Restructuring
 
 **Backend Folder Structure:**
 
 ```
 backend/
 ├── pi-planning-backend/                      # Main .NET 8 Web API
-│   ├── Controllers/                         # API endpoints (5 controllers)
-│   │   ├── BoardsController.cs
-│   │   ├── FeaturesController.cs
-│   │   ├── UserStoriesController.cs
-│   │   ├── TeamController.cs
-│   │   └── AzureController.cs
-│   ├── Services/
-│   │   ├── Interfaces/
-│   │   └── Implementations/
-│   ├── Repositories/
-│   │   ├── Interfaces/
-│   │   └── Implementations/
-│   ├── Models/                              # EF Core entities
-│   ├── DTOs/                                # Data transfer objects
-│   ├── Data/                                # DbContext
-│   ├── Hubs/                                # SignalR hubs
-│   ├── Middleware/                          # Global exception, CORS
-│   ├── Filters/                             # Model validation
+│   ├── Controllers/                          # API endpoints
+│   ├── DTOs/                                 # Transport contracts
+│   ├── Data/                                 # AppDbContext
+│   ├── Filters/                              # Validation / pipeline filters
+│   ├── Hubs/                                 # SignalR hubs
+│   ├── Middleware/                           # Global exception / request middleware
+│   ├── Models/                               # EF Core entities
+│   ├── Repositories/                         # Data access abstractions + implementations
+│   ├── Services/                             # Business logic abstractions + implementations
 │   ├── Program.cs
-│   └── appsettings.json
-│
-├── pi-planning-backend.migrations.postgres/  # PostgreSQL Migrations (Provider-Isolated)
-│   ├── Migrations/
-│   │   ├── 20260302202415_InitialCreate.cs
-│   │   ├── 20260302202415_InitialCreate.Designer.cs
-│   │   └── AppDbContextModelSnapshot.cs
-│   ├── DesignTimeDbContextFactory.cs        # Design-time DbContext for EF CLI
-│   └── pi-planning-backend.migrations.postgres.csproj
-│
-└── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations (Provider-Isolated)
-    ├── Migrations/
-    │   ├── 20260302202434_InitialCreate.cs
-    │   ├── 20260302202434_InitialCreate.Designer.cs
-    │   └── AppDbContextModelSnapshot.cs
-    ├── DesignTimeDbContextFactory.cs        # Design-time DbContext for EF CLI
-    └── pi-planning-backend.migrations.sqlserver.csproj
+│   └── appsettings*.json
+├── pi-planning-backend.migrations.postgres/   # Provider-isolated PostgreSQL migrations
+├── pi-planning-backend.migrations.sqlserver/  # Provider-isolated SQL Server migrations
+└── pi-planning-backend.tests/                 # xUnit tests (services, controllers, repositories)
 ```
 
 **Frontend Folder Structure:**
@@ -820,83 +792,58 @@ backend/
 frontend/pi-planning-ui/src/
 ├── app/
 │   ├── core/
-│   │   ├── services/
-│   │   │   └── user.service.ts        # PAT & user state (persistent)
-│   │   └── guards/
-│   │
+│   │   ├── config/                    # Runtime config bootstrap
+│   │   ├── constants/                 # API endpoints and app constants
+│   │   ├── guards/                    # Route guards
+│   │   ├── interceptors/              # HTTP interceptors
+│   │   ├── services/                  # App-wide services
+│   │   └── utils/                     # Shared utilities
 │   ├── shared/
-│   │   ├── models/                    # DTOs & data types
-│   │   ├── components/               # Reusable: story-card, enter-your-name
-│   │   └── utilities/
-│   │
+│   │   ├── components/                # Reusable UI pieces
+│   │   ├── constants/                 # UI labels/placeholders/messages
+│   │   ├── models/                    # Shared DTOs
+│   │   └── types/                     # Shared TS types
 │   ├── features/
 │   │   ├── board/
-│   │   │   ├── components/           # Main board + 6 subcomponents
-│   │   │   ├── services/             # 5 split services (see below)
-│   │   │   │   ├── board.service.ts
-│   │   │   │   ├── feature.service.ts
-│   │   │   │   ├── team.service.ts
-│   │   │   │   ├── story.service.ts
-│   │   │   │   └── sprint.service.ts
-│   │   │   ├── models/
-│   │   │   └── index.ts              # Barrel export
-│   │   │
+│   │   │   ├── components/            # Board UI and sub-components
+│   │   │   ├── constants/
+│   │   │   ├── services/              # Board state, API, realtime, calculations
+│   │   │   ├── types/
+│   │   │   └── index.ts
 │   │   └── home/
-│   │       ├── components/
-│   │       └── index.ts              # Barrel export
-│   │
-│   ├── app.component.ts
+│   │       ├── home/
+│   │       └── index.ts
+│   ├── app.ts
 │   ├── app.routes.ts
 │   └── app.config.ts
-│
-├── styles/
+├── environments/
 └── index.html
 ```
 
-**Service Split (from 850-line monolith):**
+**Board Service Split:**
 
-| Service                | Responsibility                   | LOC | Key Methods                                                   |
-| ---------------------- | -------------------------------- | --- | ------------------------------------------------------------- |
-| **board.service.ts**   | Board fetch, PAT handling, state | 200 | `getBoard()`, `validatePAT()`, `setBoardState()`              |
-| **feature.service.ts** | Feature import/refresh/reorder   | 150 | `importFeatures()`, `refreshFeature()`, `reorderFeatures()`   |
-| **team.service.ts**    | Team members & capacity          | 120 | `addMember()`, `updateCapacity()`, `deleteMember()`           |
-| **story.service.ts**   | Story movement between sprints   | 100 | `moveStory()`, `refreshStory()`, `getStoryPosition()`         |
-| **sprint.service.ts**  | Sprint utilities & calculations  | 80  | `calculateMetrics()`, `getSprintPath()`, `formatSprintName()` |
+| Service                          | Responsibility                    | LOC    | Key Methods                                            |
+| -------------------------------- | --------------------------------- | ------ | ------------------------------------------------------ |
+| **board.service.ts**             | Board fetch/state orchestration   | varies | `getBoard()`, `updateBoardState()`                     |
+| **board-api.service.ts**         | Backend API wrappers              | varies | `getBoard()`, `searchBoards()`, `lockBoard()`          |
+| **board-calculation.service.ts** | Pure board/capacity calculations  | varies | `getSprintTotals()`, `isSprintOverCapacity()`          |
+| **board-realtime.service.ts**    | Realtime event application        | varies | `connect()`, `disconnect()`                            |
+| **signalr.service.ts**           | Raw SignalR hub connection        | varies | `connect()`, `sendCursorUpdate()`, `getConnectionId()` |
+| **feature.service.ts**           | Feature-specific UI orchestration | varies | `importFeature()`, `refreshFeature()`                  |
+| **team.service.ts**              | Team member/capacity UI actions   | varies | `addTeamMember()`, `updateCapacity()`                  |
+| **story.service.ts**             | Story move/refresh UI actions     | varies | `moveStory()`, `refreshStory()`                        |
+| **sprint.service.ts**            | Sprint-related UI helpers         | varies | sprint helper methods                                  |
 
-**Barrel Exports (8 files):**
+**Barrel Exports:**
 
 - `core/index.ts` - UserService
 - `shared/models/index.ts` - All DTOs
 - `shared/components/index.ts` - Story-card, Enter-your-name
 - `features/board/index.ts` - Board component + services
-- `features/board/components/index.ts` - All subcomponents
-- `features/board/services/index.ts` - All 5 services
-- `features/board/models/index.ts` - Board-specific types
+- `features/board/components/index.ts` - Board sub-components
+- `features/board/services/index.ts` - Board services
+- `features/board/types/index.ts` - Board-specific types
 - `features/home/index.ts` - Home component
-
-**TypeScript Path Aliases (tsconfig.json):**
-
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@core/*": ["src/app/core/*"],
-      "@shared/*": ["src/app/shared/*"],
-      "@features/*": ["src/app/features/*"]
-    }
-  }
-}
-```
-
-**Import Pattern Before & After:**
-
-```typescript
-// Before (flat structure)
-import { BoardService } from "../../../services/board.service";
-
-// After (domain-driven with alias)
-import { BoardService } from "@features/board/services";
-```
 
 ### State Management & Service Layer
 
@@ -922,7 +869,7 @@ import { BoardService } from "@features/board/services";
 - Home (/) - Gradient bg + bright text
 - Board List (/boards) - Cards, filters, search
 - Create Board (/boards/new) - Form inputs, checkboxes
-- Board View (/boards/:id) - Main board + 6 subcomponents
+- Board View (/boards/:id) - Main board + 6 sub-components
 - Welcome (/name) - Modal + input
 
 **Dark Theme Implementation:**
@@ -936,69 +883,10 @@ import { BoardService } from "@features/board/services";
 1. **Adding Features:** Create or extend components; don't add to board.ts
 2. **Styling:** Keep CSS scoped to component; use :host-context(.dark-theme) for dark mode
 3. **State:** Use signals for reactive state; pass immutable data via @Input
-4. **Modals:** Place in appropriate subcomponent or board-modals; add dark-mode styles
+4. **Modals:** Place in appropriate sub component or board-modals; add dark-mode styles
 5. **Performance:** Each component is standalone (no dependency chains); lazy loading ready
 6. **Services:** Keep focused on single domain; use barrel exports for clean imports
-7. **Types:** Use shared DTOs from models/ folder; avoid duplication
-
----
-
-## 🎨 Frontend UI Component Architecture (Phase 3A - Feb 20, 2026)
-
-### Board Component Refactoring
-
-The board component has been modernized using Angular 15+ standalone component architecture. The monolithic board component is now decomposed into 6 focused subcomponents, each with scoped styling and clear responsibilities.
-
-### Component Hierarchy
-
-```
-Board (Main Container)
-├── BoardHeader (Toggle & Dev/Test Mode)
-├── TeamBar (Team Members Management)
-├── CapacityRow (Sprint Capacity Display & Edit)
-├── SprintHeader (Column Headers & Metrics)
-├── FeatureRow × N (Feature Cards with Stories)
-└── BoardModals (Import, Finalize, Delete Dialogs)
-```
-
-### Subcomponent Details
-
-| Component        | Purpose                     | Key Features                                  | Files                     |
-| ---------------- | --------------------------- | --------------------------------------------- | ------------------------- |
-| **BoardHeader**  | Top bar with mode toggles   | Dev/Test toggle, finalization banner          | board-header.ts/html/css  |
-| **TeamBar**      | Team member management      | Add/edit/delete members, modal dialogs        | team-bar.ts/html/css      |
-| **CapacityRow**  | Team capacity visualization | Edit modal with 60/20/20 layout, dark mode    | capacity-row.ts/html/css  |
-| **SprintHeader** | Column headers              | Sprint names, load/capacity bars, metrics     | sprint-header.ts/html/css |
-| **FeatureRow**   | Feature & story container   | Drag-drop zones, story cards, dev/test split  | feature-row.ts/html/css   |
-| **BoardModals**  | Dialog overlays             | Feature import, finalization warnings, delete | board-modals.ts/html/css  |
-
-### State Management
-
-- **Signal-based:** Board owns `showDevTest` signal, passes as @Input to children
-- **Reactive:** Changes propagate immediately through component tree
-- **Per-component:** Each component manages its own local state (modals, edits)
-
-### CSS Architecture
-
-**CSS Distribution (Total: 2046 lines):**
-
-- board.css: 214 lines (global layout, PAT modal, responsive)
-- board-header.css: 106 lines (toggle styles, banner)
-- board-modals.css: 470 lines (modal dialogs, form styling)
-- capacity-row.css: 352 lines (capacity display, edit modal)
-- feature-row.css: 311 lines (drag-drop styles, story cards)
-- sprint-header.css: 193 lines (header, metrics display)
-- team-bar.css: 400 lines (member chips, member modals)
-
-**Dark Mode:** All 80+ UI elements use `:host-context(.dark-theme)` selectors (70+ instances) for app-controlled theming (not OS-detected).
-
-### Development Guidelines
-
-1. **Adding Features:** Create or extend components; don't add to board.ts
-2. **Styling:** Keep CSS scoped to component; use :host-context(.dark-theme) for dark mode
-3. **State:** Use signals for reactive state; pass immutable data via @Input
-4. **Modals:** Place in appropriate subcomponent or board-modals; add dark-mode styles
-5. **Performance:** Each component is standalone (no dependency chains); lazy loading ready
+7. **Types:** Use shared DTOs from `shared/models` and shared types from `shared/types`; avoid duplication
 
 ---
 

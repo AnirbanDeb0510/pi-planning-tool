@@ -81,38 +81,43 @@ pi-planning-tool/
 ├── backend/
 │   ├── pi-planning-backend/                  # .NET 8 Web API
 │   │   ├── Controllers/
-│   │   ├── Models/
-│   │   ├── Services/
-│   │   ├── Repositories/
 │   │   ├── DTOs/
 │   │   ├── Data/
+│   │   ├── Filters/
 │   │   ├── Hubs/
 │   │   ├── Middleware/
-│   │   ├── Filters/
+│   │   ├── Models/
+│   │   ├── Repositories/
+│   │   ├── Services/
 │   │   ├── Dockerfile
 │   │   └── Program.cs
 │   ├── pi-planning-backend.migrations.postgres/  # PostgreSQL Migrations
 │   │   ├── Migrations/
 │   │   ├── DesignTimeDbContextFactory.cs
 │   │   └── *.csproj
-│   └── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations
+│   ├── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations
 │       ├── Migrations/
 │       ├── DesignTimeDbContextFactory.cs
+│       └── *.csproj
+│   └── pi-planning-backend.tests/           # xUnit backend tests
+│       ├── Controllers/
+│       ├── Data/
+│       ├── Services/
 │       └── *.csproj
 ├── frontend/pi-planning-ui/                   # Angular 20 app
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── components/
-│   │   │   ├── services/
-│   │   │   └── models/
-│   │   ├── assets/
+│   │   │   ├── core/
+│   │   │   ├── features/
+│   │   │   └── shared/
+│   │   ├── environments/
 │   │   └── index.html
 │   ├── Dockerfile
-│   └── angular.json
+│   ├── angular.json
+│   └── package.json
 ├── db/
 │   ├── Dockerfile
-│   ├── init.sql
-│   └── init-sqlserver.sql
+│   └── init.sql
 ├── docker-compose.yml
 ├── README.md
 ├── API_REFERENCE.md
@@ -233,6 +238,32 @@ ng serve --open
 ```
 
 **Result:** Frontend serves on `http://localhost:4200` and auto-opens in browser
+
+---
+
+## Testing
+
+### Backend Tests
+
+```bash
+cd backend/pi-planning-backend.tests
+dotnet test
+```
+
+Backend test coverage currently focuses on service logic, controller behavior, and repository integration paths.
+
+### Frontend Tests
+
+```bash
+cd frontend/pi-planning-ui
+npm test -- --watch=false --browsers ChromeHeadless
+```
+
+Notes:
+
+- The frontend `test` script is configured to run Karma against Microsoft Edge on macOS by setting `CHROME_BIN` to the Edge binary path.
+- On non-macOS environments, override `CHROME_BIN` as needed for the locally installed Chromium-based browser.
+- Current frontend coverage focuses on core services, the name-entry guard and component flow, board calculations, and board API wrapper services.
 
 ---
 
