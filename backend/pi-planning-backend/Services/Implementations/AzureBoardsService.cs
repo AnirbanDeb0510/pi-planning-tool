@@ -100,7 +100,7 @@ namespace PiPlanningBackend.Services.Implementations
             return doc.RootElement;
         }
 
-        private FeatureDto ParseFeature(JsonElement workItem)
+        private static FeatureDto ParseFeature(JsonElement workItem)
         {
             JsonElement fields = workItem.GetProperty("fields");
             int id = workItem.GetProperty("id").GetInt32();
@@ -112,7 +112,7 @@ namespace PiPlanningBackend.Services.Implementations
             return feature;
         }
 
-        private UserStoryDto ParseUserStory(JsonElement workItem, string storyPointField = "Microsoft.VSTS.Scheduling.StoryPoints", string devField = "Custom.DevStoryPoints", string testField = "Custom.TestStoryPoints")
+        private static UserStoryDto ParseUserStory(JsonElement workItem, string storyPointField = "Microsoft.VSTS.Scheduling.StoryPoints", string devField = "Custom.DevStoryPoints", string testField = "Custom.TestStoryPoints")
         {
             JsonElement fields = workItem.GetProperty("fields");
             int id = workItem.GetProperty("id").GetInt32();

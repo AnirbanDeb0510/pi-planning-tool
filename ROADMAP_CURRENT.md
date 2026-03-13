@@ -1,9 +1,9 @@
 # PI Planning Tool - Current Roadmap & Priorities
 
-**Last Updated:** March 3, 2026  
-**Current Status:** Phase 10 COMPLETE ✅  
+**Last Updated:** March 8, 2026  
+**Current Status:** Phase 8 + Phase 10 COMPLETE ✅  
 **Current Branch:** `main`  
-**Next Phase:** Phase 8 - Documentation & Integration Testing
+**Next Phase:** Phase 11 - Automated Unit Testing
 
 ---
 
@@ -11,7 +11,7 @@
 
 **Immediate Next Steps:**
 
-1. **Phase 8** - Documentation & Integration Testing (3-4 hrs)
+1. **Phase 11** - Automated Unit Testing (1-2 days)
 2. **Phase 9** - Cloud/Hosting Deployment (1-2 days)
 
 ## ✅ COMPLETED PHASES (Summary)
@@ -42,6 +42,12 @@
 - Completed on Mar 2, 2026
 - Password-based lock/unlock, real-time state sync, mutations blocked when locked
 
+### Phase 8 — Documentation & Integration Testing
+
+- Completed on Mar 7, 2026
+- Documentation suite completed (README, architecture, API, deployment, security, user guide)
+- Integration and workflow validation documented
+
 ### Phase 10 — Provider-Isolated EF Core Migrations
 
 - Completed on Mar 3, 2026
@@ -53,32 +59,75 @@
 
 ### PHASE 8: Documentation & Integration Testing — WRAP-UP
 
-**Status:** Not Started  
+**Status:** Complete ✅  
 **Estimated Time:** 3-4 hours  
 **Depends On:** All other phases complete
 **Why:** Ensure comprehensive documentation and real-world integration testing
 
 #### Work Items:
 
-- [ ] **Architecture docs** (ERD, service flow, component hierarchy, SignalR flow)
-- [ ] **API docs** (endpoints, request/response examples, error handling, auth notes)
-- [ ] **Deployment docs** (Docker + PostgreSQL, IIS + SQL Server, SSL/HTTPS notes)
-- [ ] **User guide** (board lifecycle, planning flow, finalize/restore, lock/unlock)
-- [ ] **Code docs** (README refresh + key service behavior notes)
-- [ ] **Integration testing** (end-to-end board flow + multi-user scenarios)
-- [ ] **Performance check** (concurrency + query behavior + SignalR throughput)
-- [ ] **Security review** (input validation, CORS, PAT handling, auth surface)
+- [x] **Architecture docs** (ERD, service flow, component hierarchy, SignalR flow)
+- [x] **API docs** (endpoints, request/response examples, error handling, auth notes)
+- [x] **Deployment docs** (Docker + PostgreSQL, IIS + SQL Server, SSL/HTTPS notes)
+- [x] **User guide** (board lifecycle, planning flow, finalize/restore, lock/unlock)
+- [x] **Code docs** (README refresh + key service behavior notes)
+- [x] **Integration testing** (end-to-end board flow + multi-user scenarios)
+- [x] **Performance check** (concurrency + query behavior + SignalR throughput)
+- [x] **Security review** (input validation, CORS, PAT handling, auth surface)
 
 #### Acceptance Criteria:
 
-- [ ] All features documented (user-facing)
-- [ ] All APIs documented (developer-facing)
-- [ ] Deployment guides complete (Docker + IIS)
-- [ ] Integration testing complete (all major workflows)
-- [ ] Performance benchmarks documented
-- [ ] Security audit completed with findings documented
-- [ ] README.md comprehensive and current
-- [ ] Zero issues blocking production deployment
+- [x] All features documented (user-facing)
+- [x] All APIs documented (developer-facing)
+- [x] Deployment guides complete (Docker + IIS)
+- [x] Integration testing complete (all major workflows)
+- [x] Performance benchmarks documented
+- [x] Security audit completed with findings documented
+- [x] README.md comprehensive and current
+- [x] Zero issues blocking production deployment
+
+---
+
+### PHASE 11: Automated Unit Testing — NEW
+
+**Status:** Not Started  
+**Estimated Time:** 1-2 days  
+**Depends On:** Phase 8, 10  
+**Why:** Add repeatable automated checks for backend business logic and frontend core behaviors.
+
+#### Testing Strategy (Decided)
+
+- **Backend framework:** `xUnit` + `Moq` + `Microsoft.NET.Test.Sdk`
+- **Frontend framework:** Existing Angular `Jasmine` + `Karma` stack (already configured)
+- **Execution:**
+  - Backend: `dotnet test`
+  - Frontend: `npm test` / `ng test --watch=false --browsers=ChromeHeadless`
+
+#### Fake Data / Test Data Approach
+
+- Prefer **small in-memory builders/factories** per test file for DTO/model setup.
+- Use **mocks/fakes** for external dependencies:
+  - Backend repositories/services via `Moq`
+  - Frontend HTTP via `HttpClientTestingModule` and `HttpTestingController`
+- Avoid real database and Azure DevOps calls in unit tests.
+- Keep deterministic test data (fixed IDs, dates, names) for reproducibility.
+
+#### Phase 11 Work Items
+
+- [ ] Create backend test project and add to solution
+- [ ] Add backend unit tests for `ValidationService` and `SprintService`
+- [ ] Add backend unit tests for one controller happy-path + validation/failure path
+- [ ] Add frontend unit tests for `user.service.ts` and `user-name.guard.ts`
+- [ ] Add frontend unit tests for `http-client.service.ts` error handling
+- [ ] Add CI-ready test commands to README
+
+#### Acceptance Criteria
+
+- [ ] Backend tests run locally with `dotnet test`
+- [ ] Frontend tests run locally with `ng test --watch=false`
+- [ ] At least one test suite exists for backend services and frontend core services/guards
+- [ ] Failing tests correctly fail CI/local command execution
+- [ ] Test execution instructions documented in README
 
 ---
 
