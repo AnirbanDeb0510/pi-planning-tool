@@ -41,9 +41,17 @@ namespace PiPlanningBackend.Middleware
                 InvalidOperationException ex
                     => (StatusCodes.Status400BadRequest, "Invalid operation", ex.Message),
 
+                // Authentication failures (401)
+                System.Security.Authentication.AuthenticationException ex
+                    => (StatusCodes.Status401Unauthorized, "Authentication failed", ex.Message),
+
                 // Authorization Errors (403)
                 UnauthorizedAccessException ex
                     => (StatusCodes.Status403Forbidden, "Access denied", ex.Message),
+
+                // External HTTP errors (preserve known status code)
+                HttpRequestException ex when ex.StatusCode.HasValue
+                    => ((int)ex.StatusCode.Value, "External service request failed", ex.Message),
 
                 // Entity Framework Errors
                 Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException

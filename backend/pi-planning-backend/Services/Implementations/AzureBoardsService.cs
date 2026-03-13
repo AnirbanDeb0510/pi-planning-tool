@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using System.Net;
+using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using PiPlanningBackend.DTOs;
@@ -47,13 +49,13 @@ namespace PiPlanningBackend.Services.Implementations
             string resolvedDevField = ResolveField(devField, DefaultDevField);
             string resolvedTestField = ResolveField(testField, DefaultTestField);
 
-            JsonElement? featureJson = await GetWorkItemWithRelationsAsync(organization, project, featureId, pat);
+            JsonElement featureJson = await GetWorkItemWithRelationsAsync(organization, project, featureId, pat);
 
-            FeatureDto featureDto = ParseFeature(featureJson.Value);
+            FeatureDto featureDto = ParseFeature(featureJson);
 
             // gather child IDs
             List<int> childIds = [];
-            if (featureJson.Value.TryGetProperty("relations", out JsonElement relations))
+            if (featureJson.TryGetProperty("relations", out JsonElement relations))
             {
                 foreach (JsonElement rel in relations.EnumerateArray())
                 {
@@ -74,8 +76,8 @@ namespace PiPlanningBackend.Services.Implementations
 
             if (childIds.Count != 0)
             {
-                JsonElement? childrenJson = await GetWorkItemsAsync(organization, project, childIds, pat);
-                if (childrenJson != null && childrenJson.Value.TryGetProperty("value", out JsonElement array))
+                JsonElement childrenJson = await GetWorkItemsAsync(organization, project, childIds, pat);
+                if (childrenJson.TryGetProperty("value", out JsonElement array))
                 {
                     List<UserStoryDto> children = [];
                     foreach (JsonElement wi in array.EnumerateArray())
@@ -103,8 +105,15 @@ namespace PiPlanningBackend.Services.Implementations
             string resolvedDevField = ResolveField(devField, DefaultDevField);
             string resolvedTestField = ResolveField(testField, DefaultTestField);
 
-            JsonElement? userStoryJson = await GetWorkItemsAsync(organization, project, [userStoryId], pat);
-            UserStoryDto userStory = ParseUserStory(userStoryJson.Value, resolvedStoryPointField, resolvedDevField, resolvedTestField);
+            JsonElement userStoryJson = await GetWorkItemsAsync(organization, project, [userStoryId], pat);
+            if (!userStoryJson.TryGetProperty("value", out JsonElement valueArray)
+                || valueArray.ValueKind != JsonValueKind.Array
+                || valueArray.GetArrayLength() == 0)
+            {
+                throw new KeyNotFoundException($"Azure user story with ID {userStoryId} not found.");
+            }
+
+            UserStoryDto userStory = ParseUserStory(valueArray[0], resolvedStoryPointField, resolvedDevField, resolvedTestField);
             return userStory;
         }
 
@@ -115,22 +124,28 @@ namespace PiPlanningBackend.Services.Implementations
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
         }
 
-        private async Task<JsonElement?> GetWorkItemWithRelationsAsync(string organization, string project, int id, string pat)
+        private async Task<JsonElement> GetWorkItemWithRelationsAsync(string organization, string project, int id, string pat)
         {
             SetPat(pat);
             string url = $"https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?$expand=relations&api-version=7.2-preview.3";
             HttpResponseMessage res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode)
             {
-                _log.LogWarning("Azure API failed: {Code} {Reason}", res.StatusCode, await res.Content.ReadAsStringAsync());
-                return null;
+                _log.LogWarning(
+                    "Azure work item fetch failed | StatusCode: {StatusCode} | Organization: {Organization} | Project: {Project} | WorkItemId: {WorkItemId}",
+                    res.StatusCode,
+                    organization,
+                    project,
+                    id);
+
+                throw CreateAzureException(res.StatusCode, $"work item {id}");
             }
 
             JsonDocument doc = await JsonDocument.ParseAsync(await res.Content.ReadAsStreamAsync());
             return doc.RootElement;
         }
 
-        private async Task<JsonElement?> GetWorkItemsAsync(string organization, string project, IEnumerable<int> ids, string pat)
+        private async Task<JsonElement> GetWorkItemsAsync(string organization, string project, IEnumerable<int> ids, string pat)
         {
             SetPat(pat);
             string idList = string.Join(",", ids);
@@ -138,11 +153,33 @@ namespace PiPlanningBackend.Services.Implementations
             HttpResponseMessage res = await _http.GetAsync(url);
             if (!res.IsSuccessStatusCode)
             {
-                return null;
+                _log.LogWarning(
+                    "Azure work items fetch failed | StatusCode: {StatusCode} | Organization: {Organization} | Project: {Project} | WorkItemIds: {WorkItemIds}",
+                    res.StatusCode,
+                    organization,
+                    project,
+                    idList);
+
+                throw CreateAzureException(res.StatusCode, $"work items [{idList}]");
             }
 
             JsonDocument doc = await JsonDocument.ParseAsync(await res.Content.ReadAsStreamAsync());
             return doc.RootElement;
+        }
+
+        private static Exception CreateAzureException(HttpStatusCode statusCode, string operation)
+        {
+
+            return statusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+                ? new AuthenticationException("Azure PAT is invalid, expired, or does not have the required permissions.")
+                : statusCode is HttpStatusCode.NotFound
+                ? new KeyNotFoundException($"Azure resource not found for {operation}.")
+                : statusCode is HttpStatusCode.TooManyRequests
+                ? new HttpRequestException("Azure Boards rate limit exceeded. Please retry shortly.", null, statusCode)
+                : new HttpRequestException(
+                                            $"Azure API request failed for {operation} with status {(int)statusCode} ({statusCode}).",
+                                            null,
+                                            statusCode);
         }
 
         private static FeatureDto ParseFeature(JsonElement workItem)
