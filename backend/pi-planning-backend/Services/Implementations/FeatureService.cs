@@ -174,8 +174,17 @@ namespace PiPlanningBackend.Services.Implementations
             await _validationService.ValidateFeatureBelongsToBoard(featureId, boardId);
             Feature feature = await _featureRepo.GetByIdAsync(featureId)
                 ?? throw new KeyNotFoundException($"Feature with ID {featureId} not found.");
+            Board board = await _boardRepo.GetByIdAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
 
-            FeatureDto workItem = await _azureService.GetFeatureWithChildrenAsync(organization, project, int.Parse(feature.AzureId!), pat);
+            FeatureDto workItem = await _azureService.GetFeatureWithChildrenAsync(
+                organization,
+                project,
+                int.Parse(feature.AzureId!),
+                pat,
+                board.AzureStoryPointField,
+                board.AzureDevStoryPointField,
+                board.AzureTestStoryPointField);
             _logger.LogInformation(
                 "Feature refreshed from Azure | CorrelationId: {CorrelationId} | FeatureId: {FeatureId} | Title: {Title}",
                 correlationId, featureId, workItem.Title);
@@ -209,7 +218,14 @@ namespace PiPlanningBackend.Services.Implementations
                     throw new Exception("Story has no AzureId");
                 }
 
-                UserStoryDto wi = await _azureService.GetUserStoryAsync(organization, project, int.Parse(story.AzureId!), pat);
+                UserStoryDto wi = await _azureService.GetUserStoryAsync(
+                    organization,
+                    project,
+                    int.Parse(story.AzureId!),
+                    pat,
+                    board.AzureStoryPointField,
+                    board.AzureDevStoryPointField,
+                    board.AzureTestStoryPointField);
 
                 story.Title = wi.Title;
                 story.StoryPoints = wi.StoryPoints;

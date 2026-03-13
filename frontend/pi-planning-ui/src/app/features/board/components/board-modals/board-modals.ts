@@ -108,22 +108,11 @@ export class BoardModals {
       return;
     }
 
-    if (!currentBoard.organization || !currentBoard.project) {
-      this.importError.set(VALIDATIONS.BOARD.MISSING_INFO);
-      return;
-    }
-
     this.importLoading.set(true);
     this.importError.set(null);
 
     try {
-      await this.featureService.importFeature(
-        currentBoard.id,
-        currentBoard.organization,
-        currentBoard.project,
-        featureId,
-        pat,
-      );
+      await this.featureService.importFeature(currentBoard.id, featureId, pat);
       if (this.rememberPatForImport()) {
         this.parent.boardService.storePat(pat);
       } else {

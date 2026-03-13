@@ -183,4 +183,13 @@ export interface IAzureApiService {
     featureId: string,
     pat: string,
   ): Observable<FeatureResponseDto>;
+
+  /**
+   * Fetch feature with children using board-level Azure configuration
+   */
+  getFeatureWithChildrenForBoard(
+    boardId: number,
+    featureId: string,
+    pat: string,
+  ): Observable<FeatureResponseDto>;
 }

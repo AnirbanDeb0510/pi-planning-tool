@@ -136,4 +136,14 @@ describe('BoardApiService family', () => {
       params: { pat: 'token' },
     });
   });
+
+  it('AzureApiService.getFeatureWithChildrenForBoard uses board-scoped endpoint', () => {
+    const service = TestBed.inject(AzureApiService);
+
+    service.getFeatureWithChildrenForBoard(22, '987', 'token').subscribe();
+
+    expect(httpClientSpy.get).toHaveBeenCalledWith(AZURE_API.GET_FEATURE_FOR_BOARD(22, '987'), {
+      params: { pat: 'token' },
+    });
+  });
 });
