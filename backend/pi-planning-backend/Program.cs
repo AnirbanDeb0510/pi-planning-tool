@@ -166,6 +166,10 @@ if (swaggerEnabled)
 
 app.UseCors("Frontend");
 // app.UseHttpsRedirection();
+
+// Health check endpoint — lightweight wake-up ping, no DB interaction
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+
 app.MapControllers();
 app.MapHub<PlanningHub>("/hub/planning");
 

@@ -70,3 +70,10 @@ export const AZURE_API = {
   AUTHENTICATE: `${API_PREFIX}/azure/auth`,
   SEARCH_FEATURES: `${API_PREFIX}/azure/features/search`,
 } as const;
+
+/**
+ * Health / wake-up endpoint
+ */
+export const HEALTH_API = {
+  PING: '/health',
+} as const;

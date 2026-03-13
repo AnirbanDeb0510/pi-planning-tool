@@ -10,4 +10,21 @@
   </button>
 </div>
 
-<router-outlet />
+@if (serverStatus() === 'connecting') {
+  <div class="server-status-overlay">
+    <div class="server-status-card">
+      <div class="connecting-spinner"></div>
+      <p class="connecting-message">Connecting to server&hellip;</p>
+      <p class="connecting-hint">This may take a few seconds on first load.</p>
+    </div>
+  </div>
+} @else if (serverStatus() === 'error') {
+  <div class="server-status-overlay">
+    <div class="server-status-card error">
+      <p class="connecting-message">⚠️ Could not reach the server.</p>
+      <p class="connecting-hint">Check your connection and refresh the page.</p>
+    </div>
+  </div>
+} @else {
+  <router-outlet />
+}
