@@ -17,7 +17,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: pi-planning-backend/Dockerfile
+      dockerfile: Dockerfile
     container_name: pi-backend
     depends_on:
       - db
