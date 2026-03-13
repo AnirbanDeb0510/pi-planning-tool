@@ -7,6 +7,7 @@ using PiPlanningBackend.Services.Interfaces;
 using PiPlanningBackend.Services.Implementations;
 using PiPlanningBackend.Repositories.Interfaces;
 using PiPlanningBackend.Repositories.Implementations;
+using System.Threading.RateLimiting;
 using System.Runtime.Loader;
 
 // Register assembly resolver for migration assemblies
@@ -29,6 +30,13 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 string[] configuredCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 bool allowAllOrigins = configuredCorsOrigins.Contains("*");
+bool rateLimitingEnabled = builder.Configuration.GetValue<bool?>("RateLimiting:Enabled") ?? true;
+int generalPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:General:PermitLimit") ?? 120;
+int generalWindowSeconds = builder.Configuration.GetValue<int?>("RateLimiting:General:WindowSeconds") ?? 60;
+int generalQueueLimit = builder.Configuration.GetValue<int?>("RateLimiting:General:QueueLimit") ?? 0;
+int azurePermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Azure:PermitLimit") ?? 20;
+int azureWindowSeconds = builder.Configuration.GetValue<int?>("RateLimiting:Azure:WindowSeconds") ?? 60;
+int azureQueueLimit = builder.Configuration.GetValue<int?>("RateLimiting:Azure:QueueLimit") ?? 0;
 
 bool IsCorsOriginAllowed(string origin)
 {
@@ -119,6 +127,82 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
+if (rateLimitingEnabled)
+{
+    _ = builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.OnRejected = (context, _) =>
+        {
+            int? retryAfterSeconds = null;
+            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+            {
+                retryAfterSeconds = (int)Math.Ceiling(retryAfter.TotalSeconds);
+                context.HttpContext.Response.Headers.RetryAfter = retryAfterSeconds.Value.ToString();
+            }
+
+            string correlationId = context.HttpContext.Items.TryGetValue("CorrelationId", out object? correlationIdObj)
+                ? correlationIdObj?.ToString() ?? "NO_CORRELATION_ID"
+                : "NO_CORRELATION_ID";
+
+            context.HttpContext.Response.ContentType = "application/json";
+
+            return new ValueTask(context.HttpContext.Response.WriteAsJsonAsync(new
+            {
+                error = new
+                {
+                    message = "Too many requests",
+                    details = retryAfterSeconds.HasValue
+                        ? $"Rate limit exceeded. Retry after {retryAfterSeconds.Value} seconds."
+                        : "Rate limit exceeded. Please retry shortly.",
+                    retryAfterSeconds,
+                    correlationId,
+                    timestamp = DateTime.UtcNow,
+                }
+            }));
+        };
+
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            PathString requestPath = httpContext.Request.Path;
+            string ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            // Keep health checks and SignalR transport negotiation unrestricted.
+            if (requestPath.StartsWithSegments("/health") || requestPath.StartsWithSegments("/hub/planning"))
+            {
+                return RateLimitPartition.GetNoLimiter($"no-limit:{ip}");
+            }
+
+            bool isAzureEndpoint = requestPath.StartsWithSegments("/api/azure")
+                || requestPath.StartsWithSegments("/api/v1/azure")
+                || requestPath.Value?.Contains("/refresh", StringComparison.OrdinalIgnoreCase) == true
+                || requestPath.Value?.Contains("/import", StringComparison.OrdinalIgnoreCase) == true;
+
+            return isAzureEndpoint
+                ? RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: $"azure:{ip}",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = azurePermitLimit,
+                        Window = TimeSpan.FromSeconds(azureWindowSeconds),
+                        QueueLimit = azureQueueLimit,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        AutoReplenishment = true,
+                    })
+                : RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: $"general:{ip}",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = generalPermitLimit,
+                    Window = TimeSpan.FromSeconds(generalWindowSeconds),
+                    QueueLimit = generalQueueLimit,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    AutoReplenishment = true,
+                });
+        });
+    });
+}
+
 WebApplication app = builder.Build();
 
 bool swaggerEnabled = builder.Configuration.GetValue<bool?>("Swagger:Enabled")
@@ -132,6 +216,14 @@ app.Logger.LogInformation(
     "CORS policy loaded | AllowAll: {AllowAll} | Origins: {Origins}",
     allowAllOrigins,
     allowAllOrigins ? "*" : string.Join(", ", configuredCorsOrigins));
+
+app.Logger.LogInformation(
+    "Rate limiting enabled: {Enabled} | General: {GeneralPermit}/{GeneralWindow}s | Azure-heavy: {AzurePermit}/{AzureWindow}s",
+    rateLimitingEnabled,
+    generalPermitLimit,
+    generalWindowSeconds,
+    azurePermitLimit,
+    azureWindowSeconds);
 
 // Apply migrations at startup (optional for Dev & safe if you control migrations)
 // Note: EF Core automatically detects the active provider and applies only compatible migrations
@@ -162,6 +254,11 @@ if (swaggerEnabled)
 {
     _ = app.UseSwagger();
     _ = app.UseSwaggerUI();
+}
+
+if (rateLimitingEnabled)
+{
+    _ = app.UseRateLimiter();
 }
 
 app.UseCors("Frontend");
