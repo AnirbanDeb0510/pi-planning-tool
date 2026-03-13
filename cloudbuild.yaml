@@ -1,0 +1,12 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    [
+      'build',
+      '-f', 'backend/pi-planning-backend/Dockerfile',  # Dockerfile path
+      '-t', 'gcr.io/$PROJECT_ID/pi-backend',           # Image name
+      'backend'                                        # Build context
+    ]
+
+images:
+- 'gcr.io/$PROJECT_ID/pi-backend'
