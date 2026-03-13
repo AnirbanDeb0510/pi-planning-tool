@@ -6,6 +6,7 @@ namespace PiPlanningBackend.Services.Interfaces
     public interface IBoardService
     {
         Task<Board> CreateBoardAsync(BoardCreateDto dto);
+        Task<Board?> GetBoardAsync(int id);
         Task<BoardResponseDto?> GetBoardWithHierarchyAsync(int boardId);
         Task<IEnumerable<BoardSummaryDto>> SearchBoardsAsync(string? searchTerm = null, string? organization = null, string? project = null, bool? isLocked = null, bool? isFinalized = null);
         Task<BoardSummaryDto?> GetBoardPreviewAsync(int boardId);

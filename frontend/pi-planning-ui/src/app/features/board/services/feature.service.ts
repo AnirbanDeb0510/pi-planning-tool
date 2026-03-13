@@ -20,17 +20,11 @@ export class FeatureService {
    * Import feature from Azure DevOps
    * First fetches the feature from Azure, then imports it to the board
    */
-  public async importFeature(
-    boardId: number,
-    organization: string,
-    project: string,
-    featureId: string,
-    pat: string,
-  ): Promise<void> {
+  public async importFeature(boardId: number, featureId: string, pat: string): Promise<void> {
     try {
       // Step 1: Fetch feature from Azure DevOps
       const featureDto = await firstValueFrom(
-        this.azureApi.getFeatureWithChildren(organization, project, featureId, pat),
+        this.azureApi.getFeatureWithChildrenForBoard(boardId, featureId, pat),
       );
 
       // Step 2: Import the feature to the board

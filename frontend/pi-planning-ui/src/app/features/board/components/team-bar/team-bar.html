@@ -19,10 +19,10 @@
           class="member-action"
           type="button"
           (click)="openEditMember(member)"
-          [disabled]="parent.isOperationBlocked()"
+          [disabled]="parent.isOperationBlockedFor('edit-members')"
           [title]="
-            parent.isOperationBlocked()
-              ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.EDIT_MEMBERS)
+            parent.isOperationBlockedFor('edit-members')
+              ? parent.getOperationBlockedMessageFor('edit-members', LABELS.OPERATIONS.EDIT_MEMBERS)
               : TOOLTIPS.TEAM.EDIT_MEMBER
           "
         >
@@ -32,10 +32,13 @@
           class="member-action"
           type="button"
           (click)="openDeleteMember(member)"
-          [disabled]="parent.isOperationBlocked()"
+          [disabled]="parent.isOperationBlockedFor('delete-members')"
           [title]="
-            parent.isOperationBlocked()
-              ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.DELETE_MEMBERS)
+            parent.isOperationBlockedFor('delete-members')
+              ? parent.getOperationBlockedMessageFor(
+                  'delete-members',
+                  LABELS.OPERATIONS.DELETE_MEMBERS
+                )
               : TOOLTIPS.TEAM.DELETE_MEMBER
           "
         >
@@ -49,10 +52,10 @@
       class="add-member-button"
       type="button"
       (click)="openAddMember()"
-      [disabled]="parent.isOperationBlocked()"
+      [disabled]="parent.isOperationBlockedFor('add-members')"
       [title]="
-        parent.isOperationBlocked()
-          ? parent.getOperationBlockedMessage(LABELS.OPERATIONS.ADD_MEMBERS)
+        parent.isOperationBlockedFor('add-members')
+          ? parent.getOperationBlockedMessageFor('add-members', LABELS.OPERATIONS.ADD_MEMBERS)
           : TOOLTIPS.TEAM.ADD_MEMBER
       "
     >

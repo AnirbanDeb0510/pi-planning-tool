@@ -37,6 +37,10 @@ yarn-error.log*
 /backend/pi-planning-backend.migrations.sqlserver/obj/
 /backend/pi-planning-backend.migrations.postgres/bin/
 /backend/pi-planning-backend.migrations.postgres/obj/
+**/bin/
+**/obj/
+*.AssemblyReference.cache
+*.CoreCompileInputs.cache
 
 # Docker / DB data
 db/pg-data/

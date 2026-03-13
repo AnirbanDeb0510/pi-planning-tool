@@ -65,6 +65,8 @@ export const TEAM_API = {
 export const AZURE_API = {
   GET_FEATURE: (organization: string, project: string, featureId: string) =>
     `${API_PREFIX}/v1/azure/feature/${organization}/${project}/${featureId}`,
+  GET_FEATURE_FOR_BOARD: (boardId: number, featureId: string) =>
+    `${API_PREFIX}/v1/azure/boards/${boardId}/feature/${featureId}`,
   AUTHENTICATE: `${API_PREFIX}/azure/auth`,
   SEARCH_FEATURES: `${API_PREFIX}/azure/features/search`,
 } as const;

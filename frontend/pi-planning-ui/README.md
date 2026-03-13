@@ -1,6 +1,6 @@
 # PiPlanningUi
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.4 and uses Angular 15+ with standalone components and signals.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.4 and uses Angular 20 standalone components and signals.
 
 ## Project Note
 
@@ -10,7 +10,6 @@ For current project-level guidance, use:
 
 - [../../README.md](../../README.md)
 - [../../IIS_DEPLOYMENT_GUIDE.md](../../IIS_DEPLOYMENT_GUIDE.md)
-- [../../ROADMAP_CURRENT.md](../../ROADMAP_CURRENT.md)
 
 ## Component Architecture (Phase 3A)
 
@@ -18,7 +17,7 @@ The application uses a modern Angular architecture with standalone components an
 
 ### Board Component Structure
 
-**Main Components (src/app/Components/board/):**
+**Main Components (src/app/features/board/components/):**
 
 ```
 board/
@@ -94,11 +93,21 @@ This will compile your project and store the build artifacts in the `dist/` dire
 
 ## Running unit tests
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use:
 
 ```bash
-ng test
+npm test -- --watch=false --browsers ChromeHeadless
 ```
+
+Notes:
+
+- The `test` script sets `CHROME_BIN` to the Microsoft Edge binary on macOS so Karma can run headless in local development.
+- On other platforms or CI environments, override `CHROME_BIN` to point at the installed Chromium-based browser.
+- Current test coverage includes:
+  - core services: `HttpClientService`, `UserService`
+  - routing guard: `userNameGuard`
+  - board domain logic: `BoardCalculationService`, board API wrapper services
+  - user flow: `EnterYourName`
 
 ## Running end-to-end tests
 

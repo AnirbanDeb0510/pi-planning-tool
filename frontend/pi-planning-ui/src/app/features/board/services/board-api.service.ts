@@ -236,4 +236,14 @@ export class AzureApiService {
       { params: { pat } },
     );
   }
+
+  getFeatureWithChildrenForBoard(
+    boardId: number,
+    featureId: string,
+    pat: string,
+  ): Observable<FeatureResponseDto> {
+    return this.http.get<FeatureResponseDto>(AZURE_API.GET_FEATURE_FOR_BOARD(boardId, featureId), {
+      params: { pat },
+    });
+  }
 }

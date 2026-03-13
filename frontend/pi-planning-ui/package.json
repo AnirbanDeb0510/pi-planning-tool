@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "CHROME_BIN=\"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge\" ng test",
     "lint": "eslint . --ext .ts,.html",
     "lint:fix": "eslint . --ext .ts,.html --fix",
     "format:html": "prettier --write \"src/**/*.html\""

@@ -2,17 +2,51 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using PiPlanningBackend.DTOs;
+using PiPlanningBackend.Models;
 using PiPlanningBackend.Services.Interfaces;
 
 namespace PiPlanningBackend.Services.Implementations
 {
-    public class AzureBoardsService(HttpClient http, ILogger<AzureBoardsService> log) : IAzureBoardsService
+    public class AzureBoardsService(HttpClient http, ILogger<AzureBoardsService> log, IBoardService boardService) : IAzureBoardsService
     {
+        private const string DefaultStoryPointField = "Microsoft.VSTS.Scheduling.StoryPoints";
+        private const string DefaultDevField = "Custom.DevStoryPoints";
+        private const string DefaultTestField = "Custom.TestStoryPoints";
+
         private readonly HttpClient _http = http;
         private readonly ILogger<AzureBoardsService> _log = log;
+        private readonly IBoardService _boardService = boardService;
 
-        public async Task<FeatureDto> GetFeatureWithChildrenAsync(string organization, string project, int featureId, string pat)
+        public async Task<FeatureDto> GetFeatureWithChildrenForBoardAsync(int boardId, int featureId, string pat)
         {
+            Board board = await _boardService.GetBoardAsync(boardId)
+                ?? throw new KeyNotFoundException($"Board with ID {boardId} not found.");
+
+            return string.IsNullOrWhiteSpace(board.Organization) || string.IsNullOrWhiteSpace(board.Project)
+                ? throw new ArgumentException("Board Azure configuration is incomplete. Organization and Project are required.")
+                : await GetFeatureWithChildrenAsync(
+                board.Organization,
+                board.Project,
+                featureId,
+                pat,
+                board.AzureStoryPointField,
+                board.AzureDevStoryPointField,
+                board.AzureTestStoryPointField);
+        }
+
+        public async Task<FeatureDto> GetFeatureWithChildrenAsync(
+            string organization,
+            string project,
+            int featureId,
+            string pat,
+            string? storyPointField = null,
+            string? devField = null,
+            string? testField = null)
+        {
+            string resolvedStoryPointField = ResolveField(storyPointField, DefaultStoryPointField);
+            string resolvedDevField = ResolveField(devField, DefaultDevField);
+            string resolvedTestField = ResolveField(testField, DefaultTestField);
+
             JsonElement? featureJson = await GetWorkItemWithRelationsAsync(organization, project, featureId, pat);
 
             FeatureDto featureDto = ParseFeature(featureJson.Value);
@@ -46,7 +80,7 @@ namespace PiPlanningBackend.Services.Implementations
                     List<UserStoryDto> children = [];
                     foreach (JsonElement wi in array.EnumerateArray())
                     {
-                        UserStoryDto us = ParseUserStory(wi);
+                        UserStoryDto us = ParseUserStory(wi, resolvedStoryPointField, resolvedDevField, resolvedTestField);
                         children.Add(us);
                     }
                     featureDto.Children = children;
@@ -56,10 +90,21 @@ namespace PiPlanningBackend.Services.Implementations
             return featureDto;
         }
 
-        public async Task<UserStoryDto> GetUserStoryAsync(string organization, string project, int userStoryId, string pat)
+        public async Task<UserStoryDto> GetUserStoryAsync(
+            string organization,
+            string project,
+            int userStoryId,
+            string pat,
+            string? storyPointField = null,
+            string? devField = null,
+            string? testField = null)
         {
+            string resolvedStoryPointField = ResolveField(storyPointField, DefaultStoryPointField);
+            string resolvedDevField = ResolveField(devField, DefaultDevField);
+            string resolvedTestField = ResolveField(testField, DefaultTestField);
+
             JsonElement? userStoryJson = await GetWorkItemsAsync(organization, project, [userStoryId], pat);
-            UserStoryDto userStory = ParseUserStory(userStoryJson.Value);
+            UserStoryDto userStory = ParseUserStory(userStoryJson.Value, resolvedStoryPointField, resolvedDevField, resolvedTestField);
             return userStory;
         }
 
@@ -100,7 +145,7 @@ namespace PiPlanningBackend.Services.Implementations
             return doc.RootElement;
         }
 
-        private FeatureDto ParseFeature(JsonElement workItem)
+        private static FeatureDto ParseFeature(JsonElement workItem)
         {
             JsonElement fields = workItem.GetProperty("fields");
             int id = workItem.GetProperty("id").GetInt32();
@@ -112,7 +157,12 @@ namespace PiPlanningBackend.Services.Implementations
             return feature;
         }
 
-        private UserStoryDto ParseUserStory(JsonElement workItem, string storyPointField = "Microsoft.VSTS.Scheduling.StoryPoints", string devField = "Custom.DevStoryPoints", string testField = "Custom.TestStoryPoints")
+        private static string ResolveField(string? configuredField, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(configuredField) ? fallback : configuredField;
+        }
+
+        private static UserStoryDto ParseUserStory(JsonElement workItem, string storyPointField, string devField, string testField)
         {
             JsonElement fields = workItem.GetProperty("fields");
             int id = workItem.GetProperty("id").GetInt32();

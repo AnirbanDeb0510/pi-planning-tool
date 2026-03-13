@@ -951,7 +951,7 @@ REVOKE CREATE ON SCHEMA public FROM piuser;
 
 **Changelog:**
 
-- Check [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md) for security-related changes
+- Check the repository commit history and release notes for security-related changes
 
 ---
 

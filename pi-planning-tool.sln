@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pi-planning-backend.migrati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pi-planning-backend.migrations.sqlserver", "backend\pi-planning-backend.migrations.sqlserver\pi-planning-backend.migrations.sqlserver.csproj", "{27F624A8-A9A9-436A-998F-7E8FDA1F53E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pi-planning-backend.tests", "backend\pi-planning-backend.tests\pi-planning-backend.tests.csproj", "{F85074B4-5741-4348-A5DD-2A6B2795CA2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{27F624A8-A9A9-436A-998F-7E8FDA1F53E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27F624A8-A9A9-436A-998F-7E8FDA1F53E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27F624A8-A9A9-436A-998F-7E8FDA1F53E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F85074B4-5741-4348-A5DD-2A6B2795CA2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F85074B4-5741-4348-A5DD-2A6B2795CA2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F85074B4-5741-4348-A5DD-2A6B2795CA2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F85074B4-5741-4348-A5DD-2A6B2795CA2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +42,7 @@ Global
 		{DE9C80CA-595A-0A04-7818-201D67F3A7E4} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 		{0183FB2F-BC52-4B94-9500-77A7EC9992B0} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 		{27F624A8-A9A9-436A-998F-7E8FDA1F53E5} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
+		{F85074B4-5741-4348-A5DD-2A6B2795CA2F} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1595819C-D05F-4D48-9560-EF90DAE432BD}

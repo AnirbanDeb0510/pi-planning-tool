@@ -551,22 +551,117 @@ export class Board implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if operation is blocked by finalization or lock
+   * Per-operation policy so lock/finalized can have different allowed actions.
    */
-  isOperationBlocked(): boolean {
+  isOperationBlockedFor(
+    operation:
+      | 'add-feature'
+      | 'refresh-feature'
+      | 'delete-feature'
+      | 'add-members'
+      | 'edit-members'
+      | 'delete-members'
+      | 'edit-capacity'
+      | 'move-stories'
+      | 'reorder-features'
+      | 'refresh-story'
+      | 'refresh-board'
+      | 'unlock-board',
+  ): boolean {
     const board = this.board();
-    return board?.isLocked || board?.isFinalized || false;
+    if (!board) {
+      return false;
+    }
+
+    if (board.isLocked) {
+      return !this.isAllowedWhenLocked(operation);
+    }
+
+    if (board.isFinalized) {
+      return !this.isAllowedWhenFinalized(operation);
+    }
+
+    return false;
   }
 
   /**
    * Get operation blocked error message
    */
-  getOperationBlockedMessage(operation: string): string {
+  getOperationBlockedMessageFor(
+    operation:
+      | 'add-feature'
+      | 'refresh-feature'
+      | 'delete-feature'
+      | 'add-members'
+      | 'edit-members'
+      | 'delete-members'
+      | 'edit-capacity'
+      | 'move-stories'
+      | 'reorder-features'
+      | 'refresh-story'
+      | 'refresh-board'
+      | 'unlock-board',
+    actionLabel: string,
+  ): string {
     const board = this.board();
-    if (board?.isLocked) {
+
+    if (board?.isLocked && this.isOperationBlockedFor(operation)) {
       return MESSAGES.BOARD.OPERATION_BLOCKED_LOCKED;
     }
-    return MESSAGES.BOARD.OPERATION_BLOCKED(operation);
+
+    if (board?.isFinalized && this.isOperationBlockedFor(operation)) {
+      return MESSAGES.BOARD.OPERATION_BLOCKED(actionLabel);
+    }
+
+    return '';
+  }
+
+  private isAllowedWhenLocked(
+    operation:
+      | 'add-feature'
+      | 'refresh-feature'
+      | 'delete-feature'
+      | 'add-members'
+      | 'edit-members'
+      | 'delete-members'
+      | 'edit-capacity'
+      | 'move-stories'
+      | 'reorder-features'
+      | 'refresh-story'
+      | 'refresh-board'
+      | 'unlock-board',
+  ): boolean {
+    // Locked means read-only. Only unlock and board reload are allowed.
+    return operation === 'unlock-board' || operation === 'refresh-board';
+  }
+
+  private isAllowedWhenFinalized(
+    operation:
+      | 'add-feature'
+      | 'refresh-feature'
+      | 'delete-feature'
+      | 'add-members'
+      | 'edit-members'
+      | 'delete-members'
+      | 'edit-capacity'
+      | 'move-stories'
+      | 'reorder-features'
+      | 'refresh-story'
+      | 'refresh-board'
+      | 'unlock-board',
+  ): boolean {
+    switch (operation) {
+      case 'refresh-feature':
+      case 'refresh-story':
+      case 'move-stories':
+      case 'reorder-features':
+      case 'edit-capacity':
+      case 'refresh-board':
+      case 'unlock-board':
+        return true;
+      default:
+        return false;
+    }
   }
 
   /**

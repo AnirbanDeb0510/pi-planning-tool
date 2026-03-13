@@ -2,7 +2,7 @@
 
 A web-based **Program Increment (PI) Planning Tool** integrated with **Azure Boards**, enabling teams to plan sprints and features collaboratively in real-time. Inspired by tools like Mural/Miro, but focused on Agile PI planning.
 
-**🎯 Current Status (Mar 7, 2026):** ✅ **Phase 8 - Documentation COMPLETE**. Comprehensive documentation suite includes API reference, user guide, deployment guides (Docker/IIS), security guide, architecture documentation, and configuration guide. Phase 10 (Provider-Isolated Migrations) also complete. Ready for Phase 9 (Cloud Deployment). See [ROADMAP_CURRENT.md](ROADMAP_CURRENT.md).
+**🎯 Current Status (Mar 13, 2026):** Documentation, provider-isolated migrations, and automated unit testing are complete. The next major milestone is cloud/hosting deployment.
 
 ---
 
@@ -67,12 +67,6 @@ Comprehensive guides for users, developers, and operators:
 - **[Configuration Guide](CONFIGURATION.md)**: Environment variables, runtime configuration, CORS setup, database provider selection, and PAT TTL configuration
 - **[Security Guide](SECURITY.md)**: Security architecture, PBKDF2 password hashing, input validation, CORS configuration, Azure PAT handling, audit logging, and OWASP Top 10 compliance
 
-### Project Management
-
-- **[Roadmap](ROADMAP_CURRENT.md)**: Current phase status, completed features, and upcoming priorities
-
----
-
 ## �📦 Project Structure
 
 ```
@@ -81,38 +75,43 @@ pi-planning-tool/
 ├── backend/
 │   ├── pi-planning-backend/                  # .NET 8 Web API
 │   │   ├── Controllers/
-│   │   ├── Models/
-│   │   ├── Services/
-│   │   ├── Repositories/
 │   │   ├── DTOs/
 │   │   ├── Data/
+│   │   ├── Filters/
 │   │   ├── Hubs/
 │   │   ├── Middleware/
-│   │   ├── Filters/
+│   │   ├── Models/
+│   │   ├── Repositories/
+│   │   ├── Services/
 │   │   ├── Dockerfile
 │   │   └── Program.cs
 │   ├── pi-planning-backend.migrations.postgres/  # PostgreSQL Migrations
 │   │   ├── Migrations/
 │   │   ├── DesignTimeDbContextFactory.cs
 │   │   └── *.csproj
-│   └── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations
+│   ├── pi-planning-backend.migrations.sqlserver/ # SQL Server Migrations
 │       ├── Migrations/
 │       ├── DesignTimeDbContextFactory.cs
+│       └── *.csproj
+│   └── pi-planning-backend.tests/           # xUnit backend tests
+│       ├── Controllers/
+│       ├── Data/
+│       ├── Services/
 │       └── *.csproj
 ├── frontend/pi-planning-ui/                   # Angular 20 app
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── components/
-│   │   │   ├── services/
-│   │   │   └── models/
-│   │   ├── assets/
+│   │   │   ├── core/
+│   │   │   ├── features/
+│   │   │   └── shared/
+│   │   ├── environments/
 │   │   └── index.html
 │   ├── Dockerfile
-│   └── angular.json
+│   ├── angular.json
+│   └── package.json
 ├── db/
 │   ├── Dockerfile
-│   ├── init.sql
-│   └── init-sqlserver.sql
+│   └── init.sql
 ├── docker-compose.yml
 ├── README.md
 ├── API_REFERENCE.md
@@ -122,7 +121,6 @@ pi-planning-tool/
 ├── IIS_DEPLOYMENT_GUIDE.md
 ├── SECURITY.md
 ├── USER_GUIDE.md
-├── ROADMAP_CURRENT.md
 └── pi-planning-tool.sln
 
 ```
@@ -236,6 +234,32 @@ ng serve --open
 
 ---
 
+## Testing
+
+### Backend Tests
+
+```bash
+cd backend/pi-planning-backend.tests
+dotnet test
+```
+
+Backend test coverage currently focuses on service logic, controller behavior, and repository integration paths.
+
+### Frontend Tests
+
+```bash
+cd frontend/pi-planning-ui
+npm test -- --watch=false --browsers ChromeHeadless
+```
+
+Notes:
+
+- The frontend `test` script is configured to run Karma against Microsoft Edge on macOS by setting `CHROME_BIN` to the Edge binary path.
+- On non-macOS environments, override `CHROME_BIN` as needed for the locally installed Chromium-based browser.
+- Current frontend coverage focuses on core services, the name-entry guard and component flow, board calculations, and board API wrapper services.
+
+---
+
 ### 6. Docker Compose (Full Stack - Recommended for Integrated Testing)
 
 #### Start All Services (Backend + Frontend + PostgreSQL)
@@ -325,6 +349,40 @@ docker-compose build frontend
 # Rebuild all images
 docker-compose build
 ```
+
+#### Rebuild and Restart a Service After Code Changes (Day-to-Day)
+
+Always use `--build` when restarting after code changes — otherwise Docker Compose reuses the cached image and your changes won't be picked up:
+
+```bash
+# Rebuild image and restart backend
+docker-compose up -d --build backend
+
+# Rebuild image and restart frontend
+docker-compose up -d --build frontend
+```
+
+#### Force a Clean Rebuild (When Cached Image Is Stale)
+
+If `--build` still serves stale code (e.g. after removing a container with `docker-compose rm`), delete the old image first so Docker Compose is forced to build from scratch:
+
+```bash
+# Backend
+docker-compose stop backend
+docker-compose rm -f backend
+docker rmi pi-planning-tool-backend:latest
+docker-compose build --no-cache backend
+docker-compose up -d backend
+
+# Frontend
+docker-compose stop frontend
+docker-compose rm -f frontend
+docker rmi pi-planning-tool-frontend:latest
+docker-compose build --no-cache frontend
+docker-compose up -d frontend
+```
+
+> **Why this happens:** `docker-compose rm -f` removes the _container_ but leaves the _image_ intact. A plain `docker-compose up -d` will reuse that old image rather than rebuilding. Using `--build` normally avoids this, but if the image tag is identical Docker may still skip the build. Deleting the image with `docker rmi` guarantees a clean rebuild.
 
 #### Enter Container Shell
 
