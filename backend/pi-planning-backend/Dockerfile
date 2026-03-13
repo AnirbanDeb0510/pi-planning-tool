@@ -12,31 +12,22 @@ COPY ["pi-planning-backend/pi-planning-backend.csproj", "pi-planning-backend/"]
 COPY ["pi-planning-backend.migrations.postgres/pi-planning-backend.migrations.postgres.csproj", "pi-planning-backend.migrations.postgres/"]
 COPY ["pi-planning-backend.migrations.sqlserver/pi-planning-backend.migrations.sqlserver.csproj", "pi-planning-backend.migrations.sqlserver/"]
 
-# Restore dependencies
-RUN dotnet restore "pi-planning-backend/pi-planning-backend.csproj"
+# Restore dependencies (main project + migration projects — all three must be restored
+# before publish because the CopyMigrationAssemblies AfterBuild target MSBuilds them)
+RUN dotnet restore "pi-planning-backend/pi-planning-backend.csproj" \
+    && dotnet restore "pi-planning-backend.migrations.postgres/pi-planning-backend.migrations.postgres.csproj" \
+    && dotnet restore "pi-planning-backend.migrations.sqlserver/pi-planning-backend.migrations.sqlserver.csproj"
 
 # Copy all source code
 COPY . .
 
-# Build
+# Publish — dotnet publish implicitly builds first; the CopyMigrationAssemblies MSBuild target
+# in pi-planning-backend.csproj builds the migration projects automatically during the build phase.
 WORKDIR "/src/pi-planning-backend"
-RUN dotnet build "pi-planning-backend.csproj" -c Release -o /app/build
-
-# Build migration projects (so their DLLs exist for the publish step)
-WORKDIR "/src/pi-planning-backend.migrations.postgres"
-RUN dotnet build "pi-planning-backend.migrations.postgres.csproj" -c Release -o /app/build
-
-WORKDIR "/src/pi-planning-backend.migrations.sqlserver"
-RUN dotnet build "pi-planning-backend.migrations.sqlserver.csproj" -c Release -o /app/build
-
-# Publish stage
-FROM build AS publish
-WORKDIR "/src/pi-planning-backend"
-# The publish target automatically includes migration DLLs via IncludeMigrationAssembliesInPublish
 RUN dotnet publish "pi-planning-backend.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Final stage
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "pi-planning-backend.dll"]
