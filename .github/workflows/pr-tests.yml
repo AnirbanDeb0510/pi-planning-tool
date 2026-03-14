@@ -62,6 +62,9 @@ jobs:
           dotnet restore backend/pi-planning-backend.migrations.sqlserver/pi-planning-backend.migrations.sqlserver.csproj
           dotnet restore backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj
 
+      - name: Build backend (Release)
+        run: dotnet build backend/pi-planning-backend/pi-planning-backend.csproj --configuration Release --no-restore
+
       - name: Run backend unit tests
         env:
           DOTNET_ROLL_FORWARD: LatestPatch
@@ -90,6 +93,10 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+        working-directory: frontend/pi-planning-ui
+
+      - name: Build frontend (production)
+        run: npm run build -- --configuration production
         working-directory: frontend/pi-planning-ui
 
       - name: Run frontend unit tests (headless)
