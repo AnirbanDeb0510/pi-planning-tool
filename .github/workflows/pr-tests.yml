@@ -52,12 +52,19 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 8.0.204
 
-      - name: Restore backend tests
-        run: dotnet restore backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj
+      - name: Restore backend dependencies
+        run: |
+          dotnet --info
+          dotnet restore backend/pi-planning-backend/pi-planning-backend.csproj
+          dotnet restore backend/pi-planning-backend.migrations.postgres/pi-planning-backend.migrations.postgres.csproj
+          dotnet restore backend/pi-planning-backend.migrations.sqlserver/pi-planning-backend.migrations.sqlserver.csproj
+          dotnet restore backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj
 
       - name: Run backend unit tests
+        env:
+          DOTNET_ROLL_FORWARD: LatestPatch
         run: dotnet test backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj --configuration Release --no-restore --verbosity normal
 
   frontend-tests:
