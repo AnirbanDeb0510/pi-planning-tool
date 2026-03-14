@@ -95,5 +95,5 @@ jobs:
       - name: Run frontend unit tests (headless)
         env:
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: npx ng test --watch=false --browsers=ChromeHeadless --no-progress
+        run: npx ng test --watch=false --no-progress --karma-config karma.ci.conf.cjs
         working-directory: frontend/pi-planning-ui
