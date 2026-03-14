@@ -1,5 +1,7 @@
 module.exports = function (config) {
   config.set({
+    frameworks: ['jasmine'],
+    plugins: [require('karma-jasmine'), require('karma-chrome-launcher')],
     client: {
       clearContext: false,
     },
