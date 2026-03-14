@@ -606,6 +606,12 @@ MIT License. See [LICENSE](LICENSE).
 
 ---
 
+## 👥 Contributors
+
+Arnab Nanda Goswami
+
+---
+
 ## 👤 Author
 
 Anirban Deb

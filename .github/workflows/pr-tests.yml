@@ -40,7 +40,7 @@ jobs:
               - '.github/workflows/pr-tests.yml'
 
   backend-tests:
-    name: Backend Unit Tests
+    name: Backend Build and Unit Tests
     needs: changes
     if: github.event.pull_request.draft == false && needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
@@ -71,7 +71,7 @@ jobs:
         run: dotnet test backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj --configuration Release --no-restore --verbosity normal
 
   frontend-tests:
-    name: Frontend Unit Tests
+    name: Frontend Build and Unit Tests
     needs: changes
     if: github.event.pull_request.draft == false && needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest

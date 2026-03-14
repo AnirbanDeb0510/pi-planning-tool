@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Azure-blue rounded background -->
+  <rect width="64" height="64" rx="12" fill="#0078D4"/>
+
+  <!-- Sprint header strip -->
+  <rect x="8" y="7" width="48" height="8" rx="3" fill="#FFFFFF" opacity="0.25"/>
+
+  <!-- Sprint dividers (vertical hairlines) -->
+  <line x1="28" y1="7" x2="28" y2="57" stroke="#FFFFFF" stroke-width="0.8" opacity="0.2"/>
+  <line x1="44" y1="7" x2="44" y2="57" stroke="#FFFFFF" stroke-width="0.8" opacity="0.2"/>
+
+  <!-- Feature row 1 story cards -->
+  <rect x="8"  y="19" width="17" height="9" rx="2.5" fill="#FFFFFF" opacity="0.90"/>
+  <rect x="29" y="19" width="12" height="9" rx="2.5" fill="#50E6FF"/>
+  <rect x="45" y="19" width="11" height="9" rx="2.5" fill="#FFFFFF" opacity="0.60"/>
+
+  <!-- Feature row 2 story cards -->
+  <rect x="8"  y="31" width="17" height="9" rx="2.5" fill="#50E6FF"/>
+  <rect x="29" y="31" width="12" height="9" rx="2.5" fill="#FFFFFF" opacity="0.90"/>
+  <rect x="45" y="31" width="11" height="9" rx="2.5" fill="#50E6FF" opacity="0.80"/>
+
+  <!-- Feature row 3 story cards -->
+  <rect x="8"  y="43" width="17" height="9" rx="2.5" fill="#FFFFFF" opacity="0.70"/>
+  <rect x="29" y="43" width="12" height="9" rx="2.5" fill="#50E6FF" opacity="0.80"/>
+  <rect x="45" y="43" width="11" height="9" rx="2.5" fill="#FFFFFF" opacity="0.90"/>
+</svg>
