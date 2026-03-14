@@ -41,6 +41,7 @@ yarn-error.log*
 **/obj/
 *.AssemblyReference.cache
 *.CoreCompileInputs.cache
+/backend/pi-planning-backend.tests/TestResults/**
 
 # Docker / DB data
 db/pg-data/

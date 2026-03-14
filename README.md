@@ -258,6 +258,32 @@ Notes:
 - On non-macOS environments, override `CHROME_BIN` as needed for the locally installed Chromium-based browser.
 - Current frontend coverage focuses on core services, the name-entry guard and component flow, board calculations, and board API wrapper services.
 
+### Test Coverage (Manual / On-Demand)
+
+Coverage collection is intentionally not part of PR-required checks to keep PR pipelines fast.
+
+#### Backend Coverage
+
+```bash
+cd backend/pi-planning-backend.tests
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+Result files are generated under `TestResults/` (Cobertura XML format).
+
+#### Frontend Coverage
+
+```bash
+cd frontend/pi-planning-ui
+npx ng test --watch=false --browsers ChromeHeadless --code-coverage
+```
+To run with chrome path without chrome installed
+```bash
+CHROME_BIN="/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" npx ng test --watch=false --browsers ChromeHeadless --code-coverage
+```
+
+Coverage report is generated at `coverage/pi-planning-ui/index.html`.
+
 ---
 
 ### 6. Docker Compose (Full Stack - Recommended for Integrated Testing)

@@ -1,0 +1,106 @@
+name: PR Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changes:
+    name: Detect Changed Areas
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/pr-tests.yml'
+            frontend:
+              - 'frontend/pi-planning-ui/**'
+              - '.github/workflows/pr-tests.yml'
+
+  backend-tests:
+    name: Backend Unit Tests
+    needs: changes
+    if: github.event.pull_request.draft == false && needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+
+      - name: Restore backend dependencies
+        run: |
+          dotnet --info
+          dotnet restore backend/pi-planning-backend/pi-planning-backend.csproj
+          dotnet restore backend/pi-planning-backend.migrations.postgres/pi-planning-backend.migrations.postgres.csproj
+          dotnet restore backend/pi-planning-backend.migrations.sqlserver/pi-planning-backend.migrations.sqlserver.csproj
+          dotnet restore backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj
+
+      - name: Build backend (Release)
+        run: dotnet build backend/pi-planning-backend/pi-planning-backend.csproj --configuration Release --no-restore
+
+      - name: Run backend unit tests
+        env:
+          DOTNET_ROLL_FORWARD: LatestPatch
+        run: dotnet test backend/pi-planning-backend.tests/pi-planning-backend.tests.csproj --configuration Release --no-restore --verbosity normal
+
+  frontend-tests:
+    name: Frontend Unit Tests
+    needs: changes
+    if: github.event.pull_request.draft == false && needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/pi-planning-ui/package-lock.json
+
+      - name: Setup Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend/pi-planning-ui
+
+      - name: Build frontend (production)
+        run: npm run build -- --configuration production
+        working-directory: frontend/pi-planning-ui
+
+      - name: Run frontend unit tests (headless)
+        env:
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: npx ng test --watch=false --no-progress --karma-config karma.ci.conf.cjs --browsers=ChromeHeadlessNoSandbox
+        working-directory: frontend/pi-planning-ui
